@@ -41,13 +41,22 @@ public final class NetworkOverlay implements OverlayLayer {
         List<OverlayMesh> built = new ArrayList<>();
         for (NetworkOverlayS2CPacket.Network network : packet.networks()) {
             Set<SpatialPos> members = new HashSet<>(network.members());
-            int color = color(network.id());
+            int color = 0xFF000000 | color(network.id());
             OverlayMesh mesh = OverlayMesh.build(CELL_SIZE, members, (x, y, z) -> members.contains(new SpatialPos(x, y, z)), (x, y, z) -> color);
             if (mesh != null) {
                 built.add(mesh);
             }
         }
         meshes.put(packet.networkType(), built);
+    }
+
+    /**
+     * How many network volumes are drawn for each network type.
+     */
+    public Map<String, Integer> counts() {
+        Map<String, Integer> counts = new HashMap<>();
+        meshes.forEach((type, list) -> counts.put(type, list.size()));
+        return counts;
     }
 
     private void remove(String type) {

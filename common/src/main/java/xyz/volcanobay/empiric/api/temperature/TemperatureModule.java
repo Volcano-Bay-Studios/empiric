@@ -28,7 +28,9 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
 
     public static final int SIZE = 32;
     public static final int CELLS = SIZE * SIZE * SIZE;
-    public static final short LIMIT = 256;
+    /** Temperatures are whole tenths of a degree Celsius, so 245 is 24.5 C. */
+    public static final int MIN = -2731;
+    public static final int MAX = Short.MAX_VALUE;
     private static final int SYNC_INTERVAL = 10;
 
     @Data(sync = false)
@@ -50,13 +52,25 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
         return attachment().chunk();
     }
 
+    /**
+     * Cells hold the difference from the dimension's ambient temperature, so an untouched cell (0) is always at ambient.
+     */
+    public int ambient() {
+        return TemperatureSystem.ambient(level());
+    }
+
+    public static String format(int temperature) {
+        return String.format("%.1f C", temperature / 10f);
+    }
+
     public short get(int section, int index) {
         short[] values = sections.get(section);
         return values == null ? 0 : values[index];
     }
 
     public void set(int section, int index, int value) {
-        short clamped = (short) Mth.clamp(value, 0, LIMIT);
+        int ambient = ambient();
+        short clamped = (short) Mth.clamp(value, Math.max(MIN - ambient, Short.MIN_VALUE), Math.min(MAX - ambient, Short.MAX_VALUE));
         short[] values = sections.get(section);
         if (values == null) {
             if (clamped == 0) {
@@ -68,7 +82,7 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
         if (values[index] != clamped) {
             values[index] = clamped;
             changed.add(section);
-            if (clamped > 0) {
+            if (clamped != 0) {
                 mark(section, index);
             }
         }
@@ -81,7 +95,7 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
             short[] values = sections.get(section);
             if (values != null) {
                 for (int i = 0; i < CELLS; i++) {
-                    if (values[i] > 0) {
+                    if (values[i] != 0) {
                         mask[i >> 6] |= 1L << i;
                     }
                 }
@@ -125,7 +139,7 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
                     run++;
                 }
                 buffer.writeVarInt(run);
-                buffer.writeVarInt(value);
+                buffer.writeVarInt((value << 1) ^ (value >> 31));
                 i += run;
             }
             byte[] bytes = new byte[buffer.readableBytes()];
@@ -142,7 +156,8 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
         int i = 0;
         while (buffer.isReadable()) {
             int run = buffer.readVarInt();
-            short value = (short) Mth.clamp(buffer.readVarInt(), 0, LIMIT);
+            int zigzag = buffer.readVarInt();
+            short value = (short) Mth.clamp((zigzag >>> 1) ^ -(zigzag & 1), Short.MIN_VALUE, Short.MAX_VALUE);
             if (run <= 0 || i + run > CELLS) {
                 throw new IllegalArgumentException("Temperature run of " + run + " at " + i + " doesn't fit in a section");
             }
@@ -225,7 +240,7 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
             VeilPacketManager.PacketSink sink = VeilPacketManager.tracking((ServerLevel) level(), chunk().getPos());
             for (int section : changed) {
                 sink.sendPacket(packet(section));
-                TemperatureSystem.sectionChanged(this, section);
+                TemperatureSystem.TEMPERATURE.fire(this, TemperatureSystem.SECTION_CHANGED, section);
             }
             changed.clear();
         }

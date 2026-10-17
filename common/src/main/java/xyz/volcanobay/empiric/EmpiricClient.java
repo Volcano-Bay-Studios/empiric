@@ -1,10 +1,12 @@
 package xyz.volcanobay.empiric;
 
+import foundry.veil.Veil;
 import foundry.veil.platform.VeilEventPlatform;
 import net.minecraft.client.Minecraft;
 import xyz.volcanobay.empiric.api.behavior.ClientTickBehavior;
 import xyz.volcanobay.empiric.api.behavior.EmpiricBehaviors;
 import xyz.volcanobay.empiric.api.behavior.RenderBehavior;
+import xyz.volcanobay.empiric.client.editor.EmpiricInspector;
 import xyz.volcanobay.empiric.client.overlay.OverlayRenderer;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
@@ -14,6 +16,11 @@ import xyz.volcanobay.empiric.system.ModuleSyncSystem;
 public class EmpiricClient {
 
     public static void init() {
+        VeilEventPlatform.INSTANCE.onVeilRendererAvailable(renderer -> {
+            if (Veil.IMGUIMC) {
+                renderer.getEditorManager().add(new EmpiricInspector());
+            }
+        });
         VeilEventPlatform.INSTANCE.onVeilRenderLevelStage((stage, levelRenderer, bufferSource, matrixStack, frustumMatrix, projectionMatrix, renderTick, deltaTracker, camera, frustum) -> {
             OverlayRenderer.render(stage, frustumMatrix, projectionMatrix, camera);
             ModuleSystem modules = EmpiricCore.modules();

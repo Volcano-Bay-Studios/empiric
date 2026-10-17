@@ -21,18 +21,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Heated octs around the player from the client's synced temperature, colored by a heat palette and
- * hidden by blocks in front of them. Sections are remeshed as their temperature packets arrive.
- */
 public final class TemperatureOverlay implements OverlayLayer {
 
     public static final TemperatureOverlay INSTANCE = new TemperatureOverlay();
 
     private static final double CELL_SIZE = 0.5;
     private static final int REBUILDS_PER_TICK = 8;
-    // Turbo palette, cold to hot.
-    private static final int[] PALETTE = {0x30123b, 0x4662d7, 0x36aaf9, 0x1ae4b6, 0x72fe5e, 0xc8ef34, 0xfaba39, 0xf66b19, 0xca2a04};
+    private static final int FADE_RANGE = 100;
+    private static final int[][] STOPS = {
+            {TemperatureModule.MIN, 0xffffff}, {-400, 0xe0f4ff}, {-150, 0x4662d7}, {0, 0x36aaf9}, {150, 0x1ae4b6}, {250, 0x72fe5e},
+            {400, 0xc8ef34}, {600, 0xfaba39}, {1000, 0xf66b19}, {2000, 0xca2a04}, {TemperatureModule.MAX, 0x7a0000}
+    };
 
     private final Map<Section, OverlayMesh> meshes = new HashMap<>();
     private final Set<Section> dirty = new HashSet<>();
@@ -41,10 +40,17 @@ public final class TemperatureOverlay implements OverlayLayer {
     private TemperatureOverlay() {
     }
 
-    public static int color(int temperature) {
-        float t = Mth.clamp(temperature / (float) TemperatureModule.LIMIT, 0, 1) * (PALETTE.length - 1);
-        int low = Math.min((int) t, PALETTE.length - 2);
-        return lerp(t - low, PALETTE[low], PALETTE[low + 1]);
+    public static int color(int ambient, int offset) {
+        int temperature = ambient + offset;
+        int stop = 0;
+        while (stop < STOPS.length - 2 && temperature >= STOPS[stop + 1][0]) {
+            stop++;
+        }
+        int[] low = STOPS[stop];
+        int[] high = STOPS[stop + 1];
+        float t = Mth.clamp((temperature - low[0]) / (float) (high[0] - low[0]), 0, 1);
+        int alpha = Math.round(Mth.clamp(Math.abs(offset) / (float) FADE_RANGE, 0, 1) * 255);
+        return (alpha << 24) | lerp(t, low[1], high[1]);
     }
 
     private static int lerp(float t, int from, int to) {
@@ -59,6 +65,14 @@ public final class TemperatureOverlay implements OverlayLayer {
         if (radius <= 0) {
             clear();
         }
+    }
+
+    public int radius() {
+        return radius;
+    }
+
+    public int meshCount() {
+        return meshes.size();
     }
 
     public void changed(ChunkPos chunk, int section) {
@@ -152,12 +166,13 @@ public final class TemperatureOverlay implements OverlayLayer {
         long baseZ = chunkZ * (long) TemperatureModule.SIZE;
         List<SpatialPos> cells = new ArrayList<>();
         for (int i = 0; i < TemperatureModule.CELLS; i++) {
-            if (values[i] > 0) {
+            if (values[i] != 0) {
                 cells.add(new SpatialPos(baseX + ((i >> 10) & 31), baseY + ((i >> 5) & 31), baseZ + (i & 31)));
             }
         }
+        int ambient = TemperatureSystem.ambient(level);
         Lookup lookup = new Lookup(level);
-        return OverlayMesh.build(CELL_SIZE, cells, (x, y, z) -> lookup.get(x, y, z) > 0, (x, y, z) -> color(lookup.get(x, y, z)));
+        return OverlayMesh.build(CELL_SIZE, cells, (x, y, z) -> lookup.get(x, y, z) != 0, (x, y, z) -> color(ambient, lookup.get(x, y, z)));
     }
 
     @Override

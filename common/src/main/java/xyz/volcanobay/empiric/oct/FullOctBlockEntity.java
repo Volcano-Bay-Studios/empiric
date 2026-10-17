@@ -27,6 +27,7 @@ import xyz.volcanobay.empiric.client.ClientLookup;
 import xyz.volcanobay.empiric.mixin.oct.LevelChunkInvoker;
 import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.system.OctModuleSystem;
+import xyz.volcanobay.empiric.system.SpatialNetworkSystem;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 import xyz.volcanobay.empiric.oct.TickableBlockEntity;
 import xyz.volcanobay.empiric.ext.LevelOctExtension;
@@ -222,6 +223,7 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
             OctModuleSystem.octChanged(this.level, new OctPos(this.worldPosition, octant), oldState, state);
             if (!this.level.isClientSide) {
                 TemperatureSystem.blockChanged(this.level, this.worldPosition);
+                SpatialNetworkSystem.octChanged(this.level, new OctPos(this.worldPosition, octant));
             }
         }
         if (OctBlock.getEntityType(oldState) != OctBlock.getEntityType(state)) {

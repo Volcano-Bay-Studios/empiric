@@ -1,0 +1,20 @@
+{
+  "dimensions": [
+    "minecraft:overworld"
+  ],
+  // Earth at sea level: a mild 24 C and one standard atmosphere.
+  "temperature": 24.0,
+  "pressure": 101.325,
+  // Dry air by mole fraction. Carbon dioxide (0.042%) is left out until it exists as a chemical.
+  "composition": {
+    "empiric:nitrogen": 0.78084,
+    "empiric:oxygen": 0.20946,
+    "empiric:argon": 0.00934,
+    "empiric:neon": 0.00001818,
+    "empiric:helium": 0.00000524,
+    "empiric:methane": 0.00000187,
+    "empiric:krypton": 0.00000114,
+    "empiric:hydrogen": 0.00000055,
+    "empiric:xenon": 0.000000087
+  }
+}

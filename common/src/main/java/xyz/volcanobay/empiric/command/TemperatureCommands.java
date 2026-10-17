@@ -1,5 +1,6 @@
 package xyz.volcanobay.empiric.command;
 
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -40,18 +41,18 @@ public final class TemperatureCommands {
                 .then(Commands.literal("get").then(Commands.argument("pos", BlockPosArgument.blockPos())
                         .executes(TemperatureCommands::get)))
                 .then(Commands.literal("set").then(Commands.argument("pos", BlockPosArgument.blockPos())
-                        .then(Commands.argument("value", IntegerArgumentType.integer(0, TemperatureModule.LIMIT))
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(TemperatureModule.MIN / 10.0, TemperatureModule.MAX / 10.0))
                                 .executes(context -> change(context, false, -1))
                                 .then(Commands.argument("octant", IntegerArgumentType.integer(0, 7))
                                         .executes(context -> change(context, false, IntegerArgumentType.getInteger(context, "octant")))))))
                 .then(Commands.literal("add").then(Commands.argument("pos", BlockPosArgument.blockPos())
-                        .then(Commands.argument("value", IntegerArgumentType.integer(-TemperatureModule.LIMIT, TemperatureModule.LIMIT))
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(-TemperatureModule.MAX / 10.0, TemperatureModule.MAX / 10.0))
                                 .executes(context -> change(context, true, -1))
                                 .then(Commands.argument("octant", IntegerArgumentType.integer(0, 7))
                                         .executes(context -> change(context, true, IntegerArgumentType.getInteger(context, "octant")))))))
                 .then(Commands.literal("fill").then(Commands.argument("from", BlockPosArgument.blockPos())
                         .then(Commands.argument("to", BlockPosArgument.blockPos())
-                                .then(Commands.argument("value", IntegerArgumentType.integer(0, TemperatureModule.LIMIT))
+                                .then(Commands.argument("value", DoubleArgumentType.doubleArg(TemperatureModule.MIN / 10.0, TemperatureModule.MAX / 10.0))
                                         .executes(TemperatureCommands::fill)))))
                 .then(Commands.literal("chunk")
                         .executes(context -> chunk(context, BlockPos.containing(context.getSource().getPosition())))
@@ -72,6 +73,11 @@ public final class TemperatureCommands {
         EmpiricCommands.ensureEnabled(context.getSource(), TemperatureSystem.TEMPERATURE);
     }
 
+    /** Commands take degrees Celsius with one decimal, the system works in tenths. */
+    private static int tenths(CommandContext<CommandSourceStack> context) {
+        return (int) Math.round(DoubleArgumentType.getDouble(context, "value") * 10);
+    }
+
     private static String conductivity(byte value) {
         return value < 0 ? "air" : String.format("%.2f", value / 100f);
     }
@@ -85,13 +91,13 @@ public final class TemperatureCommands {
             OctPos oct = new OctPos(pos, octant);
             BlockState state = LevelOctExtension.get(level).getBlockState(oct);
             octs.append('\n').append(octant).append(" (").append(octant & 1).append(' ').append((octant >> 1) & 1).append(' ').append((octant >> 2) & 1).append(")  ")
-                    .append(TemperatureSystem.get(level, oct)).append("  ")
+                    .append(TemperatureModule.format(TemperatureSystem.get(level, oct))).append("  ")
                     .append(conductivity(TemperatureSystem.conductivity(level, oct.getLongX(), oct.getLongY(), oct.getLongZ()))).append("  ")
                     .append(state.getBlock().getName().getString());
         }
         double data = TemperatureSystem.BLOCK_DATA.get(level.getBlockState(pos)).conductivity;
         MutableComponent line = EmpiricCommands.label("Temperature at " + EmpiricCommands.describe(pos) + ": ")
-                .append(EmpiricCommands.hover(TemperatureSystem.get(level, pos) + " average", octs.toString(), ChatFormatting.GOLD))
+                .append(EmpiricCommands.hover(TemperatureModule.format(TemperatureSystem.get(level, pos)) + " average", octs.toString(), ChatFormatting.GOLD))
                 .append(EmpiricCommands.label(", block conductivity " + String.format("%.2f", data)));
         EmpiricCommands.send(context, line);
         return TemperatureSystem.get(level, pos);
@@ -101,7 +107,7 @@ public final class TemperatureCommands {
         enable(context);
         ServerLevel level = context.getSource().getLevel();
         BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
-        int value = IntegerArgumentType.getInteger(context, "value");
+        int value = tenths(context);
         for (int i = 0; i < 8; i++) {
             if (octant != -1 && i != octant) {
                 continue;
@@ -110,8 +116,8 @@ public final class TemperatureCommands {
             TemperatureSystem.set(level, oct, add ? TemperatureSystem.get(level, oct) + value : value);
         }
         String target = octant == -1 ? EmpiricCommands.describe(pos) : EmpiricCommands.describe(pos) + " octant " + octant;
-        context.getSource().sendSuccess(() -> Component.literal((add ? "Added " + value + " to " : "Set ") + target + (add ? "" : " to " + value)
-                + ", now " + TemperatureSystem.get(level, pos) + " average"), true);
+        context.getSource().sendSuccess(() -> Component.literal((add ? "Added " + TemperatureModule.format(value) + " to " : "Set ") + target + (add ? "" : " to " + TemperatureModule.format(value))
+                + ", now " + TemperatureModule.format(TemperatureSystem.get(level, pos)) + " average"), true);
         return 1;
     }
 
@@ -120,7 +126,7 @@ public final class TemperatureCommands {
         ServerLevel level = context.getSource().getLevel();
         BlockPos from = BlockPosArgument.getLoadedBlockPos(context, "from");
         BlockPos to = BlockPosArgument.getLoadedBlockPos(context, "to");
-        int value = IntegerArgumentType.getInteger(context, "value");
+        int value = tenths(context);
         long volume = (long) (Math.abs(from.getX() - to.getX()) + 1) * (Math.abs(from.getY() - to.getY()) + 1) * (Math.abs(from.getZ() - to.getZ()) + 1);
         if (volume > FILL_LIMIT) {
             context.getSource().sendFailure(Component.literal("Too many blocks, " + volume + " is over " + FILL_LIMIT));
@@ -132,7 +138,7 @@ public final class TemperatureCommands {
             count++;
         }
         int filled = count;
-        context.getSource().sendSuccess(() -> Component.literal("Set " + filled + " blocks to " + value), true);
+        context.getSource().sendSuccess(() -> Component.literal("Set " + filled + " blocks to " + TemperatureModule.format(value)), true);
         return filled;
     }
 
@@ -155,7 +161,7 @@ public final class TemperatureCommands {
         long total = 0;
         int cells = 0;
         int max = 0;
-        StringBuilder sections = new StringBuilder("section  cells  max");
+        StringBuilder sections = new StringBuilder("section  cells  largest offset");
         int[] keys = module.sections.keySet().toIntArray();
         Arrays.sort(keys);
         for (int section : keys) {
@@ -163,20 +169,20 @@ public final class TemperatureCommands {
             int sectionCells = 0;
             int sectionMax = 0;
             for (short value : values) {
-                if (value > 0) {
+                if (value != 0) {
                     sectionCells++;
                     total += value;
-                    sectionMax = Math.max(sectionMax, value);
+                    sectionMax = Math.max(sectionMax, Math.abs(value));
                 }
             }
             cells += sectionCells;
             max = Math.max(max, sectionMax);
-            sections.append("\ny ").append((level.getMinSection() + section) * 16).append("  ").append(sectionCells).append("  ").append(sectionMax);
+            sections.append("\ny ").append((level.getMinSection() + section) * 16).append("  ").append(sectionCells).append("  ").append(TemperatureModule.format(sectionMax));
         }
         ChunkPos chunk = module.chunk().getPos();
         MutableComponent line = EmpiricCommands.label("Chunk " + chunk.x + " " + chunk.z + ": ")
                 .append(EmpiricCommands.hover(module.sections.size() + " sections", sections.toString(), ChatFormatting.AQUA))
-                .append(EmpiricCommands.label(", " + cells + " heated octs, total " + total + ", max " + max));
+                .append(EmpiricCommands.label(", " + cells + " octs off ambient (" + TemperatureModule.format(TemperatureSystem.ambient(level)) + "), largest offset " + TemperatureModule.format(max)));
         EmpiricCommands.send(context, line);
         return cells;
     }

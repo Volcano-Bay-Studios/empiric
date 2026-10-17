@@ -6,11 +6,14 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.GameRenderer;
+import foundry.veil.api.client.render.VeilRenderSystem;
+import foundry.veil.api.client.render.shader.program.ShaderProgram;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
+import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
 
 /**
@@ -19,6 +22,7 @@ import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
  */
 public final class OverlayMesh implements AutoCloseable {
 
+    private static final ResourceLocation SHADER = Empiric.id("overlay");
     private static final float[] AO = {0.45f, 0.65f, 0.82f, 1.0f};
 
     private final VertexBuffer buffer;
@@ -39,7 +43,7 @@ public final class OverlayMesh implements AutoCloseable {
      * @param cellSize size of one cell in blocks
      * @param cells    the cells to draw, in cell coordinates
      * @param filled   whether a cell is occupied, used for face culling and occlusion
-     * @param color    RGB color of an occupied cell
+     * @param color    ARGB color of an occupied cell
      */
     public static OverlayMesh build(double cellSize, Iterable<SpatialPos> cells, Filled filled, Color color) {
         SpatialPos origin = null;
@@ -96,12 +100,11 @@ public final class OverlayMesh implements AutoCloseable {
             y[corner] = (cell.y() - origin.y() + offset(Direction.Axis.Y, normal, uAxis, plane, su, sv)) * size;
             z[corner] = (cell.z() - origin.z() + offset(Direction.Axis.Z, normal, uAxis, plane, su, sv)) * size;
         }
-        // Quads split along 0-2; start at corner 1 instead when that diagonal hides the occlusion gradient.
         int start = ao[0] + ao[2] < ao[1] + ao[3] ? 1 : 0;
         for (int i = 0; i < 4; i++) {
             int corner = (start + i) & 3;
             float light = shade * AO[ao[corner]];
-            builder.addVertex(x[corner], y[corner], z[corner]).setColor(channel(rgb, 16, light), channel(rgb, 8, light), channel(rgb, 0, light), 255);
+            builder.addVertex(x[corner], y[corner], z[corner]).setColor(channel(rgb, 16, light), channel(rgb, 8, light), channel(rgb, 0, light), rgb >>> 24);
         }
     }
 
@@ -131,9 +134,16 @@ public final class OverlayMesh implements AutoCloseable {
 
     public void draw(Matrix4fc view, Matrix4fc projection, Vec3 camera) {
         Matrix4f modelView = new Matrix4f(view).translate((float) (originX - camera.x), (float) (originY - camera.y), (float) (originZ - camera.z));
+        ShaderProgram shader = VeilRenderSystem.renderer().getShaderManager().getShader(SHADER);
+        if (shader == null) {
+            return;
+        }
+        shader.bind();
+        shader.setDefaultUniforms(VertexFormat.Mode.QUADS, modelView, projection);
         buffer.bind();
-        buffer.drawWithShader(modelView, new Matrix4f(projection), GameRenderer.getPositionColorShader());
+        buffer.draw();
         VertexBuffer.unbind();
+        ShaderProgram.unbind();
     }
 
     @Override

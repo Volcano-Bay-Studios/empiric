@@ -43,6 +43,15 @@ repositories {
         )
         filter { includeGroup('org.parchmentmc.data') }
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'RyanHCode'
+                url = 'https://maven.ryanhcode.dev/releases'
+            }
+        }
+        filter { includeGroup('foundry.imguimc') }
+    }
     maven {
         name = 'BlameJared'
         url = 'https://maven.blamejared.com'

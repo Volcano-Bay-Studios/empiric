@@ -4,11 +4,7 @@ import foundry.veil.api.network.handler.ClientPacketContext;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.attachment.Attachment;
-import xyz.volcanobay.empiric.core.data.DataBuffer;
-import xyz.volcanobay.empiric.core.data.DataContext;
 import xyz.volcanobay.empiric.core.data.Encoding;
-import xyz.volcanobay.empiric.core.data.spec.ObjectSpec;
-import xyz.volcanobay.empiric.core.module.Module;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 import xyz.volcanobay.empiric.core.module.Side;
@@ -29,6 +25,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import xyz.volcanobay.empiric.oct.OctClientEffects;
 import xyz.volcanobay.empiric.system.DataSyncSystem;
 import xyz.volcanobay.empiric.system.DebugSubscriptionSystem;
+import xyz.volcanobay.empiric.system.ModuleSyncSystem;
 import xyz.volcanobay.empiric.networking.packet.DataEntriesS2CPacket;
 import net.minecraft.world.level.Level;
 
@@ -103,6 +100,7 @@ public class EmpiricClientPacketHandler {
         try {
             module.apply(packet.section(), packet.data());
             TemperatureOverlay.INSTANCE.changed(packet.chunk(), packet.section());
+            TemperatureSystem.TEMPERATURE.fire(module, TemperatureSystem.SECTION_CHANGED, packet.section());
         } catch (RuntimeException e) {
             Empiric.LOGGER.error("Couldn't apply a temperature section", e);
         }
@@ -124,38 +122,11 @@ public class EmpiricClientPacketHandler {
         TemperatureOverlay.INSTANCE.show(packet.radius());
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public static void handleModuleSync(ModuleSyncS2CPacket packet, ClientPacketContext ctx) {
         if (!ctx.client().isSameThread()) {
             ctx.client().execute(() -> handleModuleSync(packet, ctx));
             return;
         }
-        ModuleSystem modules = EmpiricCore.modules();
-        DataBuffer buffer = EmpiricBuffers.buffer(packet.data());
-        DataContext context = modules.specs().context(Encoding.PACKED);
-        try {
-            ModuleSystem.Target target = modules.readTarget(buffer, Side.CLIENT, context);
-            Attachment attachment = target.attachment();
-            ModuleType type = target.type();
-            if (attachment == null) {
-                return;
-            }
-            Module module = attachment.modules().get(type);
-            if (module == null) {
-                if (!type.isEnabled()) {
-                    return;
-                }
-                module = modules.attach(attachment, type);
-            }
-            ObjectSpec spec = type.spec();
-            if (buffer.takeBoolean()) {
-                spec.update(buffer, module, context);
-            } else {
-                spec.readDirty(buffer, module, context);
-            }
-            modules.acceptRemote(module);
-        } catch (RuntimeException e) {
-            Empiric.LOGGER.error("Couldn't apply a module sync", e);
-        }
+        ModuleSyncSystem.apply(packet.data(), Side.CLIENT);
     }
 }

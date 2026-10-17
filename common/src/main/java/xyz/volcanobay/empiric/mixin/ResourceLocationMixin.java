@@ -8,7 +8,7 @@ import xyz.volcanobay.empiric.core.module.ModuleId;
 public abstract class ResourceLocationMixin implements ModuleId {
 
     @Override
-    public String id() {
+    public String empiriccore$id() {
         return toString();
     }
 }

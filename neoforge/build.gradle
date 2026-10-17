@@ -46,6 +46,9 @@ dependencies {
     jarJar(implementation("foundry.veil:veil-neoforge-${project.minecraft_version}:${project.veil_version}") {
         exclude group: "maven.modrinth"
     })
+    // ImGuiMC is optional: dev runs get it so the editor inspectors work
+    compileOnly("foundry.imguimc:imguimc-neoforge-${project.minecraft_version}:${project.imguimc_version}")
+    runtimeOnly("foundry.imguimc:imguimc-neoforge-${project.minecraft_version}:${project.imguimc_version}")
     jarJar(api(additionalRuntimeClasspath("xyz.volcanobay:empiric-core:${project.empiric_core_version}")) {
         exclude group: "it.unimi.dsi"
     })

@@ -2,6 +2,7 @@ package xyz.volcanobay.empiric.api.network;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.core.data.Encoding;
@@ -150,6 +151,11 @@ public class SpatialNetworkMap<N extends NetworkModule> extends ManagedSpatialNe
         return type.allowDefaultNetwork();
     }
 
+    @Override
+    protected int maxSize() {
+        return MAX_SIZE;
+    }
+
     private static long chunkKey(long x, long z) {
         return ChunkPos.asLong((int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L));
     }
@@ -227,9 +233,7 @@ public class SpatialNetworkMap<N extends NetworkModule> extends ManagedSpatialNe
         N absorbed = absorbedAttachment == null ? null : absorbedAttachment.modules().get(type.moduleType());
         if (kept != null && absorbed != null) {
             kept.onMerged(absorbed);
-            for (NetworkListener<N> listener : type.listeners()) {
-                listener.merged(kept, absorbed);
-            }
+            type.moduleType().fire(kept, NetworkEvents.MERGED, absorbed);
         }
         if (absorbedAttachment != null) {
             EmpiricCore.modules().detachAll(absorbedAttachment);
@@ -246,9 +250,7 @@ public class SpatialNetworkMap<N extends NetworkModule> extends ManagedSpatialNe
         N network = getNetwork(id);
         if (network != null) {
             network.update();
-            for (NetworkListener<N> listener : type.listeners()) {
-                listener.updated(network);
-            }
+            type.moduleType().fire(network, NetworkEvents.UPDATED, null);
         }
     }
 
@@ -260,9 +262,7 @@ public class SpatialNetworkMap<N extends NetworkModule> extends ManagedSpatialNe
         N split = getNetwork(second);
         if (original != null && split != null) {
             original.onSplit(split);
-            for (NetworkListener<N> listener : type.listeners()) {
-                listener.split(original, split);
-            }
+            type.moduleType().fire(original, NetworkEvents.SPLIT, split);
         }
         if (original != null) {
             original.update();
@@ -270,6 +270,22 @@ public class SpatialNetworkMap<N extends NetworkModule> extends ManagedSpatialNe
         if (split != null) {
             split.update();
         }
+    }
+
+    /**
+     * Refreshes the eight octants of a block that changed in the world.
+     */
+    public void blockChanged(BlockPos pos) {
+        List<SpatialPos> points = new ArrayList<>(8);
+        for (int octant = 0; octant < 8; octant++) {
+            OctPos oct = new OctPos(pos, octant);
+            points.add(new SpatialPos(oct.getLongX(), oct.getLongY(), oct.getLongZ()));
+        }
+        refreshPoints(points);
+    }
+
+    public void octChanged(OctPos pos) {
+        refreshPoints(List.of(new SpatialPos(pos.getLongX(), pos.getLongY(), pos.getLongZ())));
     }
 
     public void chunkLoaded(ChunkPos chunk) {

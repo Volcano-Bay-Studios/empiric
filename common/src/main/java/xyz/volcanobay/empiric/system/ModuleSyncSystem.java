@@ -19,12 +19,22 @@ import xyz.volcanobay.empiric.core.attachment.Attachment;
 import xyz.volcanobay.empiric.core.attachment.ModuleAttachment;
 import xyz.volcanobay.empiric.api.network.NetworkAttachment;
 import xyz.volcanobay.empiric.api.network.SpatialNetworkMap;
+import xyz.volcanobay.empiric.core.data.DataBuffer;
+import xyz.volcanobay.empiric.core.data.DataContext;
+import xyz.volcanobay.empiric.core.data.Encoding;
+import xyz.volcanobay.empiric.core.data.spec.ObjectSpec;
 import xyz.volcanobay.empiric.core.module.Module;
-import xyz.volcanobay.empiric.core.module.ModuleListener;
+import xyz.volcanobay.empiric.core.module.ModuleEvents;
+import xyz.volcanobay.empiric.core.module.ModuleSystem;
+import xyz.volcanobay.empiric.core.module.ModuleType;
+import xyz.volcanobay.empiric.core.module.SyncedFields;
+import xyz.volcanobay.empiric.data.EmpiricBuffers;
 import xyz.volcanobay.empiric.networking.packet.ModuleRemoveS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncC2SPacket;
 import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncS2CPacket;
+
+import java.util.BitSet;
 
 public final class ModuleSyncSystem {
 
@@ -32,12 +42,43 @@ public final class ModuleSyncSystem {
     }
 
     public static void register() {
-        EmpiricCore.modules().listen(new ModuleListener() {
-            @Override
-            public void detached(Module<?> module) {
-                removed(module);
+        EmpiricCore.modules().listen(ModuleEvents.DETACHED, (module, ignored) -> removed(module));
+    }
+
+    /**
+     * Applies a module sync packet's data to the module it points at on {@code side}, attaching it if needed.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void apply(byte[] data, Side side) {
+        ModuleSystem modules = EmpiricCore.modules();
+        DataBuffer buffer = EmpiricBuffers.buffer(data);
+        DataContext context = modules.specs().context(Encoding.PACKED);
+        try {
+            ModuleSystem.Target target = modules.readTarget(buffer, side, context);
+            Attachment attachment = target.attachment();
+            ModuleType type = target.type();
+            if (attachment == null) {
+                return;
             }
-        });
+            Module module = attachment.modules().get(type);
+            if (module == null) {
+                if (!type.isEnabled()) {
+                    return;
+                }
+                module = modules.attach(attachment, type);
+            }
+            ObjectSpec spec = type.spec();
+            BitSet fields;
+            if (buffer.takeBoolean()) {
+                spec.update(buffer, module, context);
+                fields = SyncedFields.full(spec).fields();
+            } else {
+                fields = spec.readDirty(buffer, module, context);
+            }
+            modules.acceptRemote(module, fields);
+        } catch (RuntimeException e) {
+            Empiric.LOGGER.error("Couldn't apply a module sync", e);
+        }
     }
 
     private static void removed(Module<?> module) {

@@ -73,13 +73,18 @@ import xyz.volcanobay.empiric.system.DebugSubscriptionSystem;
 
 import net.minecraft.server.level.ServerPlayer;
 import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
+import xyz.volcanobay.empiric.api.atmosphere.LevelAtmosphere;
+import xyz.volcanobay.empiric.system.AtmosphereThermalSystem;
 import xyz.volcanobay.empiric.core.data.DataException;
 import xyz.volcanobay.empiric.core.data.tree.DataNode;
-import xyz.volcanobay.empiric.core.module.Module;
-import xyz.volcanobay.empiric.core.module.ModuleListener;
+import xyz.volcanobay.empiric.Empiric;
+import xyz.volcanobay.empiric.core.module.ModuleEvent;
+import xyz.volcanobay.empiric.core.module.ModuleEvents;
+import xyz.volcanobay.empiric.core.module.SyncedFields;
+import xyz.volcanobay.empiric.api.network.NetworkEvents;
+import xyz.volcanobay.empiric.system.ModuleSyncSystem;
 import xyz.volcanobay.empiric.networking.handler.EmpiricServerPacketHandler;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncC2SPacket;
-import xyz.volcanobay.empiric.system.AtmosphereSystem;
 import xyz.volcanobay.empiric.system.DataSyncSystem;
 
 import net.minecraft.world.level.ChunkPos;
@@ -91,6 +96,7 @@ import java.util.BitSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -122,6 +128,14 @@ public class EmpiricGameTests {
                 test("temperature_conduction", EmpiricGameTests::temperatureConduction),
                 test("chemistry_volume", EmpiricGameTests::chemistryVolume),
                 test("atmosphere_network", EmpiricGameTests::atmosphereNetwork),
+                test("level_atmosphere_data", EmpiricGameTests::levelAtmosphereData),
+                test("room_default_atmosphere", EmpiricGameTests::roomDefaultAtmosphere),
+                test("room_breach", EmpiricGameTests::roomBreach),
+                test("room_breach_into_planet", EmpiricGameTests::roomBreachIntoPlanet),
+                test("planet_seal_and_reopen", EmpiricGameTests::planetSealAndReopen),
+                test("room_merge_keeps_air", EmpiricGameTests::roomMergeKeepsAir),
+                test("room_split_shares_air", EmpiricGameTests::roomSplitSharesAir),
+                isolated("room_heat_exchange", EmpiricGameTests::roomHeatExchange),
                 test("bloodstream_and_items", EmpiricGameTests::bloodstreamAndItems),
                 test("block_data", EmpiricGameTests::blockData),
                 test("json_specs", EmpiricGameTests::jsonSpecs),
@@ -140,6 +154,9 @@ public class EmpiricGameTests {
                 test("json_fixers", EmpiricGameTests::jsonFixers),
                 isolated("data_entry_sync", EmpiricGameTests::dataEntrySync),
                 test("module_listeners", EmpiricGameTests::moduleListeners),
+                isolated("type_listener_subscribes", EmpiricGameTests::typeListenerSubscribes),
+                test("custom_module_event", EmpiricGameTests::customModuleEvent),
+                test("synced_event", EmpiricGameTests::syncedEvent),
                 test("temperature_active_cells", EmpiricGameTests::temperatureActiveCells),
                 test("disable_suppresses_mod_subscriptions", EmpiricGameTests::disableSuppresses),
                 isolated("network_viewers_dropped", EmpiricGameTests::networkViewersDropped),
@@ -229,6 +246,10 @@ public class EmpiricGameTests {
             line.add(placePipe(level, origin.relative(Direction.EAST, i)));
         }
         var map = EmpiricTestModules.PIPES.get(level);
+        List<String> events = new ArrayList<>();
+        EmpiricTestModules.PIPES.listen("pipe_events", NetworkEvents.MERGED, (kept, absorbed) -> events.add("merged"));
+        EmpiricTestModules.PIPES.listen("pipe_events", NetworkEvents.SPLIT, (original, split) -> events.add("split"));
+        EmpiricTestModules.PIPES.listen("pipe_events", NetworkEvents.UPDATED, (updated, ignored) -> events.add("updated"));
         EmpiricTestModules.PipeNetwork network = map.getNetwork(line.get(0));
         helper.assertTrue(network != null, "pipe line didn't form a network");
         helper.assertTrue(network.size == 5, "network has " + network.size + " members instead of 5");
@@ -246,6 +267,8 @@ public class EmpiricGameTests {
         helper.assertTrue(merged != null && merged == map.getNetworkSoft(line.get(4).getLongX(), line.get(4).getLongY(), line.get(4).getLongZ()), "replacing the middle pipe didn't merge the networks");
         helper.assertTrue(merged.size == 5, "merged network has " + merged.size + " members");
         helper.assertTrue(merged.merges >= 1, "merge callback wasn't called");
+        EmpiricTestModules.PIPES.unlisten("pipe_events");
+        helper.assertTrue(events.contains("split") && events.contains("merged"), "network listeners saw " + events);
         EmpiricApi.unsubscribe(EmpiricTestModules.SUBSCRIBER, EmpiricTestModules.PIPES.moduleType());
         helper.assertTrue(map.getNetwork(line.get(0)) == null, "an unsubscribed network type still made networks");
         EmpiricApi.subscribe(EmpiricTestModules.SUBSCRIBER, EmpiricTestModules.PIPES.moduleType());
@@ -298,14 +321,15 @@ public class EmpiricGameTests {
         helper.setBlock(new BlockPos(1, 1, 2), Blocks.STONE);
         helper.setBlock(new BlockPos(2, 1, 2), Blocks.STONE);
         LevelOctExtension.get(level).setOctState(oct, 0, EmpiricTestBlocks.PLAIN_OCT.get().defaultBlockState());
-        TemperatureSystem.set(level, hot, 250);
-        helper.assertTrue(TemperatureSystem.get(level, hot) == 250, "setting a block's temperature didn't stick");
+        int ambient = TemperatureSystem.ambient(level);
+        TemperatureSystem.set(level, hot, ambient + 250);
+        helper.assertTrue(TemperatureSystem.get(level, hot) == ambient + 250, "setting a block's temperature didn't stick");
         helper.succeedWhen(() -> {
-            TemperatureSystem.set(level, hot, 250);
-            helper.assertTrue(TemperatureSystem.get(level, next) > 0, "heat didn't conduct into the next stone block");
-            helper.assertTrue(TemperatureSystem.get(level, new OctPos(oct, 0)) > 0, "heat didn't reach the filled octant");
-            helper.assertTrue(TemperatureSystem.get(level, new OctPos(oct, 7)) == 0, "heat entered an empty octant");
-            helper.assertTrue(TemperatureSystem.get(level, hot.above()) == 0, "heat entered the air");
+            TemperatureSystem.set(level, hot, ambient + 250);
+            helper.assertTrue(TemperatureSystem.get(level, next) > ambient, "heat didn't conduct into the next stone block");
+            helper.assertTrue(TemperatureSystem.get(level, new OctPos(oct, 0)) > ambient, "heat didn't reach the filled octant");
+            helper.assertTrue(TemperatureSystem.get(level, new OctPos(oct, 7)) == ambient, "heat entered an empty octant");
+            helper.assertTrue(TemperatureSystem.get(level, hot.above()) == ambient, "heat entered the air");
         });
     }
 
@@ -346,6 +370,186 @@ public class EmpiricGameTests {
         helper.assertTrue(network != null, "sealed air didn't form an atmosphere network");
         helper.assertTrue(Math.abs(network.getVolume().getVolumeLiters() - 1000) < 1.0E-6, "a one block air pocket should hold 1000 liters, not " + network.getVolume().getVolumeLiters());
         helper.assertTrue(VolumeHelper.getVolumeSoft(level, inside) == network.getVolume(), "VolumeHelper didn't find the atmosphere");
+        helper.succeed();
+    }
+
+    private static void levelAtmosphereData(GameTestHelper helper) {
+        LevelAtmosphere overworld = AtmosphereSystem.LEVEL_ATMOSPHERE.get(Level.OVERWORLD.location());
+        LevelAtmosphere nether = AtmosphereSystem.LEVEL_ATMOSPHERE.get(Level.NETHER.location());
+        LevelAtmosphere end = AtmosphereSystem.LEVEL_ATMOSPHERE.get(Level.END.location());
+        helper.assertTrue(overworld.composition.containsKey("empiric:nitrogen"), "the overworld atmosphere wasn't loaded");
+        helper.assertTrue(nether.temperature > overworld.temperature, "the nether should be hotter than the overworld");
+        helper.assertTrue(end.temperature < overworld.temperature, "the end should be colder than the overworld");
+        helper.assertTrue(TemperatureSystem.ambient(helper.getLevel()) == overworld.ambient(), "ambient temperature didn't come from the level atmosphere");
+        helper.succeed();
+    }
+
+    private static AtmosphereNetwork sealedRoom(GameTestHelper helper) {
+        for (int x = 1; x <= 3; x++) {
+            for (int y = 1; y <= 3; y++) {
+                for (int z = 1; z <= 3; z++) {
+                    if (x != 2 || y != 2 || z != 2) {
+                        helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                    }
+                }
+            }
+        }
+        return AtmosphereSystem.ATMOSPHERE.get(helper.getLevel()).getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0));
+    }
+
+    private static void roomDefaultAtmosphere(GameTestHelper helper) {
+        AtmosphereNetwork room = sealedRoom(helper);
+        helper.assertTrue(room != null, "sealed air didn't form an atmosphere network");
+        LevelAtmosphere atmosphere = AtmosphereSystem.levelAtmosphere(helper.getLevel());
+        double pressure = room.getVolume().getGasPressure();
+        helper.assertTrue(Math.abs(pressure - atmosphere.pressure * 1000) < atmosphere.pressure * 10, "a new room should start at the level's pressure, got " + pressure + " Pa, " + room.getVolume().getVolumeLiters() + " L, " + room.getVolume().getTemperature() + " K, planet " + room.isWorldAtmosphere() + " id " + room.id());
+        helper.assertTrue(Math.abs(room.getVolume().getTemperature() - atmosphere.kelvin()) < 1.0E-6, "a new room should start at the level's temperature");
+        Chemical oxygen = ChemicalRegistry.getChemical("empiric:oxygen");
+        helper.assertTrue(room.getVolume().getChemicalAmount(oxygen, Volume.State.GAS) > 0, "a new room should hold oxygen");
+        helper.succeed();
+    }
+
+    private static void roomBreach(GameTestHelper helper) {
+        var map = AtmosphereSystem.ATMOSPHERE.get(helper.getLevel());
+        OctPos inside = new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0);
+        AtmosphereNetwork room = sealedRoom(helper);
+        helper.assertTrue(room != null && !room.isWorldAtmosphere(), "sealed air didn't form a room");
+        int id = room.id();
+        helper.setBlock(new BlockPos(2, 3, 2), Blocks.AIR);
+        AtmosphereNetwork breached = map.getNetwork(inside);
+        helper.assertTrue(breached != null && breached.isWorldAtmosphere(), "breaking the roof into undiscovered air didn't open the room, got " + (breached == null ? "nothing" : "id " + breached.id()));
+        helper.assertTrue(map.existing(id) == null, "the breached room's network is still around");
+        helper.succeed();
+    }
+
+    private static void roomBreachIntoPlanet(GameTestHelper helper) {
+        var map = AtmosphereSystem.ATMOSPHERE.get(helper.getLevel());
+        OctPos inside = new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0);
+        AtmosphereNetwork room = sealedRoom(helper);
+        helper.assertTrue(room != null && !room.isWorldAtmosphere(), "sealed air didn't form a room");
+        int id = room.id();
+        AtmosphereNetwork planet = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 5, 2)), 0));
+        helper.assertTrue(planet != null && planet.isWorldAtmosphere(), "the air above the room isn't the planet atmosphere");
+        helper.setBlock(new BlockPos(2, 3, 2), Blocks.AIR);
+        AtmosphereNetwork breached = map.getNetwork(inside);
+        helper.assertTrue(breached == planet, "breaking the roof into the cached planet atmosphere didn't merge the room into it, got " + (breached == null ? "nothing" : "id " + breached.id()));
+        helper.assertTrue(map.existing(id) == null, "the breached room's network is still around");
+        helper.succeed();
+    }
+
+    private static void planetSealAndReopen(GameTestHelper helper) {
+        var map = AtmosphereSystem.ATMOSPHERE.get(helper.getLevel());
+        BlockPos roof = new BlockPos(2, 3, 2);
+        for (int x = 1; x <= 3; x++) {
+            for (int y = 1; y <= 3; y++) {
+                for (int z = 1; z <= 3; z++) {
+                    if ((x != 2 || y != 2 || z != 2) && !roof.equals(new BlockPos(x, y, z))) {
+                        helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                    }
+                }
+            }
+        }
+        OctPos inside = new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0);
+        OctPos above = new OctPos(helper.absolutePos(new BlockPos(2, 5, 2)), 0);
+        AtmosphereNetwork planet = map.getNetwork(inside);
+        helper.assertTrue(planet != null && planet.isWorldAtmosphere(), "an open room should be part of the planet atmosphere");
+
+        helper.setBlock(roof, Blocks.STONE);
+        AtmosphereNetwork room = map.getNetwork(inside);
+        helper.assertTrue(room != null && !room.isWorldAtmosphere(), "sealing the roof didn't split a room off the cached planet atmosphere");
+        helper.assertTrue(room.members().size() == 8, "the sealed room has " + room.members().size() + " octants instead of 8");
+        helper.assertTrue(map.getNetwork(above) == planet, "the air outside left the planet atmosphere");
+        LevelAtmosphere atmosphere = AtmosphereSystem.levelAtmosphere(helper.getLevel());
+        double pressure = room.getVolume().getGasPressure();
+        helper.assertTrue(Math.abs(pressure - atmosphere.pressure * 1000) < atmosphere.pressure * 10, "a room sealed off the planet should start at the level's pressure, got " + pressure + " Pa");
+
+        int id = room.id();
+        helper.setBlock(roof, Blocks.AIR);
+        helper.assertTrue(map.getNetwork(inside) == planet, "reopening the roof didn't merge the room back into the planet atmosphere");
+        helper.assertTrue(map.existing(id) == null, "the reopened room's network is still around");
+        helper.succeed();
+    }
+
+    /**
+     * Fills x 1 to 5, y 1 to 3, z 1 to 3 with stone except for the given air cells.
+     */
+    private static void stoneShell(GameTestHelper helper, BlockPos... air) {
+        List<BlockPos> open = List.of(air);
+        for (int x = 1; x <= 5; x++) {
+            for (int y = 1; y <= 3; y++) {
+                for (int z = 1; z <= 3; z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if (!open.contains(pos)) {
+                        helper.setBlock(pos, Blocks.STONE);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void roomMergeKeepsAir(GameTestHelper helper) {
+        var map = AtmosphereSystem.ATMOSPHERE.get(helper.getLevel());
+        stoneShell(helper, new BlockPos(2, 2, 2), new BlockPos(4, 2, 2));
+        AtmosphereNetwork left = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0));
+        AtmosphereNetwork right = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(4, 2, 2)), 0));
+        helper.assertTrue(left != null && right != null && left != right && !left.isWorldAtmosphere() && !right.isWorldAtmosphere(), "the two cells didn't form separate rooms");
+        Chemical oxygen = ChemicalRegistry.getChemical("empiric:oxygen");
+        left.getVolume().addChemical(oxygen, 5, Volume.State.GAS);
+        left.getVolume().setTemperature(400);
+        double expected = left.getVolume().getChemicalAmount(oxygen, Volume.State.GAS) + right.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
+        double low = right.getVolume().getTemperature();
+        helper.setBlock(new BlockPos(3, 2, 2), Blocks.AIR);
+        AtmosphereNetwork merged = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0));
+        helper.assertTrue(merged != null && merged == map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(4, 2, 2)), 0)), "breaking the divider didn't merge the rooms");
+        double amount = merged.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
+        helper.assertTrue(Math.abs(amount - expected) < 1.0E-6, "the merged room holds " + amount + " oxygen instead of " + expected);
+        double temperature = merged.getVolume().getTemperature();
+        helper.assertTrue(temperature > low + 1 && temperature < 399, "the merged air should mix to between " + low + " K and 400 K, got " + temperature + " K");
+        helper.succeed();
+    }
+
+    private static void roomSplitSharesAir(GameTestHelper helper) {
+        var map = AtmosphereSystem.ATMOSPHERE.get(helper.getLevel());
+        stoneShell(helper, new BlockPos(2, 2, 2), new BlockPos(3, 2, 2), new BlockPos(4, 2, 2));
+        AtmosphereNetwork room = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0));
+        helper.assertTrue(room != null && !room.isWorldAtmosphere() && room.members().size() == 24, "the three cells didn't form one room");
+        Chemical oxygen = ChemicalRegistry.getChemical("empiric:oxygen");
+        room.getVolume().addChemical(oxygen, 6, Volume.State.GAS);
+        room.getVolume().setTemperature(350);
+        double total = room.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
+        helper.setBlock(new BlockPos(3, 2, 2), Blocks.STONE);
+        AtmosphereNetwork left = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0));
+        AtmosphereNetwork right = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(4, 2, 2)), 0));
+        helper.assertTrue(left != null && right != null && left != right, "filling the middle cell didn't split the room");
+        double leftAmount = left.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
+        double rightAmount = right.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
+        helper.assertTrue(Math.abs(leftAmount + rightAmount - total) < 1.0E-6, "the split rooms hold " + (leftAmount + rightAmount) + " oxygen instead of " + total);
+        helper.assertTrue(Math.abs(leftAmount - rightAmount) < 1.0E-6, "equal halves got " + leftAmount + " and " + rightAmount + " oxygen");
+        helper.assertTrue(left.getVolume().getTemperature() == 350 && right.getVolume().getTemperature() == 350, "the split rooms didn't keep the room's temperature");
+        helper.succeed();
+    }
+
+    private static void roomHeatExchange(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        AtmosphereNetwork room = sealedRoom(helper);
+        helper.assertTrue(room != null, "sealed air didn't form an atmosphere network");
+        BlockPos wall = helper.absolutePos(new BlockPos(2, 2, 1));
+        int ambient = TemperatureSystem.ambient(level);
+        double start = room.getVolume().getTemperature();
+        for (int i = 0; i < 300; i++) {
+            TemperatureSystem.set(level, wall, ambient + 500);
+            AtmosphereThermalSystem.exchange(room);
+        }
+        helper.assertTrue(room.getVolume().getTemperature() > start + 1, "a heated wall didn't warm the room, " + start + " K to " + room.getVolume().getTemperature() + " K");
+        BlockPos opposite = helper.absolutePos(new BlockPos(2, 2, 3));
+        helper.assertTrue(TemperatureSystem.get(level, opposite) > ambient, "the warm air didn't pass heat to the opposite wall");
+        TemperatureSystem.unsubscribe(EmpiricTestModules.SUBSCRIBER);
+        double held = room.getVolume().getTemperature();
+        for (int i = 0; i < 50; i++) {
+            AtmosphereThermalSystem.exchange(room);
+        }
+        TemperatureSystem.subscribe(EmpiricTestModules.SUBSCRIBER);
+        helper.assertTrue(room.getVolume().getTemperature() == held, "heat moved while the temperature system wasn't subscribed");
         helper.succeed();
     }
 
@@ -396,7 +600,7 @@ public class EmpiricGameTests {
         helper.setBlock(new BlockPos(2, 1, 2), Blocks.IRON_BLOCK);
         helper.setBlock(new BlockPos(3, 1, 2), Blocks.STONE);
         helper.setBlock(new BlockPos(1, 1, 2), Blocks.WHITE_WOOL);
-        helper.onEachTick(() -> TemperatureSystem.set(level, hot, 250));
+        helper.onEachTick(() -> TemperatureSystem.set(level, hot, TemperatureSystem.ambient(level) + 250));
         helper.runAfterDelay(40, () -> {
             int stone = TemperatureSystem.get(level, hot.east());
             int wool = TemperatureSystem.get(level, hot.west());
@@ -436,17 +640,18 @@ public class EmpiricGameTests {
         BlockPos block = helper.absolutePos(new BlockPos(2, 1, 2));
         helper.setBlock(new BlockPos(2, 1, 2), Blocks.STONE);
         OctPos corner = new OctPos(block, 0);
-        TemperatureSystem.set(level, corner, 200);
-        helper.assertTrue(TemperatureSystem.get(level, corner) == 200, "a single oct didn't keep its temperature");
+        int ambient = TemperatureSystem.ambient(level);
+        TemperatureSystem.set(level, corner, ambient + 200);
+        helper.assertTrue(TemperatureSystem.get(level, corner) == ambient + 200, "a single oct didn't keep its temperature");
         for (int octant = 1; octant < 8; octant++) {
-            helper.assertTrue(TemperatureSystem.get(level, new OctPos(block, octant)) == 0, "heating one oct heated octant " + octant + " too");
+            helper.assertTrue(TemperatureSystem.get(level, new OctPos(block, octant)) == ambient, "heating one oct heated octant " + octant + " too");
         }
-        helper.assertTrue(TemperatureSystem.get(level, block) == 25, "the block average should be an eighth of one oct, got " + TemperatureSystem.get(level, block));
+        helper.assertTrue(TemperatureSystem.get(level, block) == ambient + 25, "the block average should be an eighth of one oct, got " + TemperatureSystem.get(level, block));
         LevelOctExtension.get(level).setOctState(block.east(), 0, EmpiricTestBlocks.PLAIN_OCT.get().defaultBlockState());
         helper.assertTrue(TemperatureSystem.conductivity(level, new OctPos(block.east(), 0).getLongX(), new OctPos(block.east(), 0).getLongY(), new OctPos(block.east(), 0).getLongZ()) > 0, "a filled oct should conduct");
         helper.assertTrue(TemperatureSystem.conductivity(level, new OctPos(block.east(), 1).getLongX(), new OctPos(block.east(), 1).getLongY(), new OctPos(block.east(), 1).getLongZ()) < 0, "an empty oct in an oct block should count as air");
         helper.succeedWhen(() -> {
-            helper.assertTrue(TemperatureSystem.get(level, new OctPos(block, 1)) > 0, "heat didn't spread to the neighbouring oct inside the block");
+            helper.assertTrue(TemperatureSystem.get(level, new OctPos(block, 1)) > ambient, "heat didn't spread to the neighbouring oct inside the block");
         });
     }
 
@@ -472,15 +677,15 @@ public class EmpiricGameTests {
         helper.assertTrue(command(helper, "empiric modules") > 0, "module list was empty");
         helper.assertTrue(command(helper, "empiric modules subscribed") > 0, "no modules showed as subscribed");
         command(helper, "empiric modules empiric:temperature");
-        command(helper, "empiric temperature set " + at + " 120");
+        command(helper, "empiric temperature set " + at + " 12.0");
         helper.assertTrue(TemperatureSystem.get(helper.getLevel(), pos) == 120, "temperature set didn't apply");
-        command(helper, "empiric temperature add " + at + " 10 3");
+        command(helper, "empiric temperature add " + at + " 1.0 3");
         helper.assertTrue(TemperatureSystem.get(helper.getLevel(), new OctPos(pos, 3)) == 130, "temperature add on one octant didn't apply");
         command(helper, "empiric temperature get " + at);
-        helper.assertTrue(command(helper, "empiric temperature fill " + at + " " + to + " 40") == 8, "temperature fill didn't cover 8 blocks");
+        helper.assertTrue(command(helper, "empiric temperature fill " + at + " " + to + " 4.0") == 8, "temperature fill didn't cover 8 blocks");
         helper.assertTrue(command(helper, "empiric temperature chunk " + at) > 0, "temperature chunk found no heat");
         command(helper, "empiric temperature clear " + at);
-        helper.assertTrue(TemperatureSystem.get(helper.getLevel(), pos) == 0, "temperature clear left heat behind");
+        helper.assertTrue(TemperatureSystem.get(helper.getLevel(), pos) == TemperatureSystem.ambient(helper.getLevel()), "temperature clear left heat behind");
         command(helper, "empiric network");
         command(helper, "empiric network empiric:test_pipes");
         placePipe(helper.getLevel(), new OctPos(pos.above(2), 0));
@@ -549,13 +754,16 @@ public class EmpiricGameTests {
         short[] values = new short[TemperatureModule.CELLS];
         java.util.Random random = new java.util.Random(7);
         for (int i = 0; i < values.length; i++) {
-            values[i] = (short) random.nextInt(TemperatureModule.LIMIT + 1);
+            values[i] = (short) (TemperatureModule.MIN + random.nextInt(TemperatureModule.MAX - TemperatureModule.MIN + 1));
         }
         byte[] encoded = TemperatureModule.encode(values);
         helper.assertTrue(encoded.length < ModuleSyncS2CPacket.LIMIT, "a noisy section encoded to " + encoded.length + " bytes");
         helper.assertTrue(java.util.Arrays.equals(TemperatureModule.decode(encoded), values), "noisy section didn't round trip");
         short[] sparse = new short[TemperatureModule.CELLS];
         sparse[100] = 42;
+        sparse[101] = -42;
+        sparse[102] = TemperatureModule.MAX;
+        sparse[103] = TemperatureModule.MIN;
         byte[] small = TemperatureModule.encode(sparse);
         helper.assertTrue(small.length < 32, "a sparse section should be tiny, got " + small.length + " bytes");
         helper.assertTrue(java.util.Arrays.equals(TemperatureModule.decode(small), sparse), "sparse section didn't round trip");
@@ -579,6 +787,7 @@ public class EmpiricGameTests {
         helper.assertTrue(network != null, "sealed air didn't form an atmosphere network");
         Chemical oxygen = ChemicalRegistry.getChemical("empiric:oxygen");
         network.getVolume().addChemical(oxygen, 7, Volume.State.GAS);
+        double expected = network.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
         var saved = map.save();
         map.unload();
         helper.assertTrue(map.attachments().isEmpty(), "unloading should drop the network modules");
@@ -588,7 +797,7 @@ public class EmpiricGameTests {
         AtmosphereNetwork restored = map.getNetwork(inside);
         helper.assertTrue(restored != null && restored != network, "the network wasn't restored as a new module");
         double amount = restored.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
-        helper.assertTrue(Math.abs(amount - 7) < 1.0E-6, "the restored network has " + amount + " oxygen instead of 7");
+        helper.assertTrue(Math.abs(amount - expected) < 1.0E-6, "the restored network has " + amount + " oxygen instead of " + expected + " (id " + restored.id() + ", " + restored.getVolume().getVolumeLiters() + " L)");
         helper.succeed();
     }
 
@@ -672,19 +881,14 @@ public class EmpiricGameTests {
         ServerLevel level = helper.getLevel();
         ChunkAttachment attachment = ChunkAttachment.of(level.getChunkAt(helper.absolutePos(new BlockPos(3, 1, 3))));
         List<String> events = new ArrayList<>();
-        EmpiricApi.listen(new ModuleListener() {
-            @Override
-            public void attached(Module<?> module) {
-                if (module.attachment() == attachment && module.type() == EmpiricTestModules.NOTE) {
-                    events.add("attached");
-                }
+        EmpiricApi.listen(ModuleEvents.ATTACHED, (module, ignored) -> {
+            if (module.attachment() == attachment && module.type() == EmpiricTestModules.NOTE) {
+                events.add("attached");
             }
-
-            @Override
-            public void detached(Module<?> module) {
-                if (module.attachment() == attachment && module.type() == EmpiricTestModules.NOTE) {
-                    events.add("detached");
-                }
+        });
+        EmpiricApi.listen(ModuleEvents.DETACHED, (module, ignored) -> {
+            if (module.attachment() == attachment && module.type() == EmpiricTestModules.NOTE) {
+                events.add("detached");
             }
         });
         EmpiricTestModules.NOTE.detach(attachment);
@@ -695,19 +899,75 @@ public class EmpiricGameTests {
         helper.succeed();
     }
 
+    private static void typeListenerSubscribes(GameTestHelper helper) {
+        ChunkAttachment attachment = ChunkAttachment.of(helper.getLevel().getChunkAt(helper.absolutePos(new BlockPos(1, 1, 1))));
+        String owner = ModuleSystem.listenerId("listen_test");
+        List<String> events = new ArrayList<>();
+        EmpiricTestModules.NOTE.listen("listen_test", ModuleEvents.ATTACHED, (note, ignored) -> {
+            if (note.attachment() == attachment) {
+                events.add("attached");
+            }
+        });
+        helper.assertTrue(EmpiricApi.subscribers(EmpiricTestModules.NOTE).contains(owner), "listening didn't subscribe " + owner);
+        EmpiricTestModules.NOTE.detach(attachment);
+        EmpiricTestModules.NOTE.attach(attachment);
+        helper.assertTrue(events.equals(List.of("attached")), "the type listener saw " + events);
+        helper.assertTrue(EmpiricTestModules.NOTE.unlisten("listen_test"), "unlisten found no listeners");
+        Set<String> subscribers = EmpiricApi.subscribers(EmpiricTestModules.NOTE);
+        helper.assertTrue(!subscribers.contains(owner), "unlisten left " + owner + " subscribed");
+        helper.assertTrue(subscribers.contains(EmpiricTestModules.SUBSCRIBER), "unlisten dropped the mod's own subscription");
+        EmpiricTestModules.NOTE.detach(attachment);
+        EmpiricTestModules.NOTE.attach(attachment);
+        helper.assertTrue(events.size() == 1, "a removed listener still fired");
+        helper.succeed();
+    }
+
+    private static void customModuleEvent(GameTestHelper helper) {
+        ModuleEvent<String> ping = ModuleEvent.create(Empiric.id("test_ping")::toString);
+        ChunkAttachment attachment = ChunkAttachment.of(helper.getLevel().getChunkAt(helper.absolutePos(new BlockPos(1, 1, 1))));
+        EmpiricTestModules.Note note = EmpiricTestModules.NOTE.attach(attachment);
+        List<String> notes = new ArrayList<>();
+        List<String> watchers = new ArrayList<>();
+        EmpiricTestModules.NOTE.listen("ping_test", ping, (module, payload) -> notes.add(payload));
+        EmpiricTestModules.WATCHER.listen("ping_test", ping, (module, payload) -> watchers.add(payload));
+        EmpiricTestModules.NOTE.fire(note, ping, "hello");
+        EmpiricTestModules.NOTE.unlisten("ping_test");
+        EmpiricTestModules.WATCHER.unlisten("ping_test");
+        helper.assertTrue(notes.equals(List.of("hello")), "the note listener saw " + notes);
+        helper.assertTrue(watchers.isEmpty(), "a listener on another type saw " + watchers);
+        helper.succeed();
+    }
+
+    private static void syncedEvent(GameTestHelper helper) {
+        LevelAttachment attachment = LevelAttachment.of(helper.getLevel());
+        EmpiricTestModules.Watcher watcher = EmpiricTestModules.WATCHER.get(attachment);
+        List<SyncedFields> synced = new ArrayList<>();
+        EmpiricTestModules.WATCHER.listen("synced_test", ModuleEvents.SYNCED, (module, fields) -> {
+            if (module == watcher) {
+                synced.add(fields);
+            }
+        });
+        ModuleSyncSystem.apply(ModuleSyncS2CPacket.full(watcher).get(0).data(), Side.SERVER);
+        EmpiricTestModules.WATCHER.unlisten("synced_test");
+        helper.assertTrue(synced.size() == 1, "applying a sync fired SYNCED " + synced.size() + " times");
+        helper.assertTrue(synced.get(0).isFull(), "a full sync reported only " + synced.get(0).fields());
+        helper.succeed();
+    }
+
     private static void temperatureActiveCells(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         BlockPos block = helper.absolutePos(new BlockPos(1, 1, 3));
         helper.setBlock(new BlockPos(1, 1, 3), Blocks.STONE);
         OctPos oct = new OctPos(block, 0);
-        TemperatureSystem.set(level, oct, 1);
+        int ambient = TemperatureSystem.ambient(level);
+        TemperatureSystem.set(level, oct, ambient + 1);
         LevelChunk chunk = level.getChunkAt(block);
         TemperatureModule module = TemperatureSystem.TEMPERATURE.get(chunk);
         helper.assertTrue(module != null, "heating an oct didn't attach the temperature module");
         int section = level.getSectionIndex(block.getY());
         int index = TemperatureModule.index((int) Math.floorMod(oct.getLongX(), 32L), (int) Math.floorMod(oct.getLongY(), 32L), (int) Math.floorMod(oct.getLongZ(), 32L));
         helper.assertTrue((module.active(section)[index >> 6] & (1L << index)) != 0, "a heated oct wasn't marked active");
-        TemperatureSystem.set(level, oct, 0);
+        TemperatureSystem.set(level, oct, ambient);
         TemperatureSystem.propagate(module);
         helper.assertTrue(module.sections.get(section) == null || (module.active(section)[index >> 6] & (1L << index)) == 0, "a cold oct stayed active");
         helper.succeed();

@@ -13,7 +13,7 @@ import java.util.Map;
 
 @SelfSpec
 public abstract class Volume implements Cloneable {
-    private static final double R = 8.314;
+    protected static final double R = 8.314;
 
     @Data
     protected double volume = 0; // The volume of the area (m^3)
@@ -202,6 +202,54 @@ public abstract class Volume implements Cloneable {
                 break;
             }
         }
+    }
+
+    /**
+     * Moves everything from another volume into this one, in every state. The temperatures mix weighted by moles.
+     */
+    public void absorb(Volume other) {
+        double ours = getStateTotal(null);
+        double theirs = other.getStateTotal(null);
+        if (ours + theirs > 0) {
+            setTemperature((ours * temperature + theirs * other.temperature) / (ours + theirs));
+        }
+        for (ChemicalComponent component : other.chemicalComponentsList.values()) {
+            for (State state : State.values()) {
+                double amount = component.getAmount(state);
+                if (amount != 0) {
+                    addChemical(component.chemical, amount, state);
+                }
+            }
+        }
+    }
+
+    /**
+     * Replaces the target's contents with a fraction of everything in this volume, taken out of this one, at this volume's temperature.
+     *
+     * @param fraction Share of every chemical to move, from 0 to 1
+     */
+    public void splitInto(Volume target, double fraction) {
+        target.clear();
+        target.setTemperature(temperature);
+        for (ChemicalComponent component : new ArrayList<>(chemicalComponentsList.values())) {
+            for (State state : State.values()) {
+                double amount = component.getAmount(state) * fraction;
+                if (amount != 0) {
+                    addChemical(component.chemical, -amount, state);
+                    target.addChemical(component.chemical, amount, state);
+                }
+            }
+        }
+    }
+
+    /**
+     * Empties the volume of every chemical.
+     */
+    public void clear() {
+        chemicalComponentsList.clear();
+        mass = 0;
+        moles = 0;
+        markDirty();
     }
 
     public double getTemperature() {

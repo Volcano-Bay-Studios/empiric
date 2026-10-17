@@ -6,7 +6,8 @@ import xyz.volcanobay.empiric.core.attachment.Attachment;
 import xyz.volcanobay.empiric.core.attachment.AttachmentType;
 import xyz.volcanobay.empiric.core.data.SpecRegistry;
 import xyz.volcanobay.empiric.core.module.Module;
-import xyz.volcanobay.empiric.core.module.ModuleListener;
+import xyz.volcanobay.empiric.core.module.ModuleEvent;
+import xyz.volcanobay.empiric.core.module.ModuleEventListener;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 
@@ -54,8 +55,16 @@ public final class EmpiricApi {
         return modules().unsubscribe(modId, type.toString());
     }
 
-    public static void listen(ModuleListener listener) {
-        modules().listen(listener);
+    public static <E> void listen(ModuleEvent<E> event, ModuleEventListener<Module<?>, ? super E> listener) {
+        modules().listen(event, listener);
+    }
+
+    public static <M extends Module<A>, A extends Attachment, E> void listen(String modId, ModuleType<M, A> type, ModuleEvent<E> event, ModuleEventListener<? super M, ? super E> listener) {
+        type.listen(modId, event, listener);
+    }
+
+    public static boolean unlisten(String modId, ModuleType<?, ?> type) {
+        return type.unlisten(modId);
     }
 
     public static boolean isEnabled(ModuleType<?, ?> type) {

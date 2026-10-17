@@ -24,6 +24,7 @@ dependencies {
     annotationProcessor group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.5.0'
 
     implementation "foundry.veil:veil-common-${project.minecraft_version}:${project.veil_version}"
+    compileOnly "io.github.spair:imgui-java-binding:${project.imguimc_binding_version}"
     api "xyz.volcanobay:empiric-core:${project.empiric_core_version}"
 }
 

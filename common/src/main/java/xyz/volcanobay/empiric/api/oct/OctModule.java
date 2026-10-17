@@ -1,8 +1,8 @@
-package xyz.volcanobay.empiric.api.attachment;
+package xyz.volcanobay.empiric.api.oct;
 
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import xyz.volcanobay.empiric.api.oct.OctPos;
+import xyz.volcanobay.empiric.api.attachment.OctAttachment;
 import xyz.volcanobay.empiric.core.module.Module;
 
 public abstract class OctModule extends Module<OctAttachment> {

@@ -3,6 +3,7 @@ package xyz.volcanobay.empiric.system;
 import xyz.volcanobay.empiric.api.module.ChunkModuleType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14,26 +15,30 @@ import xyz.volcanobay.empiric.api.temperature.TemperatureBlockData;
 import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.api.attachment.ChunkAttachment;
 import xyz.volcanobay.empiric.api.oct.OctPos;
-import xyz.volcanobay.empiric.api.temperature.TemperatureListener;
 import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
+import xyz.volcanobay.empiric.core.module.ModuleEvent;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
 
 public final class TemperatureSystem {
 
     public static final ChunkModuleType<TemperatureModule> TEMPERATURE = ChunkModuleType.builder(Empiric.id("temperature"), TemperatureModule.class, TemperatureModule::new).build();
 
+    /**
+     * Fired with the section index when a section's temperatures change: on the server when it sends them, and on the client when it receives them.
+     */
+    public static final ModuleEvent<Integer> SECTION_CHANGED = ModuleEvent.create(Empiric.id("temperature_section_changed")::toString);
+
     public static final BlockDataType<TemperatureBlockData> BLOCK_DATA = new BlockDataType<>(Empiric.id("temperature"), TemperatureBlockData.class, TemperatureBlockData::new);
 
     private static final Vector3ic[] FACES = {new Vector3i(0, 1, 0), new Vector3i(0, -1, 0), new Vector3i(0, 0, 1), new Vector3i(0, 0, -1), new Vector3i(1, 0, 0), new Vector3i(-1, 0, 0)};
     private static final RandomSource RANDOM = RandomSource.create();
-    private static final List<TemperatureListener> LISTENERS = new CopyOnWriteArrayList<>();
+    private static ToIntFunction<Level> ambient = level -> AtmosphereSystem.levelAtmosphere(level).ambient();
     private static ToDoubleFunction<Level> dimensionCooling = level -> level.dimension() == Level.END ? 0.002 : 0.05;
 
     private TemperatureSystem() {
@@ -51,14 +56,16 @@ public final class TemperatureSystem {
         EmpiricApi.unsubscribe(modId, TEMPERATURE);
     }
 
-    public static void listen(TemperatureListener listener) {
-        LISTENERS.add(listener);
+    /**
+     * Overrides the resting temperature of a dimension in tenths of a degree Celsius (240 is 24 C), which otherwise comes from its level atmosphere entry. Cells drift back to it and everything else is stored relative to it.
+     * Must give the same answer on the server and the client.
+     */
+    public static void setAmbient(ToIntFunction<Level> temperature) {
+        ambient = temperature;
     }
 
-    public static void sectionChanged(TemperatureModule module, int section) {
-        for (TemperatureListener listener : LISTENERS) {
-            listener.sectionChanged(module, section);
-        }
+    public static int ambient(Level level) {
+        return Mth.clamp(ambient.applyAsInt(level), TemperatureModule.MIN, TemperatureModule.MAX);
     }
 
     public static void setCooling(ToDoubleFunction<Level> chance) {
@@ -104,6 +111,14 @@ public final class TemperatureSystem {
     }
 
     public static short get(Level level, long x, long y, long z) {
+        return (short) (ambient(level) + delta(level, x, y, z));
+    }
+
+    public static void set(Level level, long x, long y, long z, int value) {
+        setDelta(level, x, y, z, value - ambient(level));
+    }
+
+    private static short delta(Level level, long x, long y, long z) {
         if (!inBuildHeight(level, y)) {
             return 0;
         }
@@ -111,11 +126,11 @@ public final class TemperatureSystem {
         return module == null ? 0 : module.get(section(level, y), index(x, y, z));
     }
 
-    public static void set(Level level, long x, long y, long z, int value) {
+    private static void setDelta(Level level, long x, long y, long z, int value) {
         if (!inBuildHeight(level, y)) {
             return;
         }
-        TemperatureModule module = module(level, (int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L), value > 0);
+        TemperatureModule module = module(level, (int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L), value != 0);
         if (module != null) {
             module.set(section(level, y), index(x, y, z), value);
         }
@@ -196,16 +211,16 @@ public final class TemperatureSystem {
                     int bit = Long.numberOfTrailingZeros(bits);
                     bits &= bits - 1;
                     int i = (word << 6) | bit;
-                    if (values[i] <= 0) {
+                    if (values[i] == 0) {
                         active[word] &= ~(1L << bit);
                         continue;
                     }
                     any = true;
                     if (RANDOM.nextDouble() < chance) {
-                        values[i]--;
+                        values[i] += values[i] > 0 ? -1 : 1;
                         changed = true;
                     }
-                    if (values[i] <= 0) {
+                    if (values[i] == 0) {
                         active[word] &= ~(1L << bit);
                         continue;
                     }
@@ -228,7 +243,7 @@ public final class TemperatureSystem {
                                 int kept = share(values[i], values[neighbour], Math.min(own, other) / 100f);
                                 values[neighbour] = (short) (values[i] + values[neighbour] - kept);
                                 values[i] = (short) kept;
-                                if (values[neighbour] > 0) {
+                                if (values[neighbour] != 0) {
                                     active[neighbour >> 6] |= 1L << neighbour;
                                 }
                                 changed = true;
@@ -240,9 +255,9 @@ public final class TemperatureSystem {
                         long z = baseZ + nz;
                         int other = conductivity(level, x, y, z);
                         if (other > 0) {
-                            int second = get(level, x, y, z);
+                            int second = delta(level, x, y, z);
                             int kept = share(values[i], second, Math.min(own, other) / 100f);
-                            set(level, x, y, z, values[i] + second - kept);
+                            setDelta(level, x, y, z, values[i] + second - kept);
                             values[i] = (short) kept;
                             changed = true;
                         }

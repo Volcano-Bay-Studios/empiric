@@ -24,6 +24,7 @@ public final class EmpiricPlatform implements EmpiricPlugin {
     @Override
     public void registerData(DataEntrySystem data) {
         TemperatureSystem.registerData(data);
+        AtmosphereSystem.registerData(data);
     }
 
     @Override

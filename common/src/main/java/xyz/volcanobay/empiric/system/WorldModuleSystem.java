@@ -346,6 +346,7 @@ public final class WorldModuleSystem {
         OctMultiblockSystem.blockChanged(level, pos, oldState, newState);
         if (!level.isClientSide) {
             TemperatureSystem.blockChanged(level, pos);
+            SpatialNetworkSystem.blockChanged(level, pos);
         }
         ModuleSystem modules = EmpiricCore.modules();
         Side side = level.isClientSide ? Side.CLIENT : Side.SERVER;

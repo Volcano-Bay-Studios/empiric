@@ -7,18 +7,17 @@ import org.jetbrains.annotations.Nullable;
 import xyz.volcanobay.empiric.api.attachment.EmpiricAttachments;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctPos;
+import xyz.volcanobay.empiric.core.module.ModuleEvent;
+import xyz.volcanobay.empiric.core.module.ModuleEventListener;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 import xyz.volcanobay.empiric.system.SpatialNetworkSystem;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 public class SpatialNetworkType<N extends NetworkModule> {
 
     private final ResourceLocation id;
     private final ModuleType<N, NetworkAttachment> moduleType;
-    private final List<NetworkListener<N>> listeners = new CopyOnWriteArrayList<>();
     private int index = -1;
 
     public SpatialNetworkType(ResourceLocation id, Class<N> moduleClass, Supplier<N> factory) {
@@ -34,12 +33,12 @@ public class SpatialNetworkType<N extends NetworkModule> {
         return moduleType;
     }
 
-    public void listen(NetworkListener<N> listener) {
-        listeners.add(listener);
+    public <E> void listen(String modId, ModuleEvent<E> event, ModuleEventListener<? super N, ? super E> listener) {
+        moduleType.listen(modId, event, listener);
     }
 
-    public List<NetworkListener<N>> listeners() {
-        return listeners;
+    public boolean unlisten(String modId) {
+        return moduleType.unlisten(modId);
     }
 
     public int index() {

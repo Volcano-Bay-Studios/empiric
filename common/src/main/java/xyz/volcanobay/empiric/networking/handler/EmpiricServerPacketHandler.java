@@ -10,8 +10,10 @@ import xyz.volcanobay.empiric.core.data.DataContext;
 import xyz.volcanobay.empiric.core.data.Encoding;
 import xyz.volcanobay.empiric.core.data.spec.ObjectSpec;
 import xyz.volcanobay.empiric.core.module.Module;
+import xyz.volcanobay.empiric.core.module.ModuleEvents;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.module.Side;
+import xyz.volcanobay.empiric.core.module.SyncedFields;
 import xyz.volcanobay.empiric.data.EmpiricBuffers;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncC2SPacket;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
@@ -51,6 +53,9 @@ public class EmpiricServerPacketHandler {
                     && network.acceptClientUpdate(player, spec.synced()[index].id()));
             for (int index = applied.nextSetBit(0); index >= 0; index = applied.nextSetBit(index + 1)) {
                 module.markDirty(spec.synced()[index].id());
+            }
+            if (!applied.isEmpty()) {
+                modules.fire(module, ModuleEvents.SYNCED, new SyncedFields(spec, applied));
             }
             return applied;
         } catch (RuntimeException e) {

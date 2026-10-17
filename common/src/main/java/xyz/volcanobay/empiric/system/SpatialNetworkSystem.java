@@ -1,6 +1,7 @@
 package xyz.volcanobay.empiric.system;
 
 import foundry.veil.api.network.VeilPacketManager;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.MinecraftServer;
@@ -15,6 +16,7 @@ import xyz.volcanobay.empiric.api.network.NetworkAttachment;
 import xyz.volcanobay.empiric.api.network.NetworkModule;
 import xyz.volcanobay.empiric.api.network.SpatialNetworkMap;
 import xyz.volcanobay.empiric.api.network.SpatialNetworkType;
+import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.client.ClientLookup;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.module.Side;
@@ -113,6 +115,22 @@ public final class SpatialNetworkSystem {
         for (ServerLevel level : server.getAllLevels()) {
             LevelAttachment.of(level).forEachNetwork(map -> map.attachments().forEach(attachment -> attachment.removeViewer(player)));
         }
+    }
+
+    public static void blockChanged(Level level, BlockPos pos) {
+        LevelAttachment.of(level).forEachNetwork(map -> {
+            if (map.type().isEnabled()) {
+                map.blockChanged(pos);
+            }
+        });
+    }
+
+    public static void octChanged(Level level, OctPos pos) {
+        LevelAttachment.of(level).forEachNetwork(map -> {
+            if (map.type().isEnabled()) {
+                map.octChanged(pos);
+            }
+        });
     }
 
     public static void chunkLoaded(Level level, ChunkPos chunk) {

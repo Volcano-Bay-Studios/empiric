@@ -14,6 +14,7 @@ import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import xyz.volcanobay.empiric.core.EmpiricCore;
+import xyz.volcanobay.empiric.core.module.ModuleEventBus;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 import xyz.volcanobay.empiric.core.module.Side;
@@ -21,7 +22,10 @@ import xyz.volcanobay.empiric.system.DebugSubscriptionSystem;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public final class ModuleCommands {
 
@@ -40,6 +44,7 @@ public final class ModuleCommands {
                 .then(Commands.literal("subscribed").executes(context -> list(context, true)))
                 .then(Commands.argument("module", ResourceLocationArgument.id()).suggests(EmpiricCommands.MODULE_SUGGESTIONS)
                         .executes(ModuleCommands::info)
+                        .then(Commands.literal("listeners").executes(ModuleCommands::listeners))
                         .then(Commands.literal("subscribe")
                                 .executes(context -> subscribe(context, DebugSubscriptionSystem.SUBSCRIBER))
                                 .then(Commands.argument("subscriber", StringArgumentType.word())
@@ -101,6 +106,23 @@ public final class ModuleCommands {
         EmpiricCommands.send(context, line(type));
         EmpiricCommands.send(context, EmpiricCommands.label(" attaches to " + type.attachmentType().id() + ", behaviours " + type.behaviors()));
         return type.isEnabled() ? 1 : 0;
+    }
+
+    private static int listeners(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ModuleType<?, ?> type = type(context);
+        Map<String, Set<String>> owners = new TreeMap<>();
+        for (ModuleEventBus.Entry entry : type.events().entries()) {
+            owners.computeIfAbsent(entry.event().id(), key -> new TreeSet<>()).add(entry.owner());
+        }
+        EmpiricCommands.send(context, EmpiricCommands.label("Listeners on " + type.id() + " (" + owners.size() + " events)"));
+        if (owners.isEmpty()) {
+            EmpiricCommands.send(context, Component.literal(" none").withStyle(ChatFormatting.DARK_GRAY));
+        }
+        for (Map.Entry<String, Set<String>> event : owners.entrySet()) {
+            EmpiricCommands.send(context, Component.literal(" " + event.getKey()).withStyle(ChatFormatting.GREEN)
+                    .append(Component.literal("  " + String.join(", ", event.getValue())).withStyle(ChatFormatting.WHITE)));
+        }
+        return owners.size();
     }
 
     private static int subscribe(CommandContext<CommandSourceStack> context, String subscriber) throws CommandSyntaxException {
