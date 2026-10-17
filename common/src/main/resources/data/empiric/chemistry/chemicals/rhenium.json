@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:rhenium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 5595.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 3185.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 704.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 34.0,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 19.968,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 20.8,
+  // Molecular weight in g/mol.
+  "molecularWeight": 186.207,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 2522539
+}

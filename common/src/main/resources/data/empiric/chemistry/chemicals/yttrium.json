@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:yttrium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 3344.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1521.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 367.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 11.5,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 4.2912,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 4.47,
+  // Molecular weight in g/mol.
+  "molecularWeight": 88.9058,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 9764863
+}

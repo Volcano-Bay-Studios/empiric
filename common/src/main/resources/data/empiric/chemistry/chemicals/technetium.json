@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:technetium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 4264.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 2156.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 585.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 23.8,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 10.56,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 11.0,
+  // Molecular weight in g/mol.
+  "molecularWeight": 96.9064,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 3907230
+}

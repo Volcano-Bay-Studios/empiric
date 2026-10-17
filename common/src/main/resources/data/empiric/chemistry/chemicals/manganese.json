@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:manganese",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 2060.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1245.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 221.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 13.4,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 7.008,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 7.3,
+  // Molecular weight in g/mol.
+  "molecularWeight": 54.938,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 10255047
+}

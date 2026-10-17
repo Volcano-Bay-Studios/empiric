@@ -1,0 +1,20 @@
+{
+  "name": "empiric:antimony",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 1586.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 630.63,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 195.2,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 20.08,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 6.53,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 6.685,
+  // Molecular weight in g/mol.
+  "molecularWeight": 121.76,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": true,
+  "color": 10380213
+}

@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: boiling point, liquid density.
+  "name": "empiric:protactinium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 3753.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1571.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 481.2,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 16.7,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 14.7552,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 15.37,
+  // Molecular weight in g/mol.
+  "molecularWeight": 231.0359,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 41471
+}

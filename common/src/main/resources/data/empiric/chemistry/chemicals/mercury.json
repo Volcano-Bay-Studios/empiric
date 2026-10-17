@@ -1,0 +1,20 @@
+{
+  "name": "empiric:mercury",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 356.73,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": -38.83,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 58.5,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 2.295,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 13.534,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 14.19,
+  // Molecular weight in g/mol.
+  "molecularWeight": 200.59,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 12105936
+}

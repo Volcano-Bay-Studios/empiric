@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:tantalum",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 5457.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 3016.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 758.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 24.7,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 15.744,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 16.4,
+  // Molecular weight in g/mol.
+  "molecularWeight": 180.9479,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 5089023
+}

@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:cerium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 3423.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 797.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 398.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 5.2,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 6.4992,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 6.77,
+  // Molecular weight in g/mol.
+  "molecularWeight": 140.116,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 16777159
+}

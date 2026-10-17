@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:titanium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 3286.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1667.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 422.6,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 18.8,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 4.32,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 4.5,
+  // Molecular weight in g/mol.
+  "molecularWeight": 47.867,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 12567239
+}

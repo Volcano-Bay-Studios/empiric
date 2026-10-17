@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:platinum",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 3824.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1768.4,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 470.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 21.76,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 20.6016,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 21.46,
+  // Molecular weight in g/mol.
+  "molecularWeight": 195.08,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 13684960
+}

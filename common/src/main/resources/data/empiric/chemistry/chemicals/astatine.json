@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: boiling point, enthalpy of fusion, enthalpy of vaporization, liquid density.
+  "name": "empiric:astatine",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 63.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 301.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 29.656,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 5.75,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 6.72,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 7.0,
+  // Molecular weight in g/mol.
+  "molecularWeight": 209.9872,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 7688005
+}

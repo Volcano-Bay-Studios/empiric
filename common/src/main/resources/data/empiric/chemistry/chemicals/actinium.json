@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:actinium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 3197.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1050.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 292.9,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 10.5,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 9.6672,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 10.07,
+  // Molecular weight in g/mol.
+  "molecularWeight": 227.0277,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 7384058
+}

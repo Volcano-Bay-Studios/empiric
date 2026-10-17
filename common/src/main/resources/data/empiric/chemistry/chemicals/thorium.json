@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:thorium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 4787.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1749.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 513.7,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 16.11,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 11.2512,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 11.72,
+  // Molecular weight in g/mol.
+  "molecularWeight": 232.038,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 47871
+}

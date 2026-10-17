@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:cadmium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 766.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 321.07,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 59.1,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 6.11,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 8.3424,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 8.69,
+  // Molecular weight in g/mol.
+  "molecularWeight": 112.41,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 16767375
+}

@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:barium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 1896.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 726.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 142.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 7.66,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 3.4752,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 3.62,
+  // Molecular weight in g/mol.
+  "molecularWeight": 137.33,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 51456
+}

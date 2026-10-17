@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:nickel",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 2912.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1454.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 378.6,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 17.61,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 8.5555,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 8.912,
+  // Molecular weight in g/mol.
+  "molecularWeight": 58.693,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 5296208
+}

@@ -1,0 +1,20 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:erbium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 2867.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1528.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 317.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 19.9,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 8.7072,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 9.07,
+  // Molecular weight in g/mol.
+  "molecularWeight": 167.26,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

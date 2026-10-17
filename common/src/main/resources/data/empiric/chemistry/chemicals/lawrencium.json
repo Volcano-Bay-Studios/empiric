@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: boiling point, enthalpy of fusion, enthalpy of vaporization, liquid density.
+  "name": "empiric:lawrencium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 3146.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1626.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 300.96,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 19.0,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 14.976,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 15.6,
+  // Molecular weight in g/mol.
+  "molecularWeight": 266.12,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 13041766
+}

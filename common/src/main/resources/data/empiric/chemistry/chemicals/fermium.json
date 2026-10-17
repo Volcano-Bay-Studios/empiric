@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: boiling point, enthalpy of fusion, enthalpy of vaporization, liquid density.
+  "name": "empiric:fermium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 2966.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1526.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 285.12,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 18.0,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 9.312,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 9.7,
+  // Molecular weight in g/mol.
+  "molecularWeight": 257.0951,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 11739066
+}

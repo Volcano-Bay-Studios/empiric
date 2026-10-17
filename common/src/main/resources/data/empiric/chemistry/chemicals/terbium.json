@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:terbium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 3229.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1355.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 389.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 10.15,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 7.9008,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 8.23,
+  // Molecular weight in g/mol.
+  "molecularWeight": 158.9254,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 3211207
+}

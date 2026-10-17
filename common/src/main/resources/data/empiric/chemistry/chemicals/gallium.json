@@ -1,0 +1,20 @@
+{
+  "name": "empiric:gallium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 2203.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 29.76,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 270.3,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 5.59,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 6.095,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 5.91,
+  // Molecular weight in g/mol.
+  "molecularWeight": 69.723,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": true,
+  "color": 12750735
+}

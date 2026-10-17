@@ -1,0 +1,21 @@
+{
+  // Estimated, no measured value available: liquid density.
+  "name": "empiric:holmium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 2699.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1473.85,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 301.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 11.76,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 8.448,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 8.8,
+  // Molecular weight in g/mol.
+  "molecularWeight": 164.9303,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false,
+  "color": 65436
+}
