@@ -1,0 +1,11 @@
+{
+  "blocks": [
+    "#minecraft:base_stone_overworld",
+    "#minecraft:base_stone_nether",
+    "minecraft:cobblestone",
+    "minecraft:stone_bricks",
+    "minecraft:smooth_stone",
+    "minecraft:bricks"
+  ],
+  "conductivity": 0.5
+}

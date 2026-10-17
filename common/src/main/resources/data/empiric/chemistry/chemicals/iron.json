@@ -1,0 +1,19 @@
+{
+  "name": "empiric:iron",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 2862,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1538,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 340,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 13.8,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 6.98,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 7.87,
+  // Molecular weight in g/mol.
+  "molecularWeight": 55.85,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

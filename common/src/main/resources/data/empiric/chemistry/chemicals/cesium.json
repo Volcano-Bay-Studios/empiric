@@ -1,0 +1,19 @@
+{
+  "name": "empiric:cesium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 671,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 28.44,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 76.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 2.14,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 1.79,
+  // Density of the solid in g/cm³.
+  "densitySolid": 1.873,
+  // Molecular weight in g/mol.
+  "molecularWeight": 132.91,
+  // Cesium contracts on freezing, not expands.
+  "expandsOnFreezing": false
+}

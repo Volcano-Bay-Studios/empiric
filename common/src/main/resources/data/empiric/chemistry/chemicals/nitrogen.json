@@ -1,0 +1,19 @@
+{
+  "name": "empiric:nitrogen",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": -195.79,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": -210.00,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 5.56,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 0.72,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 0.808,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 1.026,
+  // Molecular weight in g/mol.
+  "molecularWeight": 28.01,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

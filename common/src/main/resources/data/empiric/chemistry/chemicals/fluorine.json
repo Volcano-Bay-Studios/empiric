@@ -1,0 +1,19 @@
+{
+  "name": "empiric:fluorine",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": -188.11,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": -219.67,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 6.51,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 0.51,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 1.50,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 1.70,
+  // Molecular weight in g/mol.
+  "molecularWeight": 19.00,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

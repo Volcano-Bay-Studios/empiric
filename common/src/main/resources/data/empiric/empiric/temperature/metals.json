@@ -1,0 +1,11 @@
+{
+  "blocks": [
+    "minecraft:iron_block",
+    "minecraft:gold_block",
+    "minecraft:copper_block",
+    "minecraft:netherite_block",
+    "minecraft:iron_bars",
+    "minecraft:anvil"
+  ],
+  "conductivity": 1.0
+}

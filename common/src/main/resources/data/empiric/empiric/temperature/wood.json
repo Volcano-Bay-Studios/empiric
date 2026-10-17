@@ -1,0 +1,9 @@
+{
+  "blocks": [
+    "#minecraft:logs",
+    "#minecraft:planks",
+    "#minecraft:wooden_slabs",
+    "#minecraft:wooden_stairs"
+  ],
+  "conductivity": 0.15
+}

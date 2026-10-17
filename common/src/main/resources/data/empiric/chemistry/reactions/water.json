@@ -1,0 +1,14 @@
+{
+  "reactants": {
+    "empiric:hydrogen": 2.0,
+    "empiric:oxygen": 1.0
+  },
+  "products": {
+    "empiric:water": 2.0
+  },
+  "requirements": {
+    "empiric:heat": {
+      "min": 536.0
+    }
+  }
+}

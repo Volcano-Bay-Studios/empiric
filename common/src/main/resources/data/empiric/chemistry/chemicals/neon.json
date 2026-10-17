@@ -1,0 +1,19 @@
+{
+  "name": "empiric:neon",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": -246.08,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": -248.59,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 1.71,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 0.335,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 1.207,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 1.444,
+  // Molecular weight in g/mol.
+  "molecularWeight": 20.18,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

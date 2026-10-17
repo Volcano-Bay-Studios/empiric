@@ -1,0 +1,19 @@
+{
+  "name": "empiric:iodine",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 184.3,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 113.7,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 41.7,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 15.4,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 4.93,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 4.94,
+  // Molecular weight in g/mol.
+  "molecularWeight": 126.90,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

@@ -1,0 +1,19 @@
+{
+  "name": "empiric:argon",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": -185.85,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": -189.34,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 6.43,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 1.18,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 1.40,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 1.65,
+  // Molecular weight in g/mol.
+  "molecularWeight": 39.95,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

@@ -1,0 +1,19 @@
+{
+  "name": "empiric:phosphorus",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 280.5,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 44.15,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 25.7,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 1.87,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 1.83,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 1.82,
+  // Molecular weight in g/mol.
+  "molecularWeight": 30.97,
+  // Phosphorus contracts on freezing, not expands.
+  "expandsOnFreezing": false
+}

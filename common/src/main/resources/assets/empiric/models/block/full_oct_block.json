@@ -1,0 +1,6 @@
+{
+  "loader": "empiric:full_oct_block",
+  "textures": {
+    "particle": "minecraft:block/stone"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "${description}",
+  "authors": [
+    "${mod_author}"
+  ],
+  "license": "${mod_license}",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "xyz.volcanobay.empiric.fabric.EmpiricFabric"
+    ],
+    "client": [
+      "xyz.volcanobay.empiric.fabric.client.EmpiricFabricClient"
+    ],
+    "fabric-gametest": [
+      "xyz.volcanobay.empiric.gametest.EmpiricGameTests"
+    ]
+  },
+  "accessWidener": "empiric.accesswidener",
+  "mixins": [
+    "empiric.mixins.json",
+    "empiric-common.mixins.json"
+  ],
+  "depends": {
+    "fabric": "*",
+    "minecraft": ">=${minecraft_version}",
+    "veil": ">=${veil_version}"
+  }
+}

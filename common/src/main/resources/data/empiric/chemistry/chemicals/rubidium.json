@@ -1,0 +1,19 @@
+{
+  "name": "empiric:rubidium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 688,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 39.31,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 79.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 2.10,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 1.48,
+  // Density of the solid in g/cm³.
+  "densitySolid": 1.532,
+  // Molecular weight in g/mol.
+  "molecularWeight": 85.47,
+  // Rubidium contracts on freezing, not expands.
+  "expandsOnFreezing": false
+}

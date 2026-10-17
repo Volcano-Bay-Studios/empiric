@@ -1,0 +1,43 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "xyz.volcanobay.empiric.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BlockEntityMixin",
+    "BlockEntityPortMixin",
+    "ChunkAccessMixin",
+    "ChunkSerializerMixin",
+    "EntityMixin",
+    "FriendlyByteBufMixin",
+    "InventoryMixin",
+    "ItemVolumeTooltipMixin",
+    "LevelChunkMixin",
+    "LevelMixin",
+    "oct.LevelChunkInvoker",
+    "oct.LevelChunkOctMixin",
+    "oct.LevelOctMixin",
+    "oct.ServerPlayerGameModeMixin",
+    "oct.VoxelShapeAccessor",
+    "PlayerChunkSenderMixin",
+    "PlayerListMixin",
+    "ResourceLocationMixin",
+    "ServerEntityMixin",
+    "ServerPlayerMixin"
+  ],
+  "client": [
+    "client.MinecraftMixin",
+    "client.item.HumanoidModelMixin",
+    "client.item.ItemInHandRendererMixin",
+    "client.item.ItemRendererMixin",
+    "client.item.PlayerRendererMixin",
+    "client.oct.BlockEntityRenderDispatcherMixin",
+    "client.oct.DebugScreenOverlayMixin",
+    "client.oct.LevelRendererMixin",
+    "client.oct.MultiPlayerGameModeMixin",
+    "client.oct.ParticleEngineMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

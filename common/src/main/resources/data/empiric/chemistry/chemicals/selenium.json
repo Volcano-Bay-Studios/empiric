@@ -1,0 +1,19 @@
+{
+  "name": "empiric:selenium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 685,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 221,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 45.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 6.4,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 4.2,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 4.81,
+  // Molecular weight in g/mol.
+  "molecularWeight": 78.96,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

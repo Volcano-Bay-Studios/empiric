@@ -1,0 +1,7 @@
+{
+  "blocks": [
+    "#minecraft:wool",
+    "#minecraft:wool_carpets"
+  ],
+  "conductivity": 0.02
+}

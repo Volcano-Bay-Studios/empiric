@@ -1,0 +1,3 @@
+[submodule "empiric-core"]
+	path = empiric-core
+	url = https://github.com/Volcano-Bay-Studios/empiric-core

@@ -1,0 +1,19 @@
+{
+  "name": "empiric:carbon",
+  // Standard boiling (sublimation) point at 1 atm in Celsius (°C).
+  "boilTemp": 4827.0,
+  // No true liquid phase at 1 atm; using sublimation onset as freeze equivalent.
+  "freezeTemp": 3550.0,
+  // Enthalpy of sublimation treated as vaporization in kJ/mol.
+  "hVapKJ": 355.0,
+  // No true fusion at 1 atm; approximate high-pressure value.
+  "hFusKJ": 105.0,
+  // Density of the liquid in g/cm³ (estimated).
+  "densityLiquid": 1.70,
+  // Density of the solid in g/cm³ (graphite).
+  "densitySolid": 2.26,
+  // Molecular weight in g/mol.
+  "molecularWeight": 12.01,
+  // Does not expand on freezing.
+  "expandsOnFreezing": false
+}

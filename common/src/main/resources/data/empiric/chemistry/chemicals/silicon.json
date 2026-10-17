@@ -1,0 +1,19 @@
+{
+  "name": "empiric:silicon",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 2900,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 1414,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 384,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 50.2,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 2.53,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 2.33,
+  // Molecular weight in g/mol.
+  "molecularWeight": 28.09,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": true
+}

@@ -1,0 +1,19 @@
+{
+  "name": "empiric:sodium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 883,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 97.72,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 97.0,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 2.60,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 0.927,
+  // Density of the solid in g/cm³.
+  "densitySolid": 0.968,
+  // Molecular weight in g/mol.
+  "molecularWeight": 22.99,
+  // Sodium contracts on freezing, not expands.
+  "expandsOnFreezing": false
+}

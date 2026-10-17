@@ -1,0 +1,21 @@
+{
+  "name": "empiric:water",
+  // Standard boiling point at 1 atm in Celsius (°C).,
+  "boilTemp": 100.0,
+  // Standard freezing point at 1 atm in Celsius (°C).,
+  "freezeTemp": 0.0,
+  // Enthalpy of vaporization in kJ/mol .,
+  "hVapKJ": 40.66,
+  // Enthalpy of fusion in kJ/mol.,
+  "hFusKJ": 6.01,
+  // Density of the liquid in g/cm³.,
+  "densityLiquid": 0.9999,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.,
+  "densitySolid": 0.9167,
+  // Molecular weight in g/mol.,
+  "molecularWeight": 18.015,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.,
+  "expandsOnFreezing": true,
+  // The color in decimal
+  "color": 1118685
+}

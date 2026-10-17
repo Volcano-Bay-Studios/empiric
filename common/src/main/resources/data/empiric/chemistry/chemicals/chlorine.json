@@ -1,0 +1,19 @@
+{
+  "name": "empiric:chlorine",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": -34.04,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": -101.50,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 10.20,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 3.20,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 1.56,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 2.00,
+  // Molecular weight in g/mol.
+  "molecularWeight": 70.90,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

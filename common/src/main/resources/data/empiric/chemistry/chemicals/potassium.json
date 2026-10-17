@@ -1,0 +1,19 @@
+{
+  "name": "empiric:potassium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 759,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 63.65,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 84.7,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 2.33,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 0.828,
+  // Density of the solid in g/cm³.
+  "densitySolid": 0.862,
+  // Molecular weight in g/mol.
+  "molecularWeight": 39.10,
+  // Potassium contracts on freezing, not expands.
+  "expandsOnFreezing": false
+}

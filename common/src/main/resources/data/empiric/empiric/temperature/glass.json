@@ -1,0 +1,8 @@
+{
+  "blocks": [
+    "minecraft:glass",
+    "minecraft:glass_pane",
+    "minecraft:tinted_glass"
+  ],
+  "conductivity": 0.3
+}

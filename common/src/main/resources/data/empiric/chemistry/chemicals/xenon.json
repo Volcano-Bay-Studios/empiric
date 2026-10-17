@@ -1,0 +1,19 @@
+{
+  "name": "empiric:xenon",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": -108.10,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": -111.75,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 12.64,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 2.30,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 2.94,
+  // Density of the solid in g/cm³. Pass 0 to auto-estimate.
+  "densitySolid": 3.41,
+  // Molecular weight in g/mol.
+  "molecularWeight": 131.29,
+  // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
+  "expandsOnFreezing": false
+}

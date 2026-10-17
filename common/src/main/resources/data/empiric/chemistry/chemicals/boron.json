@@ -1,0 +1,19 @@
+{
+  "name": "empiric:boron",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 3927,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 2076,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 503,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 50.0,
+  // Density of the liquid in g/cm³ (estimated).
+  "densityLiquid": 2.30,
+  // Density of the solid in g/cm³ (crystalline).
+  "densitySolid": 2.34,
+  // Molecular weight in g/mol.
+  "molecularWeight": 10.81,
+  // Boron contracts on freezing, not expands.
+  "expandsOnFreezing": false
+}

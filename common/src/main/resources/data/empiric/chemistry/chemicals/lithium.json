@@ -1,0 +1,19 @@
+{
+  "name": "empiric:lithium",
+  // Standard boiling point at 1 atm in Celsius (°C).
+  "boilTemp": 1342,
+  // Standard freezing point at 1 atm in Celsius (°C).
+  "freezeTemp": 180.54,
+  // Enthalpy of vaporization in kJ/mol.
+  "hVapKJ": 147,
+  // Enthalpy of fusion in kJ/mol.
+  "hFusKJ": 3.00,
+  // Density of the liquid in g/cm³.
+  "densityLiquid": 0.512,
+  // Density of the solid in g/cm³.
+  "densitySolid": 0.534,
+  // Molecular weight in g/mol.
+  "molecularWeight": 6.94,
+  // Lithium contracts on freezing, not expands.
+  "expandsOnFreezing": false
+}
