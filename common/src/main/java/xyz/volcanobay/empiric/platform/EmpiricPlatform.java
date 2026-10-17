@@ -3,6 +3,7 @@ package xyz.volcanobay.empiric.platform;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.system.AtmosphereSystem;
 import xyz.volcanobay.empiric.api.attachment.EmpiricAttachments;
+import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
 import xyz.volcanobay.empiric.api.chemistry.ChemistrySpecs;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 import xyz.volcanobay.empiric.api.behavior.EmpiricBehaviors;
@@ -25,6 +26,7 @@ public final class EmpiricPlatform implements EmpiricPlugin {
     public void registerData(DataEntrySystem data) {
         TemperatureSystem.registerData(data);
         AtmosphereSystem.registerData(data);
+        ChemicalRegistry.registerData(data);
     }
 
     @Override

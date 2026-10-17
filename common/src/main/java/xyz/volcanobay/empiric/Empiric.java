@@ -8,7 +8,6 @@ import xyz.volcanobay.empiric.api.behavior.ServerTickBehavior;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.registry.EmpiricBlockEntities;
 import xyz.volcanobay.empiric.registry.EmpiricBlocks;
-import xyz.volcanobay.empiric.registry.EmpiricChemicals;
 import xyz.volcanobay.empiric.registry.EmpiricDataComponents;
 import xyz.volcanobay.empiric.platform.EmpiricPlatform;
 import xyz.volcanobay.empiric.core.module.Side;
@@ -41,7 +40,6 @@ public class Empiric {
 
         BlockModuleSystem.bootstrap();
         OctModuleSystem.bootstrap();
-        EmpiricChemicals.bootstrap();
         EmpiricBlocks.bootstrap();
         EmpiricBlockEntities.bootstrap();
         EmpiricDataComponents.bootstrap();

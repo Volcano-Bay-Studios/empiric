@@ -10,7 +10,6 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import xyz.volcanobay.empiric.api.data.BlockDataType;
 import xyz.volcanobay.empiric.data.DataEntryLoader;
-import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -103,7 +102,6 @@ public class EmpiricNeoForgeEvents {
 
     @SubscribeEvent
     public static void addReloadListeners(AddReloadListenerEvent event) {
-        event.addListener(ChemicalRegistry.Reloader.INSTANCE);
         event.addListener(DataEntryLoader.INSTANCE);
     }
 

@@ -12,7 +12,6 @@ import java.util.Map;
 public record DataEntriesS2CPacket(String kind, String target, Map<String, String> entries) implements CustomPacketPayload {
 
     public static final String ENTRIES = "entries";
-    public static final String REGISTRY = "registry";
 
     public static final CustomPacketPayload.Type<DataEntriesS2CPacket> TYPE = new CustomPacketPayload.Type<>(Empiric.id("data_entries"));
     public static final StreamCodec<RegistryFriendlyByteBuf, DataEntriesS2CPacket> CODEC = StreamCodec.composite(

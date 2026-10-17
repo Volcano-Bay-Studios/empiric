@@ -19,7 +19,6 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
-import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
 import xyz.volcanobay.empiric.api.data.BlockDataType;
 import xyz.volcanobay.empiric.data.DataEntryLoader;
 import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
@@ -70,7 +69,6 @@ public class EmpiricFabric implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ModuleSyncSystem.playerJoined(handler.player));
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> ModuleSyncSystem.playerReady(newPlayer));
         ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> ModuleSyncSystem.playerReady(player));
-        registerReloadListener("chemistry", ChemicalRegistry.Reloader.INSTANCE);
         registerReloadListener("data_entries", DataEntryLoader.INSTANCE);
         CommonLifecycleEvents.TAGS_LOADED.register((registries, client) -> BlockDataType.clearCaches());
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> EmpiricCommands.registerCommands(dispatcher));

@@ -1,32 +1,31 @@
 package xyz.volcanobay.empiric.api.chemistry;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import xyz.volcanobay.empiric.core.data.Data;
 
 public class Chemical {
-    public static final Codec<Chemical> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("name").forGetter(Chemical::getName),
-            Codec.DOUBLE.fieldOf("boilTemp").forGetter(Chemical::getBoilTemp),
-            Codec.DOUBLE.fieldOf("freezeTemp").forGetter(Chemical::getFreezeTemp),
-            Codec.DOUBLE.fieldOf("hVapKJ").forGetter(Chemical::gethVapKJ),
-            Codec.DOUBLE.fieldOf("hFusKJ").forGetter(Chemical::gethFusKJ),
-            Codec.DOUBLE.fieldOf("densityLiquid").forGetter(Chemical::getDensityLiquid),
-            Codec.DOUBLE.fieldOf("densitySolid").forGetter(Chemical::getDensitySolid),
-            Codec.DOUBLE.fieldOf("molecularWeight").forGetter(Chemical::getMolecularWeight),
-            Codec.BOOL.fieldOf("expandsOnFreezing").forGetter(Chemical::getExpandsOnFreezing),
-            Codec.INT.optionalFieldOf("color", 0xcccccc).forGetter(Chemical::getColor)
-    ).apply(instance, Chemical::new));
-
-    private final String name;
+    @Data
+    private String name = "";
+    @Data
     private double boilTemp; // Standard boiling point at 1 atm in Celsius (°C).
+    @Data
     private double freezeTemp; // Standard freezing point at 1 atm in Celsius (°C).
+    @Data
     private double hVapKJ; //   Enthalpy of vaporization in kJ/mol .
+    @Data
     private double hFusKJ; //   Enthalpy of fusion in kJ/mol.
-    private double densityLiquid; //Density of the liquid in g/cm³.
+    @Data
+    private double densityLiquid = 1; //Density of the liquid in g/cm³.
+    @Data
     private double densitySolid; // Density of the solid in g/cm³. Pass 0 to auto-estimate.
-    private double molecularWeight; // Molecular weight in g/mol.
+    @Data
+    private double molecularWeight = 1; // Molecular weight in g/mol.
+    @Data
     private boolean expandsOnFreezing; //Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
-    private int color; // The color of the chemical
+    @Data
+    private int color = 0xcccccc; // The color of the chemical
+
+    public Chemical() {
+    }
 
     public Chemical(String name, double boilTemp, double freezeTemp, double hVapKJ, double hFusKJ, double densityLiquid, double densitySolid, double molecularWeight, boolean expandsOnFreezing, int color) {
         this.name = name;

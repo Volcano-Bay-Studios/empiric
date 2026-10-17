@@ -1,20 +1,13 @@
 package xyz.volcanobay.empiric.api.chemistry.requirement;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import xyz.volcanobay.empiric.registry.EmpiricChemicals;
+import xyz.volcanobay.empiric.core.data.Data;
+import xyz.volcanobay.empiric.core.data.SelfSpec;
 
-public class ElectrolysisRequirement extends ReactionRequirement {
-    public static final Codec<ElectrolysisRequirement> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.DOUBLE.fieldOf("min_amps").forGetter(ElectrolysisRequirement::getMinAmps)
-    ).apply(instance, ElectrolysisRequirement::new));
+@SelfSpec
+public class ElectrolysisRequirement {
 
-    private final double minAmps;
-
-    public ElectrolysisRequirement(double minAmps) {
-        super(EmpiricChemicals.ELECTROLYSIS_REQUIREMENT.get());
-        this.minAmps = minAmps;
-    }
+    @Data(id = "min_amps")
+    private double minAmps;
 
     public double getMinAmps() {
         return this.minAmps;

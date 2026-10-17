@@ -5,7 +5,6 @@ import foundry.veil.api.network.VeilPacketManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import xyz.volcanobay.empiric.Empiric;
-import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.entry.DataEntry;
 import xyz.volcanobay.empiric.core.entry.DataEntryType;
@@ -28,7 +27,6 @@ public final class DataSyncSystem {
         for (DataEntryType<?> type : EmpiricCore.data().types()) {
             packets.add(new DataEntriesS2CPacket(DataEntriesS2CPacket.ENTRIES, type.id(), encode(type)));
         }
-        ChemicalRegistry.encode().forEach((registry, entries) -> packets.add(new DataEntriesS2CPacket(DataEntriesS2CPacket.REGISTRY, registry, entries)));
         return packets;
     }
 
@@ -66,10 +64,6 @@ public final class DataSyncSystem {
     }
 
     public static void apply(DataEntriesS2CPacket packet) {
-        if (packet.kind().equals(DataEntriesS2CPacket.REGISTRY)) {
-            ChemicalRegistry.applySynced(packet.target(), packet.entries());
-            return;
-        }
         DataEntryType<?> type = EmpiricCore.data().type(packet.target());
         if (type == null) {
             Empiric.LOGGER.warn("The server sent data for unknown entry type {}", packet.target());

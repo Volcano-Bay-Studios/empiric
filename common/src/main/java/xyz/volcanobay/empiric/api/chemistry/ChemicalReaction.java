@@ -1,64 +1,45 @@
 package xyz.volcanobay.empiric.api.chemistry;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import xyz.volcanobay.empiric.api.chemistry.requirement.ReactionRequirement;
-import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
-import xyz.volcanobay.empiric.registry.EmpiricChemicals;
+import xyz.volcanobay.empiric.api.chemistry.requirement.ReactionRequirements;
+import xyz.volcanobay.empiric.core.data.Data;
+import xyz.volcanobay.empiric.core.data.SelfSpec;
 
-import java.util.*;
+import java.util.HashMap;
 
+@SelfSpec
 public class ChemicalReaction {
-    public static final Codec<ChemicalReaction> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.unboundedMap(
-                    Codec.STRING,
-                    Codec.FLOAT
-            ).fieldOf("reactants").forGetter(ChemicalReaction::getReactants),
-            Codec.unboundedMap(
-                    Codec.STRING,
-                    Codec.FLOAT
-            ).fieldOf("products").forGetter(ChemicalReaction::getProducts),
-            Codec.<ChemicalRegistry.ReactionRequirementType<?>, ReactionRequirement>dispatchedMap(
-                            EmpiricChemicals.REACTION_REQUIREMENTS.byNameCodec(),
-                            ChemicalRegistry.ReactionRequirementType::codec
-                    ).fieldOf("requirements").forGetter(ChemicalReaction::getRequirements)
-    ).apply(instance, ChemicalReaction::new));
 
-    private final Map<String, Float> reactants;
-    private final Map<String, Float> products;
-    private final Map<ChemicalRegistry.ReactionRequirementType<?>, ReactionRequirement> requirements = new HashMap<>();
-    private final float energyOutput;
+    @Data
+    private HashMap<String, Float> reactants = new HashMap<>();
+    @Data
+    private HashMap<String, Float> products = new HashMap<>();
+    @Data
+    private ReactionRequirements requirements = new ReactionRequirements();
 
-    public ChemicalReaction(Map<String, Float> reactants, Map<String, Float> products, Map<ChemicalRegistry.ReactionRequirementType<?>, ReactionRequirement> requirements) {
-        this.reactants = reactants;
-        this.products = products;
-        this.requirements.putAll(requirements);
+    public ChemicalReaction() {
+    }
+
+    public HashMap<String, Float> getReactants() {
+        return reactants;
+    }
+
+    public HashMap<String, Float> getProducts() {
+        return products;
+    }
+
+    public ReactionRequirements getRequirements() {
+        return requirements;
+    }
+
+    public float getEnergyOutput() {
         float energyIn = 0;
         float energyOut = 0;
-
         for (Float value : reactants.values()) {
             energyIn += value;
         }
         for (Float value : products.values()) {
             energyOut += value;
         }
-
-        energyOutput = energyIn - energyOut;
-    }
-
-    public Map<String, Float> getReactants() {
-        return reactants;
-    }
-
-    public Map<String, Float> getProducts() {
-        return products;
-    }
-
-    public Map<ChemicalRegistry.ReactionRequirementType<?>, ReactionRequirement> getRequirements() {
-        return requirements;
-    }
-
-    public float getEnergyOutput() {
-        return energyOutput;
+        return energyIn - energyOut;
     }
 }
