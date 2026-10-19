@@ -8,6 +8,10 @@ import xyz.volcanobay.empiric.api.network.NetworkModule;
 import xyz.volcanobay.empiric.core.data.Data;
 import xyz.volcanobay.empiric.system.AtmosphereSystem;
 import xyz.volcanobay.empiric.system.AtmosphereThermalSystem;
+import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class AtmosphereNetwork extends NetworkModule implements NetworkBehavior, ServerTickBehavior {
 
@@ -17,6 +21,7 @@ public class AtmosphereNetwork extends NetworkModule implements NetworkBehavior,
     @Data
     private AtmosphereVolume volume = new AtmosphereVolume();
     private int timer;
+    private final Map<SpatialPos, Double> thermalCarry = new HashMap<>();
 
     @Override
     protected void onAttach() {
@@ -78,6 +83,13 @@ public class AtmosphereNetwork extends NetworkModule implements NetworkBehavior,
 
     public boolean isWorldAtmosphere() {
         return id() == -2;
+    }
+
+    /**
+     * Heat in tenths of a degree that the thermal exchange couldn't hand to a whole cell yet, by neighbouring cell.
+     */
+    public Map<SpatialPos, Double> getThermalCarry() {
+        return thermalCarry;
     }
 
     public AtmosphereVolume getVolume() {

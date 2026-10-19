@@ -16,6 +16,13 @@ import xyz.volcanobay.empiric.networking.packet.NetworkOverlayS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.OctBreakS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.TemperatureOverlayS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.TemperatureSectionS2CPacket;
+import xyz.volcanobay.empiric.networking.packet.UiCloseS2CPacket;
+import xyz.volcanobay.empiric.networking.packet.UiOpenS2CPacket;
+import xyz.volcanobay.empiric.networking.packet.UiEditorS2CPacket;
+import xyz.volcanobay.empiric.networking.packet.UiPointerS2CPacket;
+import xyz.volcanobay.empiric.networking.packet.UiSurfaceS2CPacket;
+import xyz.volcanobay.empiric.client.ui.PresenceCursors;
+import xyz.volcanobay.empiric.client.ui.UiClient;
 import xyz.volcanobay.empiric.client.overlay.NetworkOverlay;
 import xyz.volcanobay.empiric.client.overlay.TemperatureOverlay;
 import xyz.volcanobay.empiric.api.attachment.ChunkAttachment;
@@ -30,6 +37,46 @@ import xyz.volcanobay.empiric.networking.packet.DataEntriesS2CPacket;
 import net.minecraft.world.level.Level;
 
 public class EmpiricClientPacketHandler {
+
+    public static void handleUiOpen(UiOpenS2CPacket packet, ClientPacketContext ctx) {
+        if (!ctx.client().isSameThread()) {
+            ctx.client().execute(() -> handleUiOpen(packet, ctx));
+            return;
+        }
+        UiClient.handleOpen(packet);
+    }
+
+    public static void handleUiEditor(UiEditorS2CPacket packet, ClientPacketContext ctx) {
+        if (!ctx.client().isSameThread()) {
+            ctx.client().execute(() -> handleUiEditor(packet, ctx));
+            return;
+        }
+        UiClient.openEditor(packet.layout());
+    }
+
+    public static void handleUiSurface(UiSurfaceS2CPacket packet, ClientPacketContext ctx) {
+        if (!ctx.client().isSameThread()) {
+            ctx.client().execute(() -> handleUiSurface(packet, ctx));
+            return;
+        }
+        UiClient.handleSurface(packet);
+    }
+
+    public static void handleUiPointer(UiPointerS2CPacket packet, ClientPacketContext ctx) {
+        if (!ctx.client().isSameThread()) {
+            ctx.client().execute(() -> handleUiPointer(packet, ctx));
+            return;
+        }
+        PresenceCursors.handle(packet);
+    }
+
+    public static void handleUiClose(UiCloseS2CPacket packet, ClientPacketContext ctx) {
+        if (!ctx.client().isSameThread()) {
+            ctx.client().execute(() -> handleUiClose(packet, ctx));
+            return;
+        }
+        UiClient.handleClose(packet);
+    }
 
     public static void handleOctBreak(OctBreakS2CPacket packet, ClientPacketContext ctx) {
         Level level = ctx.level();

@@ -1,0 +1,31 @@
+{
+  "colors": {
+    "text": "#E0E0E0",
+    "text_dim": "#8A8A8A",
+    "panel": "#E0181C20",
+    "panel_border": "#3A4048",
+    "widget": "#2A2F36",
+    "widget_hover": "#353B44",
+    "widget_border": "#4A525C",
+    "accent": "#4651D2",
+    "focus": "#576AD3",
+    "track": "#1A1E22",
+    "knob": "#D0D0D0",
+    "knob_hover": "#919191",
+    "field": "#101214",
+    "selection": "#803D5AA8",
+    "cursor": "#E0E0E0",
+    "scrollbar": "#4A525C",
+    "slot": "#1E2328",
+    "slot_border": "#4A525C",
+    "slot_hover": "#80FFFFFF",
+    "tooltip_line": "#C0FFFFFF",
+    "error": "#FF6666"
+  },
+  "sprites": {},
+  "sounds": {
+    "click": "minecraft:ui.button.click",
+    "toggle": "minecraft:ui.button.click",
+    "dial": "minecraft:block.wooden_button.click_on"
+  }
+}

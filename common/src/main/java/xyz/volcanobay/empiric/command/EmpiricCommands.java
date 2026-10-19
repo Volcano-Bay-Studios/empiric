@@ -50,6 +50,7 @@ public class EmpiricCommands {
         root.then(DataCommands.build());
         root.then(OctCommands.build());
         root.then(DropCommands.build());
+        root.then(UiCommands.build());
         dispatcher.register(root);
     }
 

@@ -6,7 +6,10 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.resources.ResourceLocation;
+import xyz.volcanobay.empiric.client.ui.UiMenuScreen;
+import xyz.volcanobay.empiric.registry.EmpiricMenus;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.EmpiricClient;
 import xyz.volcanobay.empiric.fabric.client.oct.FullOctUnbakedModel;
@@ -20,6 +23,7 @@ public class EmpiricFabricClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         EmpiricClient.init();
+        MenuScreens.register(EmpiricMenus.UI.get(), UiMenuScreen::new);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> EmpiricClient.clientTick());
         ClientBlockEntityEvents.BLOCK_ENTITY_LOAD.register((blockEntity, level) -> {

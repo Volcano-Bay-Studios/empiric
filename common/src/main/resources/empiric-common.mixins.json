@@ -23,10 +23,15 @@
     "PlayerListMixin",
     "ResourceLocationMixin",
     "ServerEntityMixin",
-    "ServerPlayerMixin"
+    "ServerPlayerMixin",
+    "SlotAccessor"
   ],
   "client": [
+    "client.GameRendererMixin",
+    "client.GuiMixin",
+    "client.KeyboardHandlerMixin",
     "client.MinecraftMixin",
+    "client.MouseHandlerMixin",
     "client.item.HumanoidModelMixin",
     "client.item.ItemInHandRendererMixin",
     "client.item.ItemRendererMixin",

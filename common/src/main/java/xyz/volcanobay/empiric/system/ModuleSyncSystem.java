@@ -94,7 +94,7 @@ public final class ModuleSyncSystem {
         }
     }
 
-    private static void send(VeilPacketManager.PacketSink sink, CustomPacketPayload packet) {
+    public static void send(VeilPacketManager.PacketSink sink, CustomPacketPayload packet) {
         try {
             sink.sendPacket(packet);
         } catch (UnsupportedOperationException e) {

@@ -114,6 +114,7 @@ public final class EmpiricTestModules implements EmpiricPlugin {
         SCRATCH = modules.register(ServerModuleType.builder(Empiric.id("test_scratch"), Global.class, Global::new).drop(EmpiricDropPolicies.UNLOAD).build());
         SpatialNetworkSystem.register(modules, PIPES);
         SpatialNetworkSystem.register(modules, PROBES);
+        UiGameTests.register(modules);
         AtmosphereSystem.subscribe(SUBSCRIBER);
         TemperatureSystem.subscribe(SUBSCRIBER);
         for (ModuleType<?, ?> type : new ModuleType<?, ?>[]{TICKER, TAG, COUNT, NOTE, TOGGLE, WATCHER, MARKER, TRANSIENT, GLASS, OCT_MARKER, GLOW, DIAL, KEPT, MORTAL, GROUNDED, POCKET, SESSION, GLOBAL, SCRATCH, PIPES.moduleType()}) {

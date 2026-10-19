@@ -106,6 +106,12 @@ public class EmpiricGameTests {
 
     @GameTestGenerator
     public Collection<TestFunction> tests() {
+        List<TestFunction> tests = new ArrayList<>(core());
+        tests.addAll(UiGameTests.tests(EmpiricGameTests::test, EmpiricGameTests::isolated));
+        return tests;
+    }
+
+    private static List<TestFunction> core() {
         return List.of(
                 test("data_round_trip", EmpiricGameTests::dataRoundTrip),
                 test("block_entity_module", EmpiricGameTests::blockEntityModule),

@@ -1,0 +1,159 @@
+{
+  "description": "Data-only demo screen: every binding and action here comes from this file.",
+  "root": {
+    "type": "panel",
+    "id": "main",
+    "layout": "column",
+    "gap": 6,
+    "padding": 8,
+    "anchor": "center",
+    "width": 220,
+    "children": [
+      {
+        "type": "label",
+        "text": "Layout file demo",
+        "color": "accent"
+      },
+      {
+        "type": "widget",
+        "layout": "form",
+        "gap": 6,
+        "row_gap": 4,
+        "width": "fill",
+        "children": [
+          {
+            "type": "label",
+            "text": "Power",
+            "color": "text_dim"
+          },
+          {
+            "type": "switch",
+            "id": "power",
+            "bind": "power"
+          },
+          {
+            "type": "label",
+            "text": "Frequency",
+            "color": "text_dim"
+          },
+          {
+            "type": "slider",
+            "id": "frequency",
+            "bind": "frequency",
+            "min": 20,
+            "max": 2000,
+            "step": 10,
+            "format": "%.0f Hz"
+          },
+          {
+            "type": "label",
+            "text": "Gain",
+            "color": "text_dim"
+          },
+          {
+            "type": "dial",
+            "id": "gain",
+            "bind": "gain",
+            "min": 0,
+            "max": 1,
+            "step": 0.05
+          },
+          {
+            "type": "label",
+            "text": "Mode",
+            "color": "text_dim"
+          },
+          {
+            "type": "dropdown",
+            "id": "mode",
+            "bind": "mode",
+            "options": [
+              "Sine",
+              "Square",
+              "Saw"
+            ]
+          },
+          {
+            "type": "label",
+            "text": "Level",
+            "color": "text_dim"
+          },
+          {
+            "type": "progress",
+            "id": "level",
+            "bind": "level",
+            "min": 0,
+            "max": 1,
+            "width": "fill",
+            "height": 6
+          }
+        ]
+      },
+      {
+        "type": "label",
+        "id": "frequency_echo",
+        "bind": "frequency",
+        "format": "Tuned to %.0f Hz",
+        "color": "text_dim"
+      },
+      {
+        "type": "slot_grid",
+        "id": "items",
+        "bind": "items",
+        "columns": 9,
+        "count": 9
+      },
+      {
+        "type": "widget",
+        "layout": "row",
+        "gap": 5,
+        "justify": "end",
+        "width": "fill",
+        "children": [
+          {
+            "type": "button",
+            "id": "reset",
+            "text": "Reset",
+            "on_click": [
+              {
+                "action": "set",
+                "field": "frequency",
+                "value": 440
+              },
+              {
+                "action": "set",
+                "field": "gain",
+                "value": 0.5
+              },
+              {
+                "action": "sound",
+                "key": "click"
+              }
+            ]
+          },
+          {
+            "type": "button",
+            "id": "toggle",
+            "text": "Toggle power",
+            "on_click": [
+              {
+                "action": "toggle",
+                "field": "power"
+              }
+            ]
+          },
+          {
+            "type": "button",
+            "id": "close",
+            "text": "Close",
+            "on_click": [
+              {
+                "action": "close"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

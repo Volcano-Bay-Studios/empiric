@@ -9,6 +9,7 @@ import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.registry.EmpiricBlockEntities;
 import xyz.volcanobay.empiric.registry.EmpiricBlocks;
 import xyz.volcanobay.empiric.registry.EmpiricDataComponents;
+import xyz.volcanobay.empiric.registry.EmpiricMenus;
 import xyz.volcanobay.empiric.platform.EmpiricPlatform;
 import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.core.plugin.EmpiricPlugin;
@@ -19,6 +20,7 @@ import xyz.volcanobay.empiric.system.BlockModuleSystem;
 import xyz.volcanobay.empiric.system.ModuleSyncSystem;
 import xyz.volcanobay.empiric.system.NetworkOverlaySystem;
 import xyz.volcanobay.empiric.system.SpatialNetworkSystem;
+import xyz.volcanobay.empiric.system.UiSystem;
 import xyz.volcanobay.empiric.system.OctModuleSystem;
 import org.slf4j.Logger;
 
@@ -43,9 +45,11 @@ public class Empiric {
         EmpiricBlocks.bootstrap();
         EmpiricBlockEntities.bootstrap();
         EmpiricDataComponents.bootstrap();
+        EmpiricMenus.bootstrap();
         EmpiricCore.bootstrap(new EmpiricPlatform(), plugins);
         EmpiricMessages.register();
         ModuleSyncSystem.register();
+        UiSystem.register();
         LOGGER.info("Empiric registered {} module types.", EmpiricCore.modules().types().size());
     }
 
@@ -54,6 +58,7 @@ public class Empiric {
         EmpiricCore.modules().forEach(Side.SERVER, EmpiricBehaviors.SERVER_TICK, ServerTickBehavior::serverTick);
         SpatialNetworkSystem.processDropped();
         NetworkOverlaySystem.tick(server);
+        UiSystem.tick(server);
         ModuleSyncSystem.flush();
     }
 

@@ -8,6 +8,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import xyz.volcanobay.empiric.client.ui.UiMenuScreen;
+import xyz.volcanobay.empiric.registry.EmpiricMenus;
 import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.common.NeoForge;
 import xyz.volcanobay.empiric.Empiric;
@@ -21,6 +24,7 @@ public class EmpiricNeoForgeClient {
         EmpiricClient.init();
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> EmpiricClient.clientTick());
         modEventBus.addListener(this::registerGeometryLoaders);
+        modEventBus.addListener((RegisterMenuScreensEvent event) -> event.register(EmpiricMenus.UI.get(), UiMenuScreen::new));
     }
 
     private void registerGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {

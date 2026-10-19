@@ -23,6 +23,21 @@ public interface NetworkBehavior extends SyncBehavior {
     }
 
     default boolean acceptClientUpdate(ServerPlayer player, String field) {
+        return inRange(player);
+    }
+
+    /**
+     * Runs after a client's value for a field was applied, before it syncs to everyone else, so the module can clean it
+     * up, such as running {@code NodeGraph.sanitize} on a graph.
+     */
+    default void onClientUpdate(ServerPlayer player, String field) {
+    }
+
+    /**
+     * Whether the player is close enough to interact: always for server attachments, otherwise in the same level and
+     * within {@link #CLIENT_UPDATE_RANGE} of the attachment's position, if it has one.
+     */
+    default boolean inRange(ServerPlayer player) {
         Attachment attachment = ((Module<?>) this).attachment();
         while (attachment instanceof ModuleAttachment child) {
             attachment = child.parent().attachment();

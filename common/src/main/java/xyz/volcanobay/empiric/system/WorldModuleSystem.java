@@ -90,6 +90,7 @@ public final class WorldModuleSystem {
         EmpiricCore.modules().unloadSide(Side.SERVER);
         ServerAttachment.reset(Side.SERVER);
         DebugSubscriptionSystem.clear();
+        UiSystem.clear();
         BLOCK_ENTITIES.get(Side.SERVER.ordinal()).clear();
         CHUNKS.get(Side.SERVER.ordinal()).clear();
         server = null;

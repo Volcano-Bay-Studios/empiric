@@ -1,12 +1,13 @@
 package xyz.volcanobay.empiric.system;
 
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import xyz.volcanobay.empiric.api.atmosphere.Volume;
 import xyz.volcanobay.empiric.api.atmosphere.module.AtmosphereNetwork;
 import xyz.volcanobay.empiric.api.atmosphere.volume.AtmosphereVolume;
 import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -32,7 +33,6 @@ public final class AtmosphereThermalSystem {
      */
     private static final double MAX_FRACTION = 0.5;
 
-    private static final RandomSource RANDOM = RandomSource.create();
     private static final int[][] FACES = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 
     private AtmosphereThermalSystem() {
@@ -43,7 +43,8 @@ public final class AtmosphereThermalSystem {
     }
 
     /**
-     * Moves heat between a sealed volume and every conductive block touching it.
+     * Moves heat between a sealed volume and every conductive block touching it. Every face is worked out against the air's temperature at the start, so the result doesn't depend on the order of the faces.
+     * The air takes the exact heat, while cells only take whole tenths of a degree, so each cell keeps the fraction it couldn't take yet and gets it on a later call instead of being rounded randomly.
      *
      * @return whether the volume's temperature changed
      */
@@ -59,33 +60,47 @@ public final class AtmosphereThermalSystem {
         Level level = network.level();
         Set<SpatialPos> members = network.members();
         double before = volume.getTemperature();
-        double temperature = before;
+        Map<SpatialPos, double[]> cells = new HashMap<>();
+        double conductance = 0;
         for (SpatialPos member : members) {
             for (int[] face : FACES) {
-                long x = member.x() + face[0];
-                long y = member.y() + face[1];
-                long z = member.z() + face[2];
-                if (members.contains(new SpatialPos(x, y, z))) {
+                SpatialPos pos = new SpatialPos(member.x() + face[0], member.y() + face[1], member.z() + face[2]);
+                if (members.contains(pos)) {
                     continue;
                 }
-                int conductivity = TemperatureSystem.conductivity(level, x, y, z);
+                int conductivity = TemperatureSystem.conductivity(level, pos.x(), pos.y(), pos.z());
                 if (conductivity <= 0) {
                     continue;
                 }
-                int cell = TemperatureSystem.get(level, x, y, z);
-                double gap = temperature - (cell / 10.0 + 273.15);
-                double flow = Math.min(conductivity / 100.0 * CONDUCTANCE, capacity * MAX_FRACTION);
-                double tenths = flow * gap / CELL_HEAT_CAPACITY * 10;
-                int applied = (int) Math.floor(tenths);
-                if (RANDOM.nextDouble() < tenths - applied) {
-                    applied++;
-                }
-                if (applied != 0) {
-                    TemperatureSystem.set(level, x, y, z, cell + applied);
-                    temperature = Math.max(0.01, temperature - applied / 10.0 * CELL_HEAT_CAPACITY / capacity);
-                }
+                double share = conductivity / 100.0 * CONDUCTANCE;
+                cells.computeIfAbsent(pos, key -> new double[1])[0] += share;
+                conductance += share;
             }
         }
+        if (conductance <= 0) {
+            return false;
+        }
+        double scale = Math.min(1, capacity * MAX_FRACTION / conductance);
+        Map<SpatialPos, Double> carry = network.getThermalCarry();
+        double heat = 0;
+        for (Map.Entry<SpatialPos, double[]> entry : cells.entrySet()) {
+            SpatialPos pos = entry.getKey();
+            int cell = TemperatureSystem.get(level, pos.x(), pos.y(), pos.z());
+            double flow = scale * entry.getValue()[0] * (before - (cell / 10.0 + 273.15));
+            heat += flow;
+            double wanted = flow / CELL_HEAT_CAPACITY * 10 + carry.getOrDefault(pos, 0.0);
+            int applied = (int) wanted;
+            if (applied != 0) {
+                TemperatureSystem.set(level, pos.x(), pos.y(), pos.z(), cell + applied);
+            }
+            double left = wanted - applied;
+            if (left != 0) {
+                carry.put(pos, left);
+            } else {
+                carry.remove(pos);
+            }
+        }
+        double temperature = Math.max(0.01, before - heat / capacity);
         if (temperature != before) {
             volume.setTemperature(temperature);
             return true;

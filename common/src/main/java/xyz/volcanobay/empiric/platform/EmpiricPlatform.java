@@ -6,6 +6,9 @@ import xyz.volcanobay.empiric.api.attachment.EmpiricAttachments;
 import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
 import xyz.volcanobay.empiric.api.chemistry.ChemistrySpecs;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
+import xyz.volcanobay.empiric.system.UiDemo;
+import xyz.volcanobay.empiric.api.ui.UiLayouts;
+import xyz.volcanobay.empiric.api.ui.UiThemes;
 import xyz.volcanobay.empiric.api.behavior.EmpiricBehaviors;
 import xyz.volcanobay.empiric.core.data.SpecRegistry;
 import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
@@ -27,6 +30,8 @@ public final class EmpiricPlatform implements EmpiricPlugin {
         TemperatureSystem.registerData(data);
         AtmosphereSystem.registerData(data);
         ChemicalRegistry.registerData(data);
+        UiThemes.registerData(data);
+        UiLayouts.registerData(data);
     }
 
     @Override
@@ -45,5 +50,6 @@ public final class EmpiricPlatform implements EmpiricPlugin {
     public void registerModules(ModuleSystem modules) {
         AtmosphereSystem.register(modules);
         TemperatureSystem.register(modules);
+        UiDemo.register(modules);
     }
 }
