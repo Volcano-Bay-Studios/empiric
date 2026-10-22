@@ -125,13 +125,33 @@ processResources {
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            artifactId base.archivesName.get()
+            artifactId = base.archivesName.get()
             from components.java
         }
     }
+
     repositories {
+        mavenLocal()
         maven {
-            url System.getenv('local_maven_url')
+            name = 'RyanHCode'
+            url = "https://maven.ryanhcode.dev/releases/"
+
+            credentials {
+                username = "modog"
+                password = System.getenv("PRIVATE_MAVEN_TOKEN") ?: ""
+            }
+
+            authentication {
+                basic(BasicAuthentication)
+            }
+        }
+    }
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    doFirst {
+        if (repository.name == 'RyanHCode' && !System.getenv('PRIVATE_MAVEN_TOKEN')) {
+            throw new GradleException('Set PRIVATE_MAVEN_TOKEN to publish to the RyanHCode maven')
         }
     }
 }

@@ -656,7 +656,7 @@ final class UiGameTests {
 
     private static void theme(GameTestHelper helper) {
         UiTheme loaded = UiThemes.THEMES.get(UiTheme.DEFAULT);
-        helper.assertTrue(loaded != null && loaded.color("accent") == 0xFF3FA866, "the default theme didn't load from data");
+        helper.assertTrue(loaded != null && loaded.colors.containsKey("accent") && loaded.color("accent") == 0xFF4651D2, "the default theme didn't load from data");
         String json = "{\"colors\": {\"accent\": \"#80112233\"}, \"sprites\": {\"panel\": {\"texture\": \"empiric:textures/gui/panel.png\", \"width\": 32, \"height\": 32, \"border\": 4}}, \"sounds\": {}}";
         UiTheme custom = UiThemes.THEMES.parse("empiric:custom", JsonNodes.toNode(JsonParser.parseString(json))).value();
         helper.assertTrue(custom.color("accent") == 0x80112233, "parsed accent was " + Integer.toHexString(custom.color("accent")));

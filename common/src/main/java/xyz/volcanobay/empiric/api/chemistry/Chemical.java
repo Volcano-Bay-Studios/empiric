@@ -1,8 +1,16 @@
 package xyz.volcanobay.empiric.api.chemistry;
 
+import xyz.volcanobay.empiric.api.atmosphere.Volume;
 import xyz.volcanobay.empiric.core.data.Data;
 
 public class Chemical {
+    /**
+     * Room temperature in Celsius, the temperature {@link #defaultState()} is taken at.
+     */
+    public static final double ROOM_TEMPERATURE = 20;
+    // Keeps the boiling point finite in a vacuum
+    private static final double MIN_PRESSURE = 1.0E-6;
+
     @Data
     private String name = "";
     @Data
@@ -81,6 +89,42 @@ public class Chemical {
         return color;
     }
 
+
+    /**
+     * The phase of this chemical at 1 atm.
+     * @param celsius Temperature in Celsius
+     */
+    public Volume.State phaseAt(double celsius) {
+        return phaseAt(celsius, 1);
+    }
+
+    /**
+     * The phase of this chemical at a pressure, with the transition points from {@link ChemicalPhaseCalculator}.
+     * Chemicals without enthalpies keep their 1 atm points.
+     * @param celsius Temperature in Celsius
+     * @param atm     Pressure in atmospheres
+     */
+    public Volume.State phaseAt(double celsius, double atm) {
+        double boil = boilTemp;
+        double freeze = freezeTemp;
+        if (atm != 1 && hVapKJ > 0 && hFusKJ > 0) {
+            ChemicalPhaseCalculator.PhaseTransitions transitions = ChemicalPhaseCalculator.calculate(Math.max(atm, MIN_PRESSURE),
+                    boilTemp, freezeTemp, hVapKJ, hFusKJ, densityLiquid, densitySolid, molecularWeight, expandsOnFreezing);
+            boil = transitions.boilingPointC();
+            freeze = transitions.freezingPointC();
+        }
+        if (celsius < freeze) {
+            return Volume.State.SOLID;
+        }
+        return celsius < boil ? Volume.State.LIQUID : Volume.State.GAS;
+    }
+
+    /**
+     * The phase of this chemical at room temperature, used where no state is given.
+     */
+    public Volume.State defaultState() {
+        return phaseAt(ROOM_TEMPERATURE);
+    }
 
     // ---- Calculate(d) values ----
     public double getMass(double moles) {

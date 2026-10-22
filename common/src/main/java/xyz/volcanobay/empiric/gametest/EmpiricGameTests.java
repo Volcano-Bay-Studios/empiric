@@ -36,6 +36,7 @@ import xyz.volcanobay.empiric.api.atmosphere.volume.ItemVolume;
 import xyz.volcanobay.empiric.api.chemistry.Chemical;
 import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
 import xyz.volcanobay.empiric.api.oct.OctBlockComplement;
+import xyz.volcanobay.empiric.api.oct.OctBlockEntityComplement;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 import xyz.volcanobay.empiric.client.ItemModuleCache;
 import xyz.volcanobay.empiric.core.data.tree.TreeDataBuffer;
@@ -130,6 +131,8 @@ public class EmpiricGameTests {
                 test("oct_module", EmpiricGameTests::octModule),
                 isolated("spatial_network", EmpiricGameTests::spatialNetwork),
                 test("oct_multiblock", EmpiricGameTests::octMultiblock),
+                test("oct_complement_moves", EmpiricGameTests::octComplementMoves),
+                test("chemical_phase", EmpiricGameTests::chemicalPhase),
                 isolated("block_transient_unload", EmpiricGameTests::blockTransientUnload),
                 test("temperature_conduction", EmpiricGameTests::temperatureConduction),
                 test("chemistry_volume", EmpiricGameTests::chemistryVolume),
@@ -299,8 +302,50 @@ public class EmpiricGameTests {
         }
         AABB bounds = level.getBlockState(above).getShape(level, above).bounds();
         helper.assertTrue(bounds.maxY <= 0.5 + 1.0E-6, "complement shape pokes past the multiblock shape: " + bounds);
+        AABB outline = EmpiricTestBlocks.MULTIBLOCK.get().getMultiblockOutline(level.getBlockState(center), level, center).bounds();
+        helper.assertTrue(outline.minY <= 1.0E-6 && outline.maxY >= 1.5 - 1.0E-6, "the outline doesn't cover the whole multiblock: " + outline);
         level.setBlockAndUpdate(center, Blocks.AIR.defaultBlockState());
         helper.assertTrue(level.getBlockState(above).isAir(), "removing the multiblock didn't clear its octs");
+        helper.succeed();
+    }
+
+    private static void octComplementMoves(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos center = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockPos above = center.above();
+        level.setBlockAndUpdate(center, EmpiricTestBlocks.MULTIBLOCK.get().defaultBlockState());
+        FullOctBlockEntity original = FullOctBlockEntity.get(level, above).orElse(null);
+        helper.assertTrue(original != null, "multiblock didn't create an oct block entity above it");
+        CompoundTag tag = original.saveWithId(level.registryAccess());
+        BlockPos shift = new BlockPos(7, 0, -3);
+        BlockEntity moved = BlockEntity.loadStatic(above.offset(shift), level.getBlockState(above), tag, level.registryAccess());
+        helper.assertTrue(moved instanceof FullOctBlockEntity, "the saved oct block entity didn't load");
+        OctBlockEntityComplement complement = (OctBlockEntityComplement) ((FullOctBlockEntity) moved).getOctEntity(0);
+        helper.assertTrue(complement != null && complement.getSourcePos().pos().equals(center.offset(shift)), "the complement didn't follow the move");
+
+        CompoundTag legacy = new CompoundTag();
+        legacy.putInt("x", center.getX());
+        legacy.putInt("y", center.getY());
+        legacy.putInt("z", center.getZ());
+        legacy.putInt("octant", 0);
+        legacy.putBoolean("full", true);
+        OctBlockEntityComplement old = new OctBlockEntityComplement(above, 0, level.getBlockState(above));
+        old.loadAdditional(legacy, level.registryAccess());
+        helper.assertTrue(old.getSourcePos().pos().equals(center) && old.isFullBlockSource(), "a complement saved with absolute coordinates didn't load");
+        level.setBlockAndUpdate(center, Blocks.AIR.defaultBlockState());
+        helper.succeed();
+    }
+
+    private static void chemicalPhase(GameTestHelper helper) {
+        Chemical oxygen = ChemicalRegistry.getChemical("empiric:oxygen");
+        Chemical water = ChemicalRegistry.getChemical("empiric:water");
+        helper.assertTrue(oxygen != null && water != null, "the chemistry registry didn't load oxygen and water");
+        helper.assertTrue(oxygen.defaultState() == Volume.State.GAS, "oxygen should be a gas at room temperature");
+        helper.assertTrue(water.defaultState() == Volume.State.LIQUID, "water should be a liquid at room temperature");
+        helper.assertTrue(water.phaseAt(-5) == Volume.State.SOLID, "water should freeze below zero");
+        helper.assertTrue(water.phaseAt(150) == Volume.State.GAS, "water should boil above 100");
+        helper.assertTrue(water.phaseAt(90, 1) == Volume.State.LIQUID && water.phaseAt(90, 0.5) == Volume.State.GAS, "water should boil below 90 °C at half an atmosphere");
+        helper.assertTrue(water.phaseAt(20, 0) == Volume.State.GAS, "water should boil in a vacuum");
         helper.succeed();
     }
 

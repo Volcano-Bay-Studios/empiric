@@ -24,6 +24,8 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import xyz.volcanobay.empiric.api.oct.OctBlock;
+import xyz.volcanobay.empiric.api.oct.OctBlockComplement;
+import xyz.volcanobay.empiric.api.oct.OctMultiblock;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctUtil;
 import xyz.volcanobay.empiric.ext.LevelOctExtension;
@@ -72,6 +74,9 @@ public abstract class LevelRendererMixin {
                                    BlockPos blockPos,
                                    CollisionContext collisionContext,
                                    Operation<VoxelShape> original) {
+        if (instance.getBlock() instanceof OctMultiblock multiblock) {
+            return multiblock.getMultiblockOutline(instance, blockGetter, blockPos);
+        }
         if (instance.getBlock() instanceof FullOctBlock || !(blockGetter instanceof Level)) {
             BlockEntity blockEntity = blockGetter.getBlockEntity(blockPos);
             if (blockEntity instanceof FullOctBlockEntity octBlockEntity) {
@@ -79,6 +84,15 @@ public abstract class LevelRendererMixin {
                 byte octant = OctUtil.getOctant(hitResult);
                 BlockState octState = octBlockEntity.getOctState(octant);
                 OctLevel octLevel = ((LevelOctExtension) blockGetter).empiric$getOctLevel();
+                BlockPos center = OctBlockComplement.getMultiblockCenter(octLevel, blockPos, octant);
+                if (center != null) {
+                    BlockState centerState = blockGetter.getBlockState(center);
+                    if (centerState.getBlock() instanceof OctMultiblock multiblock) {
+                        // Outline the whole multiblock, not just the looked-at oct
+                        return multiblock.getMultiblockOutline(centerState, blockGetter, center)
+                                .move(center.getX() - blockPos.getX(), center.getY() - blockPos.getY(), center.getZ() - blockPos.getZ());
+                    }
+                }
                 Block block = octState.getBlock();
                 if (block instanceof OctBlock octBlock) {
                     return octBlock.getFullShape(octState, octLevel, blockPos, octant, collisionContext).get(octant);
