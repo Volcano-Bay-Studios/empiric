@@ -102,7 +102,7 @@ public class EmpiricCommands {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static String print(Module<?> module) {
-        return DataPrinter.print(module, (Spec) module.type().spec());
+        return DataPrinter.print(module.data(), (Spec) module.spec());
     }
 
     public static String print(Object value) {

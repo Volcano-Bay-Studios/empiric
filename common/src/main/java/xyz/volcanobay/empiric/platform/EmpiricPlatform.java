@@ -5,6 +5,7 @@ import xyz.volcanobay.empiric.system.AtmosphereSystem;
 import xyz.volcanobay.empiric.api.attachment.EmpiricAttachments;
 import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
 import xyz.volcanobay.empiric.api.chemistry.ChemistrySpecs;
+import xyz.volcanobay.empiric.api.module.SelfModule;
 import xyz.volcanobay.empiric.system.SubLevelModuleSystem;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 import xyz.volcanobay.empiric.system.UiDemo;
@@ -52,6 +53,7 @@ public final class EmpiricPlatform implements EmpiricPlugin {
 
     @Override
     public void registerModules(ModuleSystem modules) {
+        SelfModule.register(modules);
         AtmosphereSystem.register(modules);
         TemperatureSystem.register(modules);
         UiDemo.register(modules);

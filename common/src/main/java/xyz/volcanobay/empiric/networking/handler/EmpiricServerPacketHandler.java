@@ -67,9 +67,9 @@ public class EmpiricServerPacketHandler {
             if (!(module instanceof NetworkBehavior network)) {
                 return new BitSet();
             }
-            ObjectSpec spec = module.type().spec();
+            ObjectSpec spec = module.spec();
             BitSet rejected = new BitSet();
-            BitSet applied = spec.readFramed(buffer, module, context, index -> {
+            BitSet applied = spec.readFramed(buffer, module.data(), context, index -> {
                 boolean accepted = spec.isClientMutable(index) && network.acceptClientUpdate(player, spec.synced()[index].id());
                 if (!accepted) {
                     rejected.set(index);

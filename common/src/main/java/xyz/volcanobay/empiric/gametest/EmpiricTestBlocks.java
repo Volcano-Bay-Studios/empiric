@@ -5,6 +5,10 @@ import xyz.volcanobay.empiric.platform.Registrar;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import xyz.volcanobay.empiric.core.data.Data;
+import xyz.volcanobay.empiric.core.data.SelfSpec;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -96,6 +100,19 @@ public final class EmpiricTestBlocks {
         @Override
         public void tick() {
             ticks++;
+        }
+    }
+
+    @SelfSpec
+    public static class TestSelfEntity extends BlockEntity {
+
+        @Data
+        public int energy;
+        @Data(watch = true)
+        public String label = "";
+
+        public TestSelfEntity(BlockPos pos, BlockState state) {
+            super(BlockEntityType.CHEST, pos, state);
         }
     }
 }

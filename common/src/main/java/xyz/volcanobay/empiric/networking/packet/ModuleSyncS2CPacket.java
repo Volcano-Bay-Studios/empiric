@@ -41,12 +41,12 @@ public record ModuleSyncS2CPacket(byte[] data) implements CustomPacketPayload {
         DataBuffer data = EmpiricBuffers.of(buffer);
         DataContext context = modules.specs().context(Encoding.PACKED);
         modules.writeLocator(data, module, context);
-        ObjectSpec spec = module.type().spec();
+        ObjectSpec spec = module.spec();
         data.putBoolean(dirty == null);
         if (dirty == null) {
-            spec.write(data, module, context);
+            spec.write(data, module.data(), context);
         } else {
-            spec.writeDirty(data, module, dirty, context);
+            spec.writeDirty(data, module.data(), dirty, context);
         }
         return new ModuleSyncS2CPacket(EmpiricBuffers.bytes(buffer));
     }
@@ -59,7 +59,7 @@ public record ModuleSyncS2CPacket(byte[] data) implements CustomPacketPayload {
         BitSet fields = dirty;
         if (fields == null) {
             fields = new BitSet();
-            fields.set(0, module.type().spec().synced().length);
+            fields.set(0, module.spec().synced().length);
         }
         List<ModuleSyncS2CPacket> packets = new ArrayList<>();
         for (int i = fields.nextSetBit(0); i >= 0; i = fields.nextSetBit(i + 1)) {
@@ -67,7 +67,7 @@ public record ModuleSyncS2CPacket(byte[] data) implements CustomPacketPayload {
             single.set(i);
             ModuleSyncS2CPacket packet = encode(module, single);
             if (packet.data.length > LIMIT) {
-                Empiric.LOGGER.warn("Skipped syncing {}.{}, it is {} bytes which is over the {} byte packet limit", module.type().id(), module.type().spec().synced()[i].id(), packet.data.length, LIMIT);
+                Empiric.LOGGER.warn("Skipped syncing {}.{}, it is {} bytes which is over the {} byte packet limit", module.type().id(), module.spec().synced()[i].id(), packet.data.length, LIMIT);
                 continue;
             }
             packets.add(packet);

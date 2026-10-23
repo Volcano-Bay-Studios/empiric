@@ -56,6 +56,8 @@ import xyz.volcanobay.empiric.core.data.DataBuffer;
 import xyz.volcanobay.empiric.api.attachment.EntityAttachment;
 import xyz.volcanobay.empiric.api.attachment.ServerAttachment;
 import xyz.volcanobay.empiric.api.module.EntityModuleType;
+import xyz.volcanobay.empiric.api.module.SelfModule;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.data.Encoding;
 import xyz.volcanobay.empiric.core.data.Spec;
@@ -120,6 +122,7 @@ public class EmpiricGameTests {
         return List.of(
                 test("data_round_trip", EmpiricGameTests::dataRoundTrip),
                 test("block_entity_module", EmpiricGameTests::blockEntityModule),
+                test("self_spec_block_entity", EmpiricGameTests::selfSpecBlockEntity),
                 test("entity_module", EmpiricGameTests::entityModule),
                 test("entity_save_load", EmpiricGameTests::entitySaveLoad),
                 test("item_stack_module", EmpiricGameTests::itemStackModule),
@@ -1171,6 +1174,29 @@ public class EmpiricGameTests {
             helper.assertTrue(!ticker.isAttached(), "ticker is still attached");
             helper.succeed();
         });
+    }
+
+    private static void selfSpecBlockEntity(GameTestHelper helper) {
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockState state = Blocks.CHEST.defaultBlockState();
+        EmpiricTestBlocks.TestSelfEntity entity = new EmpiricTestBlocks.TestSelfEntity(pos, state);
+        entity.setLevel(helper.getLevel());
+        SelfModule module = SelfModule.TYPE.get(entity);
+        helper.assertTrue(module != null, "a @SelfSpec block entity didn't get its self module");
+        helper.assertTrue(SelfModule.TYPE.get(new ChestBlockEntity(pos, state)) == null, "a plain block entity got a self module");
+        entity.energy = 42;
+        entity.label = "boiler";
+        module.markDirty("energy");
+        helper.assertTrue(module.isDirty("energy"), "markDirty(energy) didn't mark the field");
+        CompoundTag tag = entity.saveWithFullMetadata(helper.getLevel().registryAccess());
+        helper.assertTrue(tag.contains(WorldModuleSystem.TAG), "the self module wasn't saved");
+        EmpiricTestBlocks.TestSelfEntity loaded = new EmpiricTestBlocks.TestSelfEntity(pos, state);
+        loaded.loadWithComponents(tag, helper.getLevel().registryAccess());
+        loaded.setLevel(helper.getLevel());
+        helper.assertTrue(loaded.energy == 42, "energy loaded as " + loaded.energy);
+        helper.assertTrue("boiler".equals(loaded.label), "label loaded as " + loaded.label);
+        helper.assertTrue(SelfModule.TYPE.get(loaded) != null, "the loaded block entity has no self module");
+        helper.succeed();
     }
 
     private static void entityModule(GameTestHelper helper) {

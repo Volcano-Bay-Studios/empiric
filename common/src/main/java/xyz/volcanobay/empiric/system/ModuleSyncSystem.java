@@ -67,13 +67,13 @@ public final class ModuleSyncSystem {
                 }
                 module = modules.attach(attachment, type);
             }
-            ObjectSpec spec = type.spec();
+            ObjectSpec spec = module.spec();
             BitSet fields;
             if (buffer.takeBoolean()) {
-                spec.update(buffer, module, context);
+                spec.update(buffer, module.data(), context);
                 fields = SyncedFields.full(spec).fields();
             } else {
-                fields = spec.readDirty(buffer, module, context);
+                fields = spec.readDirty(buffer, module.data(), context);
             }
             modules.acceptRemote(module, fields);
         } catch (RuntimeException e) {

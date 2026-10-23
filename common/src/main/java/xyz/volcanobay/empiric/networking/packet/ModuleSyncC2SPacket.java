@@ -29,8 +29,8 @@ public record ModuleSyncC2SPacket(byte[] data) implements CustomPacketPayload {
         DataBuffer data = EmpiricBuffers.of(buffer);
         DataContext context = modules.specs().context(Encoding.PACKED);
         modules.writeLocator(data, module, context);
-        ObjectSpec spec = module.type().spec();
-        spec.writeFramed(data, module, dirty, context);
+        ObjectSpec spec = module.spec();
+        spec.writeFramed(data, module.data(), dirty, context);
         return new ModuleSyncC2SPacket(EmpiricBuffers.bytes(buffer));
     }
 
