@@ -11,6 +11,7 @@ public final class EmpiricBehaviors {
     public static BehaviorKey<BlockChangeBehavior> BLOCK_CHANGE;
     public static BehaviorKey<NetworkBehavior> NETWORK;
     public static BehaviorKey<ItemRenderBehavior> ITEM_RENDER;
+    public static BehaviorKey<SplitBehavior> SPLIT;
 
     private EmpiricBehaviors() {
     }
@@ -22,5 +23,6 @@ public final class EmpiricBehaviors {
         BLOCK_CHANGE = modules.registerBehavior(BlockChangeBehavior.class);
         NETWORK = modules.registerBehavior(NetworkBehavior.class);
         ITEM_RENDER = modules.registerBehavior(ItemRenderBehavior.class);
+        SPLIT = modules.registerBehavior(SplitBehavior.class);
     }
 }

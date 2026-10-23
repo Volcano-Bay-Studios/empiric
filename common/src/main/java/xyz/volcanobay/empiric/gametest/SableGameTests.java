@@ -14,9 +14,12 @@ import net.minecraft.gametest.framework.TestFunction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.attachment.SubLevelAttachment;
+import xyz.volcanobay.empiric.api.attachment.SubLevelSplit;
+import xyz.volcanobay.empiric.api.behavior.SplitBehavior;
 import xyz.volcanobay.empiric.api.module.SubLevelModuleType;
 import xyz.volcanobay.empiric.core.data.Data;
 import xyz.volcanobay.empiric.core.module.Module;
@@ -34,6 +37,8 @@ import java.util.function.Consumer;
 final class SableGameTests {
 
     static SubLevelModuleType<Hull> HULL;
+    static SubLevelModuleType<Cargo> CARGO;
+    static SubLevelModuleType<Flag> FLAG;
 
     private SableGameTests() {
     }
@@ -41,10 +46,15 @@ final class SableGameTests {
     static void register(ModuleSystem modules) {
         HULL = modules.register(SubLevelModuleType.builder(Empiric.id("test_hull"), Hull.class, Hull::new).build());
         modules.subscribe(EmpiricTestModules.SUBSCRIBER, HULL);
+        CARGO = modules.register(SubLevelModuleType.builder(Empiric.id("test_cargo"), Cargo.class, Cargo::new).build());
+        modules.subscribe(EmpiricTestModules.SUBSCRIBER, CARGO);
+        FLAG = modules.register(SubLevelModuleType.builder(Empiric.id("test_flag"), Flag.class, Flag::new).build());
+        modules.subscribe(EmpiricTestModules.SUBSCRIBER, FLAG);
     }
 
     static List<TestFunction> tests(BiFunction<String, Consumer<GameTestHelper>, TestFunction> test) {
-        return List.of(test.apply("sub_level_module", SableGameTests::subLevelModule));
+        return List.of(test.apply("sub_level_module", SableGameTests::subLevelModule),
+                test.apply("sub_level_split", SableGameTests::subLevelSplit));
     }
 
     private static void subLevelModule(GameTestHelper helper) {
@@ -80,6 +90,42 @@ final class SableGameTests {
         helper.succeed();
     }
 
+    private static void subLevelSplit(GameTestHelper helper) {
+        ServerSubLevelContainer container = SubLevelContainer.getContainer(helper.getLevel());
+        helper.assertTrue(container != null, "level has no sub-level container");
+        ServerSubLevel subLevel = spawn(container, helper.absoluteVec(new Vec3(1.5, 4.5, 1.5)));
+        LevelPlot plot = subLevel.getPlot();
+        BlockState stone = Blocks.STONE.defaultBlockState();
+        for (int x = 1; x <= 4; x++) {
+            plot.getEmbeddedLevelAccessor().setBlock(new BlockPos(x, 0, 0), stone, 3);
+        }
+        Hull hull = HULL.attach(subLevel);
+        hull.integrity = 40;
+        CARGO.attach(subLevel).load = 7;
+        FLAG.attach(subLevel).color = 3;
+
+        helper.runAfterDelay(2, () -> plot.getEmbeddedLevelAccessor().setBlock(new BlockPos(2, 0, 0), Blocks.AIR.defaultBlockState(), 3));
+        helper.succeedWhen(() -> {
+            SubLevelSplit split = hull.split;
+            helper.assertTrue(split != null, "the sub-level didn't split");
+            helper.assertTrue(split.from().subLevel() == subLevel, "split came from the wrong sub-level");
+            BlockPos center = plot.getCenterBlock();
+            helper.assertTrue(split.blocks().size() == 2 && split.moved(center.offset(3, 0, 0)) && split.moved(center.offset(4, 0, 0)), "wrong blocks moved: " + split.blocks());
+            ServerSubLevel into = (ServerSubLevel) split.into().subLevel();
+            helper.assertTrue(into.getLevel().getBlockState(split.newPos(center.offset(4, 0, 0))).is(Blocks.STONE), "newPos doesn't point at the moved block");
+
+            Hull copy = HULL.get(into);
+            helper.assertTrue(copy != null && copy != hull, "hull wasn't copied");
+            helper.assertTrue(copy.integrity + hull.integrity == 40 && copy.integrity > 0 && hull.integrity > 0, "hull integrity wasn't divided: " + hull + " / " + copy);
+            Cargo cargo = CARGO.get(into);
+            helper.assertTrue(cargo != null && cargo.load == 7 && CARGO.get(subLevel) == null, "cargo didn't move");
+            helper.assertTrue(FLAG.get(subLevel) != null && FLAG.get(into) == null, "module without SplitBehavior didn't stay");
+
+            container.removeSubLevel(into, SubLevelRemovalReason.REMOVED);
+            container.removeSubLevel(subLevel, SubLevelRemovalReason.REMOVED);
+        });
+    }
+
     private static ServerSubLevel spawn(ServerSubLevelContainer container, Vec3 position) {
         Pose3d pose = new Pose3d();
         pose.position().set(position.x, position.y, position.z);
@@ -91,12 +137,21 @@ final class SableGameTests {
         return subLevel;
     }
 
-    public static class Hull extends Module<SubLevelAttachment> {
+    public static class Hull extends Module<SubLevelAttachment> implements SplitBehavior {
 
         @Data
         public int integrity;
 
         boolean detached;
+        SubLevelSplit split;
+
+        @Override
+        public void onSplit(SubLevelSplit split) {
+            this.split = split;
+            Hull copy = split.copy(this);
+            copy.integrity = Math.max(1, (int) Math.round(integrity * split.massFraction()));
+            integrity -= copy.integrity;
+        }
 
         @Override
         protected void onDetach() {
@@ -106,6 +161,23 @@ final class SableGameTests {
         @Override
         public String toString() {
             return "Hull[" + integrity + "]";
+        }
+    }
+
+    public static class Flag extends Module<SubLevelAttachment> {
+
+        @Data
+        public int color;
+    }
+
+    public static class Cargo extends Module<SubLevelAttachment> implements SplitBehavior {
+
+        @Data
+        public int load;
+
+        @Override
+        public void onSplit(SubLevelSplit split) {
+            split.move(this);
         }
     }
 }
