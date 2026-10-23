@@ -5,6 +5,7 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3dc;
@@ -18,7 +19,10 @@ import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.ext.SubLevelExtension;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -83,6 +87,17 @@ public final class SubLevelAttachment extends PersistentAttachment {
             return server.playerSink()::sendPacket;
         }
         return PacketTarget.NONE;
+    }
+
+    @Override
+    public Collection<ServerPlayer> viewers() {
+        List<ServerPlayer> players = new ArrayList<>();
+        for (UUID id : synced) {
+            if (level().getPlayerByUUID(id) instanceof ServerPlayer player) {
+                players.add(player);
+            }
+        }
+        return players;
     }
 
     @Override

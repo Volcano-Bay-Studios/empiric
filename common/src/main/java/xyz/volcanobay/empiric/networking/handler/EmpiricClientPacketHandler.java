@@ -6,11 +6,14 @@ import xyz.volcanobay.empiric.client.ClientLookup;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.attachment.Attachment;
 import xyz.volcanobay.empiric.core.data.Encoding;
+import xyz.volcanobay.empiric.core.data.DataBuffer;
+import xyz.volcanobay.empiric.core.module.Module;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.data.EmpiricBuffers;
 import xyz.volcanobay.empiric.networking.packet.DebugSubscriptionsS2CPacket;
+import xyz.volcanobay.empiric.networking.packet.ModuleClearS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.ModuleRemoveS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.NetworkOverlayS2CPacket;
@@ -36,6 +39,8 @@ import xyz.volcanobay.empiric.system.DebugSubscriptionSystem;
 import xyz.volcanobay.empiric.system.ModuleSyncSystem;
 import xyz.volcanobay.empiric.networking.packet.DataEntriesS2CPacket;
 import net.minecraft.world.level.Level;
+
+import java.util.BitSet;
 
 public class EmpiricClientPacketHandler {
 
@@ -89,6 +94,29 @@ public class EmpiricClientPacketHandler {
             }
         } catch (RuntimeException e) {
             Empiric.LOGGER.error("Couldn't apply a module removal", e);
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void handleModuleClear(ModuleClearS2CPacket packet) {
+        ModuleSystem modules = EmpiricCore.modules();
+        try {
+            DataBuffer buffer = EmpiricBuffers.buffer(packet.data());
+            ModuleSystem.Target target = modules.readTarget(buffer, Side.CLIENT, modules.specs().context(Encoding.PACKED));
+            if (target.attachment() == null) {
+                return;
+            }
+            Module module = ((Attachment) target.attachment()).modules().get((ModuleType) target.type());
+            if (module == null) {
+                return;
+            }
+            BitSet fields = new BitSet();
+            for (int i = buffer.takeVarInt(); i > 0; i--) {
+                fields.set(buffer.takeVarInt());
+            }
+            modules.resetFields(module, fields);
+        } catch (RuntimeException e) {
+            Empiric.LOGGER.error("Couldn't apply a module clear", e);
         }
     }
 

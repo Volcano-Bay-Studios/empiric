@@ -22,6 +22,7 @@ import xyz.volcanobay.empiric.networking.packet.UiOpenC2SPacket;
 import xyz.volcanobay.empiric.networking.packet.UiPointerC2SPacket;
 import xyz.volcanobay.empiric.networking.packet.UiSlotC2SPacket;
 import xyz.volcanobay.empiric.system.ModuleSyncSystem;
+import xyz.volcanobay.empiric.system.TrackingSystem;
 import xyz.volcanobay.empiric.system.UiSystem;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
@@ -70,7 +71,7 @@ public class EmpiricServerPacketHandler {
             ObjectSpec spec = module.spec();
             BitSet rejected = new BitSet();
             BitSet applied = spec.readFramed(buffer, module.data(), context, index -> {
-                boolean accepted = spec.isClientMutable(index) && network.acceptClientUpdate(player, spec.synced()[index].id());
+                boolean accepted = spec.isClientMutable(index) && TrackingSystem.allows(module, index, player) && network.acceptClientUpdate(player, spec.synced()[index].id());
                 if (!accepted) {
                     rejected.set(index);
                 }

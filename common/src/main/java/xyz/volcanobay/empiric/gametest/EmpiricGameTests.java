@@ -17,7 +17,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.DimensionTransition;
@@ -59,7 +58,11 @@ import xyz.volcanobay.empiric.api.module.EntityModuleType;
 import xyz.volcanobay.empiric.api.module.SelfModule;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import xyz.volcanobay.empiric.core.EmpiricCore;
+import xyz.volcanobay.empiric.core.data.Track;
+import xyz.volcanobay.empiric.system.TrackingSystem;
+import xyz.volcanobay.empiric.core.data.DataContext;
 import xyz.volcanobay.empiric.core.data.Encoding;
+import xyz.volcanobay.empiric.core.data.FieldDelta;
 import xyz.volcanobay.empiric.core.data.Spec;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.module.Side;
@@ -106,8 +109,6 @@ import java.util.function.Supplier;
 
 public class EmpiricGameTests {
 
-    private static final String STRUCTURE = "empiric:gametest/empty";
-
     @GameTestGenerator
     public Collection<TestFunction> tests() {
         List<TestFunction> tests = new ArrayList<>(core());
@@ -123,6 +124,7 @@ public class EmpiricGameTests {
                 test("data_round_trip", EmpiricGameTests::dataRoundTrip),
                 test("block_entity_module", EmpiricGameTests::blockEntityModule),
                 test("self_spec_block_entity", EmpiricGameTests::selfSpecBlockEntity),
+                test("self_spec_skips_unloadable_fields", EmpiricGameTests::selfSpecSkipsUnloadableFields),
                 test("entity_module", EmpiricGameTests::entityModule),
                 test("entity_save_load", EmpiricGameTests::entitySaveLoad),
                 test("item_stack_module", EmpiricGameTests::itemStackModule),
@@ -137,6 +139,7 @@ public class EmpiricGameTests {
                 test("oct_entity_tick_and_save", EmpiricGameTests::octEntityTickAndSave),
                 test("oct_module", EmpiricGameTests::octModule),
                 isolated("spatial_network", EmpiricGameTests::spatialNetwork),
+                isolated("spatial_network_discovery_update", EmpiricGameTests::spatialNetworkDiscoveryUpdate),
                 test("oct_multiblock", EmpiricGameTests::octMultiblock),
                 test("oct_complement_moves", EmpiricGameTests::octComplementMoves),
                 test("chemical_phase", EmpiricGameTests::chemicalPhase),
@@ -166,6 +169,11 @@ public class EmpiricGameTests {
                 isolated("network_persistence", EmpiricGameTests::networkPersistence),
                 test("network_stops_at_unloaded_chunks", EmpiricGameTests::networkUnloadedChunks),
                 test("client_mutable_fields", EmpiricGameTests::clientMutableFields),
+                test("tracked_fields", EmpiricGameTests::trackedFields),
+                test("delta_fields", EmpiricGameTests::deltaFields),
+                test("tracked_entries", EmpiricGameTests::trackedEntries),
+                isolated("throttled_fields", EmpiricGameTests::throttledFields),
+                test("polymorphic_spec", EmpiricGameTests::polymorphicSpec),
                 isolated("module_dependencies", EmpiricGameTests::moduleDependencies),
                 test("json_fixers", EmpiricGameTests::jsonFixers),
                 isolated("data_entry_sync", EmpiricGameTests::dataEntrySync),
@@ -182,15 +190,15 @@ public class EmpiricGameTests {
     }
 
     private static TestFunction test(String name, Consumer<GameTestHelper> function) {
-        return test(name, 100, function);
+        return EmpiricTests.function("empiric", name, function);
     }
 
     private static TestFunction test(String name, int timeout, Consumer<GameTestHelper> function) {
-        return new TestFunction("empiric", "empiric." + name, STRUCTURE, Rotation.NONE, timeout, 0, true, false, 1, 1, false, function);
+        return EmpiricTests.function("empiric", name, timeout, function);
     }
 
     private static TestFunction isolated(String name, Consumer<GameTestHelper> function) {
-        return new TestFunction("empiric_isolated", "empiric." + name, STRUCTURE, Rotation.NONE, 100, 0, true, false, 1, 1, false, function);
+        return EmpiricTests.isolated("empiric", name, function);
     }
 
     private static void octPlaceAndRemove(GameTestHelper helper) {
@@ -291,6 +299,23 @@ public class EmpiricGameTests {
         for (OctPos pos : line) {
             EmpiricTestBlocks.PIPE.get().destroy(pos, level);
             LevelOctExtension.get(level).setOctState(pos.pos(), pos.octant(), Blocks.AIR.defaultBlockState());
+        }
+        helper.succeed();
+    }
+
+    private static void spatialNetworkDiscoveryUpdate(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos base = helper.absolutePos(new BlockPos(2, 1, 1));
+        BlockPos[] blocks = {base, base.above(), base.above().west()};
+        for (BlockPos pos : blocks) {
+            level.setBlockAndUpdate(pos, EmpiricTestBlocks.PIPE_BLOCK.get().defaultBlockState());
+        }
+        EmpiricTestModules.PipeNetwork network = EmpiricTestModules.PIPES.get(level).getNetwork(new OctPos(base, 0));
+        helper.assertTrue(network != null, "the pipe blocks didn't form a network");
+        helper.assertTrue(network.members().size() == 24, "the network has " + network.members().size() + " members instead of 24");
+        helper.assertTrue(network.size == network.members().size(), "the network module last updated with " + network.size + " members, but it has " + network.members().size());
+        for (BlockPos pos : blocks) {
+            level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
         }
         helper.succeed();
     }
@@ -896,6 +921,184 @@ public class EmpiricGameTests {
         helper.succeed();
     }
 
+    private static void polymorphicSpec(GameTestHelper helper) {
+        ShapeSample sample = new ShapeSample();
+        sample.main = new ShapeSample.Circle(5);
+        sample.many.add(new ShapeSample.Square(2));
+        sample.many.add(new ShapeSample.Circle(1));
+        Spec<ShapeSample> spec = EmpiricApi.specs().spec(ShapeSample.class);
+        for (Encoding encoding : Encoding.values()) {
+            DataBuffer data = EmpiricBuffers.of(EmpiricBuffers.create());
+            data.put(sample, encoding);
+            ShapeSample read = data.take(ShapeSample.class, encoding);
+            helper.assertTrue(spec.same(sample, read) && read.main instanceof ShapeSample.Circle, encoding + " round trip changed the shapes");
+            helper.assertTrue(data.readable() == 0, encoding + " left " + data.readable() + " bytes unread");
+        }
+        TreeDataBuffer writer = TreeDataBuffer.writer();
+        writer.put(sample, Encoding.KEYED);
+        ShapeSample json = TreeDataBuffer.reader(writer.result()).take(ShapeSample.class, Encoding.KEYED);
+        helper.assertTrue(spec.same(sample, json), "the JSON round trip changed the shapes");
+        ShapeSample copy = spec.copy(sample);
+        helper.assertTrue(spec.same(sample, copy) && copy.many.get(0) != sample.many.get(0), "the copy should be equal but not share shapes");
+        ShapeSample existing = new ShapeSample();
+        existing.main = new ShapeSample.Square(9);
+        DataBuffer data = EmpiricBuffers.of(EmpiricBuffers.create());
+        data.put(sample, Encoding.PACKED);
+        data.takeInto(existing, Encoding.PACKED);
+        helper.assertTrue(existing.main instanceof ShapeSample.Circle circle && circle.radius == 5, "updating over a different class should read the new one");
+        DataBuffer unknown = EmpiricBuffers.of(EmpiricBuffers.create());
+        unknown.putString("empiric_test:missing");
+        boolean threw = false;
+        try {
+            EmpiricApi.specs().spec(ShapeSample.Shape.class).read(unknown, EmpiricApi.specs().context(Encoding.PACKED));
+        } catch (DataException e) {
+            threw = true;
+        }
+        helper.assertTrue(threw, "an unregistered id should fail to read");
+        helper.succeed();
+    }
+
+    private static void throttledFields(GameTestHelper helper) {
+        ChunkAttachment attachment = ChunkAttachment.of(helper.getLevel().getChunkAt(helper.absolutePos(new BlockPos(1, 1, 1))));
+        EmpiricTestModules.Pulse pulse = EmpiricTestModules.PULSE.attach(attachment);
+        List<Integer> slow = new ArrayList<>();
+        List<Integer> fast = new ArrayList<>();
+        for (int flush = 1; flush <= 7; flush++) {
+            int number = flush;
+            if (flush <= 5) {
+                pulse.slow = flush;
+                pulse.fast = flush;
+                pulse.markDirty();
+            }
+            EmpiricCore.modules().flushDirty(Side.SERVER, module -> module == pulse, (module, dirty) -> {
+                if (module == pulse) {
+                    if (dirty.get(pulse.spec().syncIndex("slow"))) {
+                        slow.add(number);
+                    }
+                    if (dirty.get(pulse.spec().syncIndex("fast"))) {
+                        fast.add(number);
+                    }
+                }
+            });
+        }
+        helper.assertTrue(fast.equals(List.of(1, 2, 3, 4, 5)), "the field without an interval should send as it changes, got " + fast);
+        helper.assertTrue(slow.equals(List.of(1, 4, 7)), "an interval of 3 should send on flushes 1, 4 and the leftover on 7, got " + slow);
+        helper.assertTrue(!pulse.isDirty("slow"), "the throttled field should be clean once its last value was sent");
+        EmpiricTestModules.PULSE.detach(attachment);
+        helper.succeed();
+    }
+
+    private static void deltaFields(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos origin = helper.absolutePos(new BlockPos(1, 1, 1));
+        ChunkAttachment first = ChunkAttachment.of(level.getChunkAt(origin));
+        ChunkAttachment second = ChunkAttachment.of(level.getChunkAt(origin.offset(32, 0, 0)));
+        EmpiricTestModules.Signals sender = EmpiricTestModules.SIGNALS.attach(first);
+        EmpiricTestModules.Signals receiver = EmpiricTestModules.SIGNALS.attach(second);
+        for (int i = 0; i < 50; i++) {
+            sender.signals.put(i, i * 10);
+        }
+        int index = sender.spec().syncIndex("signals");
+        BitSet field = new BitSet();
+        field.set(index);
+        DataContext context = EmpiricApi.specs().context(Encoding.PACKED);
+        RegistryFriendlyByteBuf raw = EmpiricBuffers.create();
+        DataBuffer buffer = EmpiricBuffers.of(raw);
+        sender.markDirty();
+        helper.assertTrue(sender.pendingFull(index) && sender.delta(index) == null, "a whole-field mark should have no entry delta");
+        sender.spec().writeDirty(buffer, sender, field, sender::delta, context);
+        int whole = raw.readableBytes();
+        receiver.spec().readDirty(buffer, receiver, context);
+        helper.assertTrue(receiver.signals.equals(sender.signals), "the whole field didn't arrive, got " + receiver.signals);
+        EmpiricCore.modules().flushDirty(Side.SERVER, module -> module == sender, (module, dirty) -> {
+        });
+        sender.signals.put(3, 999);
+        sender.markDirty("signals", 3);
+        sender.signals.remove(4);
+        sender.markRemoved("signals", 4);
+        FieldDelta delta = sender.delta(index);
+        helper.assertTrue(delta != null && delta.changed().equals(Set.of(3)) && delta.removed().equals(Set.of(4)), "the marked entries should be the delta, got " + delta);
+        raw = EmpiricBuffers.create();
+        buffer = EmpiricBuffers.of(raw);
+        sender.spec().writeDirty(buffer, sender, field, sender::delta, context);
+        int partial = raw.readableBytes();
+        helper.assertTrue(partial * 5 < whole, "a delta of two entries should be far smaller than the field, " + partial + " against " + whole);
+        receiver.spec().readDirty(buffer, receiver, context);
+        helper.assertTrue(receiver.signals.equals(sender.signals), "the delta didn't apply, got " + receiver.signals);
+        sender.markRemoved("signals", 3);
+        sender.markDirty("signals", 3);
+        delta = sender.delta(index);
+        helper.assertTrue(delta.changed().equals(Set.of(3)) && delta.removed().equals(Set.of(4)), "the latest mark of a key should win, got " + delta);
+        EmpiricTestModules.SIGNALS.detach(first);
+        EmpiricTestModules.SIGNALS.detach(second);
+        helper.succeed();
+    }
+
+    private static void trackedEntries(GameTestHelper helper) {
+        ServerPlayer player = TestPlayers.mock(helper);
+        BlockPos origin = helper.absolutePos(new BlockPos(1, 1, 1));
+        player.teleportTo(origin.getX(), origin.getY(), origin.getZ());
+        ChunkAttachment attachment = ChunkAttachment.of(helper.getLevel().getChunkAt(origin));
+        EmpiricTestModules.Signals module = EmpiricTestModules.SIGNALS.attach(attachment);
+        int index = module.spec().syncIndex("signals");
+        int x = origin.getX();
+        module.signals.put(1, x);
+        module.signals.put(2, x + 500);
+        helper.assertTrue(TrackingSystem.isTracked(module), "a module with only entry trackers should be tracked");
+        TrackingSystem.start(module, player);
+        TrackingSystem.View view = TrackingSystem.view(module, player);
+        helper.assertTrue(view.entries(index).keySet().equals(Set.of(1)), "a player should hold the signals in range, got " + view.entries(index));
+        player.teleportTo(x + 500, origin.getY(), origin.getZ());
+        TrackingSystem.update(module, player);
+        helper.assertTrue(view.entries(index).keySet().equals(Set.of(2)), "moving should swap the held signals, got " + view.entries(index));
+        module.signals.remove(2);
+        module.markRemoved("signals", 2);
+        TrackingSystem.update(module, player);
+        helper.assertTrue(view.entries(index).isEmpty(), "a removed signal shouldn't be held, got " + view.entries(index));
+        module.signals.put(3, x + 510);
+        module.markDirty("signals", 3);
+        TrackingSystem.update(module, player);
+        helper.assertTrue(view.entries(index).keySet().equals(Set.of(3)), "a new signal in range should be held, got " + view.entries(index));
+        EmpiricTestModules.SIGNALS.detach(attachment);
+        player.discard();
+        helper.succeed();
+    }
+
+    private static void trackedFields(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = TestPlayers.mock(helper);
+        BlockPos origin = helper.absolutePos(new BlockPos(1, 1, 1));
+        player.teleportTo(origin.getX(), origin.getY(), origin.getZ());
+        ChunkAttachment attachment = ChunkAttachment.of(level.getChunkAt(origin));
+        EmpiricTestModules.Radar radar = EmpiricTestModules.RADAR.attach(attachment);
+        radar.origin = player.position();
+        helper.assertTrue(TrackingSystem.isTracked(radar), "a module with trackers should be tracked");
+        TrackingSystem.start(radar, player);
+        TrackingSystem.View view = TrackingSystem.view(radar, player);
+        helper.assertTrue(view.module() == Track.SYNC && view.synced().cardinality() == 3, "a nearby player should get every field, got " + view.synced());
+        player.teleportTo(origin.getX() + 500, origin.getY(), origin.getZ());
+        helper.assertTrue(TrackingSystem.update(radar, player).isEmpty(), "nothing should be sent when a player moves away");
+        helper.assertTrue(view.field(0) == Track.CLEAR && view.field(1) == Track.PAUSE && view.field(2) == Track.SYNC, "a far player should be cleared, paused and synced, got " + view.field(0) + " " + view.field(1) + " " + view.field(2));
+        helper.assertTrue(!TrackingSystem.allows(radar, 0, player) && TrackingSystem.allows(radar, 2, player), "client edits should only be allowed to fields the player gets");
+        player.teleportTo(origin.getX(), origin.getY(), origin.getZ());
+        BitSet sent = TrackingSystem.update(radar, player);
+        helper.assertTrue(sent.get(0) && sent.get(1) && !sent.get(2) && sent.cardinality() == 2, "returning should resend the cleared and paused fields only, got " + sent);
+        radar.hidden = true;
+        TrackingSystem.update(radar, player);
+        helper.assertTrue(view.module() == Track.CLEAR && view.synced().isEmpty() && view.field(2) == Track.CLEAR, "a module the player doesn't get should clear all its fields");
+        radar.hidden = false;
+        helper.assertTrue(TrackingSystem.update(radar, player).cardinality() == 3, "a module that comes back should resend everything");
+        radar.near = 7;
+        radar.plain = 3;
+        BitSet cleared = new BitSet();
+        cleared.set(0);
+        EmpiricCore.modules().resetFields(radar, cleared);
+        helper.assertTrue(radar.near == 0 && radar.plain == 3, "resetting a field should only restore that field, got " + radar.near + " " + radar.plain);
+        EmpiricTestModules.RADAR.detach(attachment);
+        player.discard();
+        helper.succeed();
+    }
+
     private static void moduleDependencies(GameTestHelper helper) {
         var dependency = EmpiricTestModules.DEPENDENCY;
         var dependent = EmpiricTestModules.DEPENDENT;
@@ -1174,6 +1377,23 @@ public class EmpiricGameTests {
             helper.assertTrue(!ticker.isAttached(), "ticker is still attached");
             helper.succeed();
         });
+    }
+
+    static class ClientFieldBase {
+        net.minecraft.client.Minecraft minecraft;
+        com.mojang.blaze3d.systems.RenderSystem renderSystem;
+    }
+
+    @xyz.volcanobay.empiric.core.data.SelfSpec
+    static class ClientFieldEntity extends ClientFieldBase {
+        @xyz.volcanobay.empiric.core.data.Data
+        public int value;
+    }
+
+    private static void selfSpecSkipsUnloadableFields(GameTestHelper helper) {
+        Object spec = EmpiricCore.specs().objectSpec(ClientFieldEntity.class);
+        helper.assertTrue(spec != null, "a class with client-only field types in its hierarchy got no spec");
+        helper.succeed();
     }
 
     private static void selfSpecBlockEntity(GameTestHelper helper) {

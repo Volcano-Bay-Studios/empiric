@@ -23,6 +23,7 @@ import xyz.volcanobay.empiric.system.BlockModuleSystem;
 import xyz.volcanobay.empiric.system.ModuleSyncSystem;
 import xyz.volcanobay.empiric.system.NetworkOverlaySystem;
 import xyz.volcanobay.empiric.system.SpatialNetworkSystem;
+import xyz.volcanobay.empiric.system.TrackingSystem;
 import xyz.volcanobay.empiric.system.UiSystem;
 import xyz.volcanobay.empiric.system.OctModuleSystem;
 import org.slf4j.Logger;
@@ -65,6 +66,7 @@ public class Empiric {
         SpatialNetworkSystem.processDropped();
         NetworkOverlaySystem.tick(server);
         UiSystem.tick(server);
+        TrackingSystem.tick();
         ModuleSyncSystem.flush();
     }
 

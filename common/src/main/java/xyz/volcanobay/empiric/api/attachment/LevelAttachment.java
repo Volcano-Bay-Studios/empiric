@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import xyz.volcanobay.empiric.client.ClientLookup;
 import xyz.volcanobay.empiric.core.attachment.AttachmentType;
@@ -21,6 +22,7 @@ import xyz.volcanobay.empiric.api.network.SpatialNetworkType;
 import xyz.volcanobay.empiric.system.SpatialModuleStore;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
+import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +76,11 @@ public final class LevelAttachment implements WorldAttachment {
     @Override
     public PacketTarget syncTarget() {
         return PacketTarget.level((ServerLevel) level);
+    }
+
+    @Override
+    public Collection<ServerPlayer> viewers() {
+        return ((ServerLevel) level).players();
     }
 
     public static final class Type extends AttachmentType<LevelAttachment, Level> {

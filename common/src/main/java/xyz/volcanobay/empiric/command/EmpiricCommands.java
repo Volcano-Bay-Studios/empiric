@@ -52,6 +52,7 @@ public class EmpiricCommands {
         root.then(OctCommands.build());
         root.then(DropCommands.build());
         root.then(UiCommands.build());
+        root.then(TrackingCommands.build());
         if (ModCompat.SABLE) {
             root.then(SubLevelCommands.build());
         }

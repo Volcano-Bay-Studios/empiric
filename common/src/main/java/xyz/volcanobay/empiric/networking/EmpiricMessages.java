@@ -6,6 +6,7 @@ import xyz.volcanobay.empiric.networking.handler.EmpiricServerPacketHandler;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncC2SPacket;
 import xyz.volcanobay.empiric.networking.packet.DataEntriesS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.DebugSubscriptionsS2CPacket;
+import xyz.volcanobay.empiric.networking.packet.ModuleClearS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.ModuleRemoveS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.NetworkOverlayS2CPacket;
@@ -30,6 +31,7 @@ public class EmpiricMessages {
         packets.clientbound(DebugSubscriptionsS2CPacket.TYPE, DebugSubscriptionsS2CPacket.CODEC, EmpiricClientPacketHandler::handleDebugSubscriptions);
         packets.clientbound(DataEntriesS2CPacket.TYPE, DataEntriesS2CPacket.CODEC, EmpiricClientPacketHandler::handleDataEntries);
         packets.clientbound(ModuleRemoveS2CPacket.TYPE, ModuleRemoveS2CPacket.CODEC, EmpiricClientPacketHandler::handleModuleRemove);
+        packets.clientbound(ModuleClearS2CPacket.TYPE, ModuleClearS2CPacket.CODEC, EmpiricClientPacketHandler::handleModuleClear);
         packets.clientbound(TemperatureSectionS2CPacket.TYPE, TemperatureSectionS2CPacket.CODEC, EmpiricClientPacketHandler::handleTemperatureSection);
         packets.clientbound(OctBreakS2CPacket.TYPE, OctBreakS2CPacket.CODEC, EmpiricClientPacketHandler::handleOctBreak);
         packets.clientbound(NetworkOverlayS2CPacket.TYPE, NetworkOverlayS2CPacket.CODEC, EmpiricClientPacketHandler::handleNetworkOverlay);

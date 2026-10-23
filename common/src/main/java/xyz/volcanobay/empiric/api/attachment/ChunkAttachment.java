@@ -3,6 +3,7 @@ package xyz.volcanobay.empiric.api.attachment;
 import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -19,6 +20,7 @@ import xyz.volcanobay.empiric.core.spatial.SpatialObjectMap;
 import xyz.volcanobay.empiric.system.SpatialModuleStore;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
+import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
@@ -78,6 +80,11 @@ public final class ChunkAttachment extends PersistentAttachment {
     @Override
     public PacketTarget syncTarget() {
         return PacketTarget.tracking((ServerLevel) chunk.getLevel(), chunk.getPos());
+    }
+
+    @Override
+    public Collection<ServerPlayer> viewers() {
+        return WorldAttachment.trackingChunk(chunk.getLevel(), chunk.getPos());
     }
 
     @Override

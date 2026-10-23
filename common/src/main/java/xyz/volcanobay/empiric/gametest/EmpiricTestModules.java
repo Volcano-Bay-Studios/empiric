@@ -1,7 +1,10 @@
 package xyz.volcanobay.empiric.gametest;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.phys.Vec3;
+import xyz.volcanobay.empiric.core.data.Track;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import xyz.volcanobay.empiric.platform.ModCompat;
@@ -43,8 +46,10 @@ import xyz.volcanobay.empiric.system.AtmosphereSystem;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public final class EmpiricTestModules implements EmpiricPlugin {
@@ -63,6 +68,9 @@ public final class EmpiricTestModules implements EmpiricPlugin {
     public static OctModuleType<OctMarker> OCT_MARKER;
     public static ItemModuleType<Glow> GLOW;
     public static ChunkModuleType<Dial> DIAL;
+    public static ChunkModuleType<Radar> RADAR;
+    public static ChunkModuleType<Pulse> PULSE;
+    public static ChunkModuleType<Signals> SIGNALS;
     public static LevelModuleType<Toggle> DEPENDENCY;
     public static LevelModuleType<Toggle> DEPENDENT;
     public static EntityModuleType<Tag> KEPT;
@@ -82,6 +90,9 @@ public final class EmpiricTestModules implements EmpiricPlugin {
     @Override
     public void registerSpecs(SpecRegistry specs) {
         specs.fixer(FixedSample.class, 0, data -> data.rename("old", "renamed"));
+        specs.polymorphic(ShapeSample.Shape.class)
+                .register("empiric_test:circle", ShapeSample.Circle.class)
+                .register("empiric_test:square", ShapeSample.Square.class);
     }
 
     @Override
@@ -104,6 +115,15 @@ public final class EmpiricTestModules implements EmpiricPlugin {
         OCT_MARKER = modules.register(OctModuleType.builder(Empiric.id("test_oct_marker"), OctMarker.class, OctMarker::new).build());
         GLOW = modules.register(ItemModuleType.builder(Empiric.id("test_glow"), Glow.class, Glow::new).build());
         DIAL = modules.register(ChunkModuleType.builder(Empiric.id("test_dial"), Dial.class, Dial::new).build());
+        PULSE = modules.register(ChunkModuleType.builder(Empiric.id("test_pulse"), Pulse.class, Pulse::new).build());
+        SIGNALS = modules.register(ChunkModuleType.builder(Empiric.id("test_signals"), Signals.class, Signals::new)
+                .<Integer, Integer, ServerPlayer>trackEntries("signals.*", ServerPlayer.class, Signals::inRange)
+                .build());
+        RADAR = modules.register(ChunkModuleType.builder(Empiric.id("test_radar"), Radar.class, Radar::new)
+                .track(ServerPlayer.class, Radar::visible)
+                .track("near", ServerPlayer.class, Radar::near)
+                .track("paused", ServerPlayer.class, Radar::paused)
+                .build());
         DEPENDENCY = modules.register(LevelModuleType.builder(Empiric.id("test_dependency"), Toggle.class, Toggle::new).build());
         DEPENDENT = modules.register(LevelModuleType.builder(Empiric.id("test_dependent"), Toggle.class, Toggle::new).requires(DEPENDENCY).build());
         KEPT = modules.register(EntityModuleType.builder(Empiric.id("test_kept"), Tag.class, Tag::new).build());
@@ -121,7 +141,7 @@ public final class EmpiricTestModules implements EmpiricPlugin {
         }
         AtmosphereSystem.subscribe(SUBSCRIBER);
         TemperatureSystem.subscribe(SUBSCRIBER);
-        for (ModuleType<?, ?> type : new ModuleType<?, ?>[]{TICKER, TAG, COUNT, NOTE, TOGGLE, WATCHER, MARKER, TRANSIENT, GLASS, OCT_MARKER, GLOW, DIAL, KEPT, MORTAL, GROUNDED, POCKET, SESSION, GLOBAL, SCRATCH, PIPES.moduleType()}) {
+        for (ModuleType<?, ?> type : new ModuleType<?, ?>[]{TICKER, TAG, COUNT, NOTE, TOGGLE, WATCHER, MARKER, TRANSIENT, GLASS, OCT_MARKER, GLOW, DIAL, RADAR, PULSE, SIGNALS, KEPT, MORTAL, GROUNDED, POCKET, SESSION, GLOBAL, SCRATCH, PIPES.moduleType()}) {
             modules.subscribe(SUBSCRIBER, type);
         }
     }
@@ -172,6 +192,59 @@ public final class EmpiricTestModules implements EmpiricPlugin {
         public int setting;
         @Data
         public int locked;
+    }
+
+    public static class Pulse extends Module<ChunkAttachment> implements NetworkBehavior {
+
+        @Data(interval = 3)
+        public int slow;
+        @Data
+        public int fast;
+    }
+
+    public static class Signals extends Module<ChunkAttachment> implements NetworkBehavior {
+
+        public static final double RANGE = 32;
+
+        /**
+         * Signal id to the x it sits at.
+         */
+        @Data(delta = true)
+        public Map<Integer, Integer> signals = new HashMap<>();
+
+        public Track inRange(Integer id, Integer x, ServerPlayer player) {
+            return Math.abs(player.getX() - x) < RANGE ? Track.SYNC : Track.CLEAR;
+        }
+    }
+
+    public static class Radar extends Module<ChunkAttachment> implements NetworkBehavior {
+
+        public static final double RANGE = 32;
+
+        @Data
+        public int near;
+        @Data
+        public int paused;
+        @Data
+        public int plain;
+        public Vec3 origin = Vec3.ZERO;
+        public boolean hidden;
+
+        private boolean within(ServerPlayer player) {
+            return player.position().distanceToSqr(origin) < RANGE * RANGE;
+        }
+
+        public Track visible(ServerPlayer player) {
+            return hidden ? Track.CLEAR : Track.SYNC;
+        }
+
+        public Track near(ServerPlayer player) {
+            return within(player) ? Track.SYNC : Track.CLEAR;
+        }
+
+        public Track paused(ServerPlayer player) {
+            return within(player) ? Track.SYNC : Track.PAUSE;
+        }
     }
 
     public static class Note extends Module<ChunkAttachment> {

@@ -22,4 +22,9 @@ public class ServerEntityMixin {
     private void empiric$addPairing(ServerPlayer player, CallbackInfo ci) {
         ModuleSyncSystem.entityTracked(player, entity);
     }
+
+    @Inject(method = "removePairing", at = @At("TAIL"))
+    private void empiric$removePairing(ServerPlayer player, CallbackInfo ci) {
+        ModuleSyncSystem.entityUntracked(player, entity);
+    }
 }

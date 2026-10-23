@@ -2,6 +2,7 @@ package xyz.volcanobay.empiric.api.attachment;
 
 import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import xyz.volcanobay.empiric.client.ClientLookup;
 import xyz.volcanobay.empiric.core.attachment.AttachmentType;
@@ -11,6 +12,7 @@ import xyz.volcanobay.empiric.core.module.ModuleHolder;
 import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
+import java.util.Collection;
 import java.util.function.Consumer;
 
 public final class ServerAttachment implements WorldAttachment {
@@ -68,6 +70,11 @@ public final class ServerAttachment implements WorldAttachment {
     @Override
     public PacketTarget syncTarget() {
         return PacketTarget.all(WorldModuleSystem.server());
+    }
+
+    @Override
+    public Collection<ServerPlayer> viewers() {
+        return WorldModuleSystem.server().getPlayerList().getPlayers();
     }
 
     public static final class Type extends AttachmentType<ServerAttachment, Side> {

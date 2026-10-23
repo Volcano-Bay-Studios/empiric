@@ -16,12 +16,16 @@ import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.ext.EntityExtension;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public final class EntityAttachment extends PersistentAttachment {
 
     private final Entity entity;
     private final ModuleHolder modules = new ModuleHolder(this);
+    private final Set<ServerPlayer> seen = new HashSet<>();
 
     public EntityAttachment(Entity entity) {
         this.entity = entity;
@@ -53,6 +57,23 @@ public final class EntityAttachment extends PersistentAttachment {
     @Override
     public PacketTarget syncTarget() {
         return entity instanceof ServerPlayer ? PacketTarget.trackingAndSelf(entity) : PacketTarget.tracking(entity);
+    }
+
+    /**
+     * The players whose clients are tracking the entity, kept by {@link xyz.volcanobay.empiric.mixin.ServerEntityMixin}.
+     */
+    public Set<ServerPlayer> seen() {
+        return seen;
+    }
+
+    @Override
+    public Collection<ServerPlayer> viewers() {
+        if (!(entity instanceof ServerPlayer self)) {
+            return seen;
+        }
+        Set<ServerPlayer> everyone = new HashSet<>(seen);
+        everyone.add(self);
+        return everyone;
     }
 
     @Override

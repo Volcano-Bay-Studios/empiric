@@ -2,6 +2,7 @@ package xyz.volcanobay.empiric.api.attachment;
 
 import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
@@ -13,6 +14,7 @@ import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.ext.BlockEntityExtension;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
+import java.util.Collection;
 import java.util.function.Consumer;
 
 public final class BlockEntityAttachment extends PersistentAttachment {
@@ -50,6 +52,11 @@ public final class BlockEntityAttachment extends PersistentAttachment {
     @Override
     public PacketTarget syncTarget() {
         return PacketTarget.tracking(blockEntity);
+    }
+
+    @Override
+    public Collection<ServerPlayer> viewers() {
+        return WorldAttachment.trackingChunk(blockEntity.getLevel(), blockEntity.getBlockPos());
     }
 
     @Override

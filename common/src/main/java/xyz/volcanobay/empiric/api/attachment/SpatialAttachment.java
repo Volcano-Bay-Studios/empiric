@@ -3,10 +3,13 @@ package xyz.volcanobay.empiric.api.attachment;
 import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import xyz.volcanobay.empiric.core.module.ModuleHolder;
 import xyz.volcanobay.empiric.system.SpatialModuleStore;
+
+import java.util.Collection;
 
 public abstract class SpatialAttachment implements WorldAttachment {
 
@@ -45,5 +48,10 @@ public abstract class SpatialAttachment implements WorldAttachment {
     @Override
     public PacketTarget syncTarget() {
         return PacketTarget.tracking((ServerLevel) level, blockPos());
+    }
+
+    @Override
+    public Collection<ServerPlayer> viewers() {
+        return WorldAttachment.trackingChunk(level, blockPos());
     }
 }

@@ -35,6 +35,7 @@ import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncS2CPacket;
 
 import java.util.BitSet;
+import java.util.Collection;
 
 public final class ModuleSyncSystem {
 
@@ -43,6 +44,7 @@ public final class ModuleSyncSystem {
 
     public static void register() {
         EmpiricCore.modules().listen(ModuleEvents.DETACHED, (module, ignored) -> removed(module));
+        EmpiricCore.modules().listen(ModuleEvents.UNLOADED, (module, ignored) -> TrackingSystem.forget(module));
     }
 
     /**
@@ -82,6 +84,7 @@ public final class ModuleSyncSystem {
     }
 
     private static void removed(Module<?> module) {
+        TrackingSystem.forget(module);
         if (module.attachment().side() != Side.SERVER || !(module instanceof NetworkBehavior network)) {
             return;
         }
@@ -114,9 +117,24 @@ public final class ModuleSyncSystem {
         return null;
     }
 
+    /**
+     * The players that get a module, listed from the attachment it is on, or the one its parents are on. Null if that
+     * attachment can't list them.
+     */
+    public static Collection<ServerPlayer> viewers(Module<?> module) {
+        Attachment attachment = module.attachment();
+        while (attachment instanceof ModuleAttachment child) {
+            attachment = child.parent().attachment();
+        }
+        return attachment instanceof WorldAttachment world ? world.viewers() : null;
+    }
+
     public static void flush() {
         EmpiricCore.modules().flushDirty(Side.SERVER, (module, dirty) -> {
             if (module instanceof NetworkBehavior network) {
+                if (TrackingSystem.isTracked(module) && TrackingSystem.flush(module, dirty)) {
+                    return;
+                }
                 PacketTarget sink = network.syncTarget();
                 if (sink != null) {
                     for (ModuleSyncS2CPacket packet : ModuleSyncS2CPacket.dirty(module, dirty)) {
@@ -140,18 +158,22 @@ public final class ModuleSyncSystem {
             return;
         }
         PacketTarget sink = PacketTarget.player(player);
-        attachment.modules().forEach(module -> syncModule(sink, module));
+        attachment.modules().forEach(module -> syncModule(player, sink, module));
     }
 
-    private static void syncModule(PacketTarget sink, Module<?> module) {
+    private static void syncModule(ServerPlayer player, PacketTarget sink, Module<?> module) {
         if (module instanceof NetworkBehavior network) {
-            for (ModuleSyncS2CPacket packet : ModuleSyncS2CPacket.full(module)) {
-                send(sink, packet);
+            if (TrackingSystem.isTracked(module) && ModuleSyncSystem.viewers(module) != null) {
+                TrackingSystem.start(module, player);
+            } else {
+                for (ModuleSyncS2CPacket packet : ModuleSyncS2CPacket.full(module)) {
+                    send(sink, packet);
+                }
+                network.onTracked(sink);
             }
-            network.onTracked(sink);
         }
         if (module.hasChildren()) {
-            module.children().modules().forEach(child -> syncModule(sink, child));
+            module.children().modules().forEach(child -> syncModule(player, sink, child));
         }
     }
 
@@ -175,7 +197,13 @@ public final class ModuleSyncSystem {
     }
 
     public static void entityTracked(ServerPlayer player, Entity entity) {
-        syncTo(player, EntityAttachment.of(entity));
+        EntityAttachment attachment = EntityAttachment.of(entity);
+        attachment.seen().add(player);
+        syncTo(player, attachment);
+    }
+
+    public static void entityUntracked(ServerPlayer player, Entity entity) {
+        EntityAttachment.of(entity).seen().remove(player);
     }
 
     public static void chunkSent(ServerPlayer player, LevelChunk chunk) {
