@@ -1,7 +1,12 @@
 # Empiric
 Multi-loader component attachment system that's quick, modular, and easy to use.
 
-## Why empiric?
+## Why use Empiric?
+Do you ever get tired of writing the same boiler plate over and over again? Maybe the same Map<Level,Object> for every system? Or ever writing the same packets that do the exact same things as the last, every single time you want to add one feature?
+
+Well I did, so I made this project to make that slog a thing of the past (I hope...). Empiric is similar to a component system, and it allows you to attach "moules" to many different "attachments." Never again will you have to write the same system code, or the same networking. I can go on and on, but instead heres what it does:
+
+## What does it do?
 #### One attachment system does everything
 - Use modules to attach your own data and logic to anything: the server, levels, blocks, block entities, entities, oct cells, item stacks, spatial networks, and Sable sub-levels.
 - A module is a regular java class, without the boilerplate. Mark a field ``@Data`` and it will automatically be serialized, saved, and synced to clients without any packets or codecs.
