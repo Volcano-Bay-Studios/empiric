@@ -1,8 +1,9 @@
 package xyz.volcanobay.empiric.api.network;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ChunkTrackingView;
 import net.minecraft.server.level.ServerPlayer;
@@ -98,7 +99,7 @@ public final class NetworkAttachment implements WorldAttachment {
     }
 
     @Override
-    public VeilPacketManager.PacketSink syncTarget() {
+    public PacketTarget syncTarget() {
         ServerLevel level = (ServerLevel) map.level();
         if (id >= 0) {
             for (ServerPlayer player : level.players()) {
@@ -108,7 +109,8 @@ public final class NetworkAttachment implements WorldAttachment {
                 }
             }
         }
-        return packet -> {
+        return payload -> {
+            ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(payload);
             for (UUID viewer : viewers) {
                 ServerPlayer player = level.getServer().getPlayerList().getPlayer(viewer);
                 if (player != null && player.level() == level) {

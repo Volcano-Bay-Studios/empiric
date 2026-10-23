@@ -2,7 +2,7 @@ package xyz.volcanobay.empiric.client.editor.layout;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import foundry.veil.Veil;
+import xyz.volcanobay.empiric.platform.Platform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import xyz.volcanobay.empiric.api.ui.UiLayouts;
@@ -31,7 +31,7 @@ final class LayoutFiles {
         ResourceLocation location = ResourceLocation.parse(id);
         String relative = "data/" + location.getNamespace() + "/ui/layouts/" + location.getPath() + ".json";
         Path game = Minecraft.getInstance().gameDirectory.toPath().toAbsolutePath().normalize();
-        if (Veil.platform().isDevelopmentEnvironment()) {
+        if (Platform.isDevelopment()) {
             Path resources = sourceResources(game, location.getNamespace());
             if (resources != null) {
                 return resources.resolve(relative);

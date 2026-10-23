@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.api.attachment;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import xyz.volcanobay.empiric.core.attachment.Attachment;
@@ -10,7 +10,7 @@ public interface WorldAttachment extends Attachment {
 
     Level level();
 
-    VeilPacketManager.PacketSink syncTarget();
+    PacketTarget syncTarget();
 
     @Override
     default Side side() {

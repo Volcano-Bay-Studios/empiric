@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.api.behavior;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import xyz.volcanobay.empiric.api.attachment.ServerAttachment;
@@ -15,11 +15,11 @@ public interface NetworkBehavior extends SyncBehavior {
 
     double CLIENT_UPDATE_RANGE = 64;
 
-    default VeilPacketManager.PacketSink syncTarget() {
+    default PacketTarget syncTarget() {
         return ModuleSyncSystem.target((Module<?>) this);
     }
 
-    default void onTracked(VeilPacketManager.PacketSink sink) {
+    default void onTracked(PacketTarget sink) {
     }
 
     default boolean acceptClientUpdate(ServerPlayer player, String field) {

@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.api.attachment;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -43,7 +43,7 @@ public abstract class SpatialAttachment implements WorldAttachment {
     }
 
     @Override
-    public VeilPacketManager.PacketSink syncTarget() {
-        return VeilPacketManager.tracking((ServerLevel) level, blockPos());
+    public PacketTarget syncTarget() {
+        return PacketTarget.tracking((ServerLevel) level, blockPos());
     }
 }

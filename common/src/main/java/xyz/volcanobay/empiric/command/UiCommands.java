@@ -5,7 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -137,7 +137,7 @@ public final class UiCommands {
      */
     private static int editor(CommandContext<CommandSourceStack> context, String layout) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        ModuleSyncSystem.send(VeilPacketManager.player(player), new UiEditorS2CPacket(layout));
+        ModuleSyncSystem.send(PacketTarget.player(player), new UiEditorS2CPacket(layout));
         EmpiricCommands.send(context, EmpiricCommands.label(layout.isEmpty() ? "Opening the layout editor" : "Opening " + layout + " in the layout editor"));
         return 1;
     }

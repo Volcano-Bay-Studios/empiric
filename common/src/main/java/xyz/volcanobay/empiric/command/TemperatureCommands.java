@@ -6,7 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -214,7 +214,7 @@ public final class TemperatureCommands {
 
     private static void sendOverlay(CommandContext<CommandSourceStack> context, int radius) throws CommandSyntaxException {
         try {
-            VeilPacketManager.player(context.getSource().getPlayerOrException()).sendPacket(new TemperatureOverlayS2CPacket(radius));
+            PacketTarget.player(context.getSource().getPlayerOrException()).send(new TemperatureOverlayS2CPacket(radius));
         } catch (UnsupportedOperationException e) {
             throw NO_OVERLAY.create();
         }

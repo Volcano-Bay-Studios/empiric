@@ -9,7 +9,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
-import foundry.veil.api.event.VeilRenderLevelStageEvent;
+import xyz.volcanobay.empiric.api.behavior.RenderBehavior;
 import net.minecraft.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -113,8 +113,8 @@ public final class SurfaceRenderer {
         }
     }
 
-    public static void render(VeilRenderLevelStageEvent.Stage stage, Matrix4fc view, Matrix4fc projection, Camera camera) {
-        if (stage != VeilRenderLevelStageEvent.Stage.AFTER_LEVEL || SURFACES.isEmpty()) {
+    public static void render(RenderBehavior.Stage stage, Matrix4fc view, Matrix4fc projection, Camera camera) {
+        if (stage != RenderBehavior.Stage.AFTER_LEVEL || SURFACES.isEmpty()) {
             return;
         }
         RenderTarget main = Minecraft.getInstance().getMainRenderTarget();

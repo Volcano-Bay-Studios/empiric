@@ -1,7 +1,7 @@
 package xyz.volcanobay.empiric.client.ui;
 
 import xyz.volcanobay.empiric.client.editor.layout.LayoutEditorScreen;
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.client.Minecraft;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.ui.UiScreenType;
@@ -42,12 +42,12 @@ public final class UiClient {
     }
 
     public static <M extends Module<?>> void request(UiScreenType<M> screen, M module) {
-        VeilPacketManager.server().sendPacket(new UiOpenC2SPacket(UiSystem.encode(screen, module)));
+        PacketTarget.server().send(new UiOpenC2SPacket(UiSystem.encode(screen, module)));
     }
 
     static void closed(UiScreenType<?> screen, Module<?> module) {
         if (Minecraft.getInstance().getConnection() != null && module.isAttached()) {
-            VeilPacketManager.server().sendPacket(new UiCloseC2SPacket(UiSystem.encode(screen, module)));
+            PacketTarget.server().send(new UiCloseC2SPacket(UiSystem.encode(screen, module)));
         }
     }
 
@@ -60,7 +60,7 @@ public final class UiClient {
         if (index < 0 || Minecraft.getInstance().getConnection() == null) {
             return false;
         }
-        VeilPacketManager.server().sendPacket(new UiSlotC2SPacket(UiSystem.encode(screen, module), index, button));
+        PacketTarget.server().send(new UiSlotC2SPacket(UiSystem.encode(screen, module), index, button));
         return true;
     }
 

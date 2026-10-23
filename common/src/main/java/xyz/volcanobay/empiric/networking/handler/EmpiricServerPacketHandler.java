@@ -1,7 +1,6 @@
 package xyz.volcanobay.empiric.networking.handler;
 
-import foundry.veil.api.network.VeilPacketManager;
-import foundry.veil.api.network.handler.ServerPacketContext;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.server.level.ServerPlayer;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.behavior.NetworkBehavior;
@@ -30,63 +29,23 @@ import java.util.BitSet;
 
 public class EmpiricServerPacketHandler {
 
-    public static void handleModuleSync(ModuleSyncC2SPacket packet, ServerPacketContext ctx) {
-        ServerPlayer player = ctx.player();
-        if (player == null) {
-            return;
-        }
-        if (!player.server.isSameThread()) {
-            player.server.execute(() -> handleModuleSync(packet, ctx));
-            return;
-        }
+    public static void handleModuleSync(ModuleSyncC2SPacket packet, ServerPlayer player) {
         apply(player, packet);
     }
 
-    public static void handleUiOpen(UiOpenC2SPacket packet, ServerPacketContext ctx) {
-        ServerPlayer player = ctx.player();
-        if (player == null) {
-            return;
-        }
-        if (!player.server.isSameThread()) {
-            player.server.execute(() -> handleUiOpen(packet, ctx));
-            return;
-        }
+    public static void handleUiOpen(UiOpenC2SPacket packet, ServerPlayer player) {
         UiSystem.handleOpen(player, packet);
     }
 
-    public static void handleUiClosed(UiCloseC2SPacket packet, ServerPacketContext ctx) {
-        ServerPlayer player = ctx.player();
-        if (player == null) {
-            return;
-        }
-        if (!player.server.isSameThread()) {
-            player.server.execute(() -> handleUiClosed(packet, ctx));
-            return;
-        }
+    public static void handleUiClosed(UiCloseC2SPacket packet, ServerPlayer player) {
         UiSystem.handleClosed(player, packet);
     }
 
-    public static void handleUiSlot(UiSlotC2SPacket packet, ServerPacketContext ctx) {
-        ServerPlayer player = ctx.player();
-        if (player == null) {
-            return;
-        }
-        if (!player.server.isSameThread()) {
-            player.server.execute(() -> handleUiSlot(packet, ctx));
-            return;
-        }
+    public static void handleUiSlot(UiSlotC2SPacket packet, ServerPlayer player) {
         UiSystem.slotClick(player, packet.data(), packet.slot(), packet.button());
     }
 
-    public static void handleUiPointer(UiPointerC2SPacket packet, ServerPacketContext ctx) {
-        ServerPlayer player = ctx.player();
-        if (player == null) {
-            return;
-        }
-        if (!player.server.isSameThread()) {
-            player.server.execute(() -> handleUiPointer(packet, ctx));
-            return;
-        }
+    public static void handleUiPointer(UiPointerC2SPacket packet, ServerPlayer player) {
         UiSystem.pointer(player, packet.data(), packet.x(), packet.y());
     }
 
@@ -125,7 +84,7 @@ public class EmpiricServerPacketHandler {
                 modules.fire(module, ModuleEvents.SYNCED, new SyncedFields(spec, applied));
             }
             if (!rejected.isEmpty()) {
-                VeilPacketManager.PacketSink sink = VeilPacketManager.player(player);
+                PacketTarget sink = PacketTarget.player(player);
                 for (ModuleSyncS2CPacket correction : ModuleSyncS2CPacket.dirty(module, rejected)) {
                     ModuleSyncSystem.send(sink, correction);
                 }

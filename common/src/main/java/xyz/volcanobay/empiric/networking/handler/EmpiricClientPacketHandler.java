@@ -1,7 +1,8 @@
 package xyz.volcanobay.empiric.networking.handler;
 
-import foundry.veil.api.network.handler.ClientPacketContext;
+import net.minecraft.client.Minecraft;
 import xyz.volcanobay.empiric.Empiric;
+import xyz.volcanobay.empiric.client.ClientLookup;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.attachment.Attachment;
 import xyz.volcanobay.empiric.core.data.Encoding;
@@ -38,80 +39,48 @@ import net.minecraft.world.level.Level;
 
 public class EmpiricClientPacketHandler {
 
-    public static void handleUiOpen(UiOpenS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleUiOpen(packet, ctx));
-            return;
-        }
+    public static void handleUiOpen(UiOpenS2CPacket packet) {
         UiClient.handleOpen(packet);
     }
 
-    public static void handleUiEditor(UiEditorS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleUiEditor(packet, ctx));
-            return;
-        }
+    public static void handleUiEditor(UiEditorS2CPacket packet) {
         UiClient.openEditor(packet.layout());
     }
 
-    public static void handleUiSurface(UiSurfaceS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleUiSurface(packet, ctx));
-            return;
-        }
+    public static void handleUiSurface(UiSurfaceS2CPacket packet) {
         UiClient.handleSurface(packet);
     }
 
-    public static void handleUiPointer(UiPointerS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleUiPointer(packet, ctx));
-            return;
-        }
+    public static void handleUiPointer(UiPointerS2CPacket packet) {
         PresenceCursors.handle(packet);
     }
 
-    public static void handleUiClose(UiCloseS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleUiClose(packet, ctx));
-            return;
-        }
+    public static void handleUiClose(UiCloseS2CPacket packet) {
         UiClient.handleClose(packet);
     }
 
-    public static void handleOctBreak(OctBreakS2CPacket packet, ClientPacketContext ctx) {
-        Level level = ctx.level();
+    public static void handleOctBreak(OctBreakS2CPacket packet) {
+        Level level = ClientLookup.level();
         if (level == null) {
             return;
         }
-        OctClientEffects.playBreak(ctx.client(), level, packet.pos().pos(), packet.pos().octant(), packet.state());
+        OctClientEffects.playBreak(Minecraft.getInstance(), level, packet.pos().pos(), packet.pos().octant(), packet.state());
     }
 
-    public static void handleDataEntries(DataEntriesS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleDataEntries(packet, ctx));
-            return;
-        }
-        if (!ctx.client().hasSingleplayerServer()) {
+    public static void handleDataEntries(DataEntriesS2CPacket packet) {
+        if (!Minecraft.getInstance().hasSingleplayerServer()) {
             DataSyncSystem.apply(packet);
         }
     }
 
-    public static void handleDebugSubscriptions(DebugSubscriptionsS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleDebugSubscriptions(packet, ctx));
-            return;
-        }
-        if (!ctx.client().hasSingleplayerServer()) {
+    public static void handleDebugSubscriptions(DebugSubscriptionsS2CPacket packet) {
+        if (!Minecraft.getInstance().hasSingleplayerServer()) {
             DebugSubscriptionSystem.apply(packet.subscriptions(), packet.suppressed());
         }
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static void handleModuleRemove(ModuleRemoveS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleModuleRemove(packet, ctx));
-            return;
-        }
+    public static void handleModuleRemove(ModuleRemoveS2CPacket packet) {
         ModuleSystem modules = EmpiricCore.modules();
         try {
             ModuleSystem.Target target = modules.readTarget(EmpiricBuffers.buffer(packet.data()), Side.CLIENT, modules.specs().context(Encoding.PACKED));
@@ -123,12 +92,8 @@ public class EmpiricClientPacketHandler {
         }
     }
 
-    public static void handleTemperatureSection(TemperatureSectionS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleTemperatureSection(packet, ctx));
-            return;
-        }
-        Level level = ctx.level();
+    public static void handleTemperatureSection(TemperatureSectionS2CPacket packet) {
+        Level level = ClientLookup.level();
         if (level == null) {
             return;
         }
@@ -153,27 +118,15 @@ public class EmpiricClientPacketHandler {
         }
     }
 
-    public static void handleNetworkOverlay(NetworkOverlayS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleNetworkOverlay(packet, ctx));
-            return;
-        }
+    public static void handleNetworkOverlay(NetworkOverlayS2CPacket packet) {
         NetworkOverlay.INSTANCE.apply(packet);
     }
 
-    public static void handleTemperatureOverlay(TemperatureOverlayS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleTemperatureOverlay(packet, ctx));
-            return;
-        }
+    public static void handleTemperatureOverlay(TemperatureOverlayS2CPacket packet) {
         TemperatureOverlay.INSTANCE.show(packet.radius());
     }
 
-    public static void handleModuleSync(ModuleSyncS2CPacket packet, ClientPacketContext ctx) {
-        if (!ctx.client().isSameThread()) {
-            ctx.client().execute(() -> handleModuleSync(packet, ctx));
-            return;
-        }
+    public static void handleModuleSync(ModuleSyncS2CPacket packet) {
         ModuleSyncSystem.apply(packet.data(), Side.CLIENT);
     }
 }

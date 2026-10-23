@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.client.ui;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
@@ -151,7 +151,7 @@ public final class PresenceCursors {
         if (Minecraft.getInstance().getConnection() == null || !key.module().isAttached()) {
             return;
         }
-        VeilPacketManager.server().sendPacket(new UiPointerC2SPacket(UiSystem.encode(key.screen(), key.module()), x, y));
+        PacketTarget.server().send(new UiPointerC2SPacket(UiSystem.encode(key.screen(), key.module()), x, y));
     }
 
     public static void handle(UiPointerS2CPacket packet) {

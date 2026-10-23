@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.api.attachment;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
 import xyz.volcanobay.empiric.client.ClientLookup;
@@ -66,8 +66,8 @@ public final class ServerAttachment implements WorldAttachment {
     }
 
     @Override
-    public VeilPacketManager.PacketSink syncTarget() {
-        return VeilPacketManager.all(WorldModuleSystem.server());
+    public PacketTarget syncTarget() {
+        return PacketTarget.all(WorldModuleSystem.server());
     }
 
     public static final class Type extends AttachmentType<ServerAttachment, Side> {

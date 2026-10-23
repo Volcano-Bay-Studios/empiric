@@ -1,14 +1,13 @@
 package xyz.volcanobay.empiric.gametest;
 
-import foundry.veil.platform.registry.RegistrationProvider;
-import foundry.veil.platform.registry.RegistryObject;
+import xyz.volcanobay.empiric.platform.Platform;
+import xyz.volcanobay.empiric.platform.Registrar;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
-import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.oct.OctBlock;
 import xyz.volcanobay.empiric.api.oct.OctBlockEntity;
 import xyz.volcanobay.empiric.api.oct.OctMultiblock;
@@ -18,19 +17,20 @@ import xyz.volcanobay.empiric.api.network.SpatialNetworkType;
 import xyz.volcanobay.empiric.api.network.SpatialNetworkable;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public final class EmpiricTestBlocks {
 
-    public static RegistryObject<TestOctBlock> TEST_OCT;
-    public static RegistryObject<OctBlock> PLAIN_OCT;
-    public static RegistryObject<TestPipeOct> PIPE;
-    public static RegistryObject<TestMultiblock> MULTIBLOCK;
+    public static Supplier<TestOctBlock> TEST_OCT;
+    public static Supplier<OctBlock> PLAIN_OCT;
+    public static Supplier<TestPipeOct> PIPE;
+    public static Supplier<TestMultiblock> MULTIBLOCK;
 
     private EmpiricTestBlocks() {
     }
 
     public static void bootstrap() {
-        RegistrationProvider<Block> blocks = RegistrationProvider.get(Registries.BLOCK, Empiric.MODID);
+        Registrar<Block> blocks = Platform.registrar(Registries.BLOCK);
         TEST_OCT = blocks.register("test_oct", () -> new TestOctBlock(BlockBehaviour.Properties.of()));
         PLAIN_OCT = blocks.register("test_plain_oct", () -> new OctBlock(BlockBehaviour.Properties.of()));
         PIPE = blocks.register("test_pipe", () -> new TestPipeOct(BlockBehaviour.Properties.of()));

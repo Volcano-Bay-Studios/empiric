@@ -3,12 +3,12 @@ package xyz.volcanobay.empiric.api.attachment;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
-import foundry.veil.api.network.VeilPacketManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3dc;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import xyz.volcanobay.empiric.client.ClientLookup;
 import xyz.volcanobay.empiric.core.attachment.AttachmentType;
 import xyz.volcanobay.empiric.core.data.DataBuffer;
@@ -77,12 +77,12 @@ public final class SubLevelAttachment extends PersistentAttachment {
     }
 
     @Override
-    public VeilPacketManager.PacketSink syncTarget() {
+    public PacketTarget syncTarget() {
         if (subLevel instanceof ServerSubLevel server) {
-            return server.playerSink();
+            // Sable's sink is Veil's; Sable brings Veil along regardless.
+            return server.playerSink()::sendPacket;
         }
-        return packet -> {
-        };
+        return PacketTarget.NONE;
     }
 
     @Override

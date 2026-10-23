@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.api.attachment;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -76,8 +76,8 @@ public final class ChunkAttachment extends PersistentAttachment {
     }
 
     @Override
-    public VeilPacketManager.PacketSink syncTarget() {
-        return VeilPacketManager.tracking((ServerLevel) chunk.getLevel(), chunk.getPos());
+    public PacketTarget syncTarget() {
+        return PacketTarget.tracking((ServerLevel) chunk.getLevel(), chunk.getPos());
     }
 
     @Override

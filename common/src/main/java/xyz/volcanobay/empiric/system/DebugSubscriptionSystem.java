@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.system;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import xyz.volcanobay.empiric.core.EmpiricCore;
@@ -100,7 +100,7 @@ public final class DebugSubscriptionSystem {
     }
 
     public static void syncTo(ServerPlayer player) {
-        VeilPacketManager.player(player).sendPacket(packet());
+        PacketTarget.player(player).send(packet());
     }
 
     private static void broadcast() {
@@ -111,7 +111,7 @@ public final class DebugSubscriptionSystem {
         DebugSubscriptionsS2CPacket packet = packet();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             try {
-                VeilPacketManager.player(player).sendPacket(packet);
+                PacketTarget.player(player).send(packet);
             } catch (UnsupportedOperationException e) {
                 continue;
             }

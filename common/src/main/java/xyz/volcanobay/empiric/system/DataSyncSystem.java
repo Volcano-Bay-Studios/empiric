@@ -1,7 +1,7 @@
 package xyz.volcanobay.empiric.system;
 
 import com.google.gson.JsonParser;
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import xyz.volcanobay.empiric.Empiric;
@@ -43,9 +43,9 @@ public final class DataSyncSystem {
         return encoded;
     }
 
-    public static void syncTo(VeilPacketManager.PacketSink sink) {
+    public static void syncTo(PacketTarget sink) {
         for (DataEntriesS2CPacket packet : packets()) {
-            sink.sendPacket(packet);
+            sink.send(packet);
         }
     }
 
@@ -56,7 +56,7 @@ public final class DataSyncSystem {
         }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             try {
-                syncTo(VeilPacketManager.player(player));
+                syncTo(PacketTarget.player(player));
             } catch (UnsupportedOperationException e) {
                 continue;
             }

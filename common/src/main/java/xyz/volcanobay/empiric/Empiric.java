@@ -18,6 +18,7 @@ import xyz.volcanobay.empiric.core.plugin.EmpiricPlugin;
 import xyz.volcanobay.empiric.gametest.EmpiricTestBlocks;
 import xyz.volcanobay.empiric.gametest.EmpiricTestModules;
 import xyz.volcanobay.empiric.networking.EmpiricMessages;
+import xyz.volcanobay.empiric.platform.Platform;
 import xyz.volcanobay.empiric.system.BlockModuleSystem;
 import xyz.volcanobay.empiric.system.ModuleSyncSystem;
 import xyz.volcanobay.empiric.system.NetworkOverlaySystem;
@@ -49,7 +50,7 @@ public class Empiric {
         EmpiricDataComponents.bootstrap();
         EmpiricMenus.bootstrap();
         EmpiricCore.bootstrap(new EmpiricPlatform(), plugins);
-        EmpiricMessages.register();
+        EmpiricMessages.register(Platform.packets("1"));
         ModuleSyncSystem.register();
         UiSystem.register();
         if (ModCompat.SABLE) {

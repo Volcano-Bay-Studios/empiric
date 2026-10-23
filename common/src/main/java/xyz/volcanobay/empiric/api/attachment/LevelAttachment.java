@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.api.attachment;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -72,8 +72,8 @@ public final class LevelAttachment implements WorldAttachment {
     }
 
     @Override
-    public VeilPacketManager.PacketSink syncTarget() {
-        return VeilPacketManager.level((ServerLevel) level);
+    public PacketTarget syncTarget() {
+        return PacketTarget.level((ServerLevel) level);
     }
 
     public static final class Type extends AttachmentType<LevelAttachment, Level> {

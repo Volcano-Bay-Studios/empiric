@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.api.attachment;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -51,8 +51,8 @@ public final class EntityAttachment extends PersistentAttachment {
     }
 
     @Override
-    public VeilPacketManager.PacketSink syncTarget() {
-        return entity instanceof ServerPlayer ? VeilPacketManager.trackingAndSelf(entity) : VeilPacketManager.tracking(entity);
+    public PacketTarget syncTarget() {
+        return entity instanceof ServerPlayer ? PacketTarget.trackingAndSelf(entity) : PacketTarget.tracking(entity);
     }
 
     @Override

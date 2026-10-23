@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.api.temperature;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -237,9 +237,9 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
         TemperatureSystem.propagate(this);
         if (!changed.isEmpty() && ++syncTimer >= SYNC_INTERVAL) {
             syncTimer = 0;
-            VeilPacketManager.PacketSink sink = VeilPacketManager.tracking((ServerLevel) level(), chunk().getPos());
+            PacketTarget sink = PacketTarget.tracking((ServerLevel) level(), chunk().getPos());
             for (int section : changed) {
-                sink.sendPacket(packet(section));
+                sink.send(packet(section));
                 TemperatureSystem.TEMPERATURE.fire(this, TemperatureSystem.SECTION_CHANGED, section);
             }
             changed.clear();
@@ -252,9 +252,9 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
     }
 
     @Override
-    public void onTracked(VeilPacketManager.PacketSink sink) {
+    public void onTracked(PacketTarget sink) {
         for (int section : sections.keySet()) {
-            sink.sendPacket(packet(section));
+            sink.send(packet(section));
         }
     }
 

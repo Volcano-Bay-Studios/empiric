@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.oct;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -65,7 +65,7 @@ public class FullOctBlock extends Block implements EntityBlock {
         if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
             int octant = OctUtil.getTargetedOctant(player, pos);
             BlockState octState = BlockGetterOctExtension.get(level).getOctState(pos, octant);
-            VeilPacketManager.tracking(serverLevel, pos).sendPacket(
+            PacketTarget.tracking(serverLevel, pos).send(
                     new OctBreakS2CPacket(new OctPos(pos, octant), octState)
             );
         }
@@ -141,7 +141,7 @@ public class FullOctBlock extends Block implements EntityBlock {
                 return false;
             }
             if (level instanceof ServerLevel serverLevel) {
-                VeilPacketManager.tracking(serverLevel, pos).sendPacket(new OctBreakS2CPacket(new OctPos(pos, octant), octState));
+                PacketTarget.tracking(serverLevel, pos).send(new OctBreakS2CPacket(new OctPos(pos, octant), octState));
             }
             ItemStack tool = player.getMainHandItem();
             ItemStack used = tool.copy();

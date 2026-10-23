@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.system;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.Nullable;
@@ -144,7 +144,7 @@ public final class NetworkOverlaySystem {
 
     private static void send(ServerPlayer player, NetworkOverlayS2CPacket packet) {
         try {
-            VeilPacketManager.player(player).sendPacket(packet);
+            PacketTarget.player(player).send(packet);
         } catch (UnsupportedOperationException e) {
             Empiric.LOGGER.debug("{} can't receive network overlays", player.getGameProfile().getName());
         }

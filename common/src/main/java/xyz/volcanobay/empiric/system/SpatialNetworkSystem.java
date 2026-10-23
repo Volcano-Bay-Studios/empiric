@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.system;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -94,10 +94,10 @@ public final class SpatialNetworkSystem {
                         continue;
                     }
                     attachment.removeViewer(player);
-                    VeilPacketManager.PacketSink sink = VeilPacketManager.player(player);
+                    PacketTarget sink = PacketTarget.player(player);
                     attachment.modules().forEach(module -> {
                         try {
-                            sink.sendPacket(ModuleRemoveS2CPacket.of(module));
+                            sink.send(ModuleRemoveS2CPacket.of(module));
                         } catch (UnsupportedOperationException e) {
                             return;
                         }

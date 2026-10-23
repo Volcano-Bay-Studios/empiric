@@ -1,6 +1,6 @@
 package xyz.volcanobay.empiric.system;
 
-import foundry.veil.api.network.VeilPacketManager;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -96,7 +96,7 @@ public final class UiSystem {
             return false;
         }
         close(player, false);
-        VeilPacketManager.PacketSink sink = VeilPacketManager.player(player);
+        PacketTarget sink = PacketTarget.player(player);
         for (ModuleSyncS2CPacket packet : ModuleSyncS2CPacket.full(module)) {
             ModuleSyncSystem.send(sink, packet);
         }
@@ -135,7 +135,7 @@ public final class UiSystem {
         if (module == null || module.type() != screen.moduleType() || !module.isAttached() || module.side() != Side.SERVER || !canView(player, screen, module)) {
             return false;
         }
-        VeilPacketManager.PacketSink sink = VeilPacketManager.player(player);
+        PacketTarget sink = PacketTarget.player(player);
         for (ModuleSyncS2CPacket packet : ModuleSyncS2CPacket.full(module)) {
             ModuleSyncSystem.send(sink, packet);
         }
@@ -187,7 +187,7 @@ public final class UiSystem {
         if (player.containerMenu instanceof UiMenu menu && menu.module() == module) {
             player.closeContainer();
         } else {
-            ModuleSyncSystem.send(VeilPacketManager.player(player), new UiCloseS2CPacket(encode(viewer.screen(), module)));
+            ModuleSyncSystem.send(PacketTarget.player(player), new UiCloseS2CPacket(encode(viewer.screen(), module)));
         }
     }
 
@@ -251,7 +251,7 @@ public final class UiSystem {
             double angle = now * 0.08;
             float x = done ? Float.NaN : (float) (110 + 80 * Math.cos(angle));
             float y = done ? Float.NaN : (float) (70 + 45 * Math.sin(angle * 2));
-            ModuleSyncSystem.send(VeilPacketManager.player(ghost.player()), new UiPointerS2CPacket(ghost.target(), -1, "Ghost", x, y));
+            ModuleSyncSystem.send(PacketTarget.player(ghost.player()), new UiPointerS2CPacket(ghost.target(), -1, "Ghost", x, y));
             if (done) {
                 ghosts.remove();
             }
@@ -303,7 +303,7 @@ public final class UiSystem {
         UiPointerS2CPacket packet = new UiPointerS2CPacket(data, player.getId(), player.getGameProfile().getName(), x, y);
         for (ServerPlayer other : player.serverLevel().players()) {
             if (other != player && canView(other, target.screen(), target.module())) {
-                ModuleSyncSystem.send(VeilPacketManager.player(other), packet);
+                ModuleSyncSystem.send(PacketTarget.player(other), packet);
             }
         }
     }
