@@ -23,6 +23,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
+import xyz.volcanobay.empiric.platform.ModCompat;
 import xyz.volcanobay.empiric.api.EmpiricApi;
 import xyz.volcanobay.empiric.api.attachment.BlockAttachment;
 import xyz.volcanobay.empiric.api.attachment.ChunkAttachment;
@@ -109,6 +110,9 @@ public class EmpiricGameTests {
     public Collection<TestFunction> tests() {
         List<TestFunction> tests = new ArrayList<>(core());
         tests.addAll(UiGameTests.tests(EmpiricGameTests::test, EmpiricGameTests::isolated));
+        if (ModCompat.SABLE) {
+            tests.addAll(SableGameTests.tests(EmpiricGameTests::test));
+        }
         return tests;
     }
 
@@ -865,7 +869,7 @@ public class EmpiricGameTests {
     @SuppressWarnings("removal")
     private static void clientMutableFields(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = TestPlayers.mock(helper);
         BlockPos origin = helper.absolutePos(new BlockPos(1, 1, 1));
         player.teleportTo(origin.getX(), origin.getY(), origin.getZ());
         ChunkAttachment attachment = ChunkAttachment.of(level.getChunkAt(origin));
@@ -1043,7 +1047,7 @@ public class EmpiricGameTests {
         var map = EmpiricTestModules.PIPES.get(level);
         EmpiricTestModules.PipeNetwork network = map.getNetwork(pipe);
         helper.assertTrue(network != null, "the pipe didn't form a network");
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = TestPlayers.mock(helper);
         NetworkAttachment attachment = network.attachment();
         attachment.addViewer(player);
         SpatialNetworkSystem.chunkDropped(player, new ChunkPos(pipe.pos()));
@@ -1278,7 +1282,7 @@ public class EmpiricGameTests {
 
     private static void playerDropPolicies(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = TestPlayers.mock(helper);
         List<EntityModuleType<EmpiricTestModules.Tag>> types = List.of(EmpiricTestModules.KEPT, EmpiricTestModules.MORTAL, EmpiricTestModules.GROUNDED, EmpiricTestModules.POCKET, EmpiricTestModules.SESSION);
         for (EntityModuleType<EmpiricTestModules.Tag> type : types) {
             type.attach(player).note = "kept";

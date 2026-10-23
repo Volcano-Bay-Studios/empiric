@@ -11,6 +11,8 @@ import xyz.volcanobay.empiric.registry.EmpiricBlocks;
 import xyz.volcanobay.empiric.registry.EmpiricDataComponents;
 import xyz.volcanobay.empiric.registry.EmpiricMenus;
 import xyz.volcanobay.empiric.platform.EmpiricPlatform;
+import xyz.volcanobay.empiric.platform.ModCompat;
+import xyz.volcanobay.empiric.system.SubLevelModuleSystem;
 import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.core.plugin.EmpiricPlugin;
 import xyz.volcanobay.empiric.gametest.EmpiricTestBlocks;
@@ -50,6 +52,9 @@ public class Empiric {
         EmpiricMessages.register();
         ModuleSyncSystem.register();
         UiSystem.register();
+        if (ModCompat.SABLE) {
+            SubLevelModuleSystem.bootstrap();
+        }
         LOGGER.info("Empiric registered {} module types.", EmpiricCore.modules().types().size());
     }
 

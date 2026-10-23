@@ -17,6 +17,35 @@ dependencies {
     modCompileOnly "foundry.imguimc:imguimc-fabric-${project.minecraft_version}:${project.imguimc_version}"
     modLocalRuntime "foundry.imguimc:imguimc-fabric-${project.minecraft_version}:${project.imguimc_version}"
     include(api("xyz.volcanobay:empiric-core:${project.empiric_core_version}"))
+    modCompileOnly("dev.ryanhcode.sable:sable-fabric-${minecraft_version}:${sable_version}") {
+        exclude group: "foundry.veil"
+        transitive = false
+    }
+    if (!project.hasProperty('noSable')) {
+        modLocalRuntime("dev.ryanhcode.sable:sable-fabric-${minecraft_version}:${sable_version}") {
+            exclude group: "foundry.veil"
+            transitive = false
+        }
+        // Loom strips Sable's nested jars when remapping it, so dev runs add them back
+        modLocalRuntime("dev.ryanhcode.sable-companion:sable-companion-fabric-${minecraft_version}:${sable_companion_version}")
+        localRuntime("dev.ryanhcode.sable:sable-sable_rapier-${minecraft_version}:${sable_version}") {
+            transitive = false
+        }
+        modLocalRuntime("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forgeconfigapiport_version}")
+    }
+    modCompileOnly("dev.ryanhcode.sable-companion:sable-companion-fabric-${minecraft_version}:${sable_companion_version}")
+}
+
+repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'Fuzs'
+                url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven/'
+            }
+        }
+        filter { includeGroup('fuzs.forgeconfigapiport') }
+    }
 }
 
 loom {

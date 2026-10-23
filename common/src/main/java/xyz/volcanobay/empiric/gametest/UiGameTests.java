@@ -789,7 +789,7 @@ final class UiGameTests {
     }
 
     private static ServerPlayer playerAt(GameTestHelper helper) {
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = TestPlayers.mock(helper);
         BlockPos origin = helper.absolutePos(new BlockPos(1, 1, 1));
         player.teleportTo(origin.getX(), origin.getY(), origin.getZ());
         return player;

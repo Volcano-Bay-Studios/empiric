@@ -192,7 +192,7 @@ public final class WorldModuleSystem {
         }
     }
 
-    private static void activate(PersistentAttachment attachment) {
+    static void activate(PersistentAttachment attachment) {
         if (attachment.isActive() || attachment.side() == Side.NONE) {
             return;
         }

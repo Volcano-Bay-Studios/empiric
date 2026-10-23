@@ -23,11 +23,15 @@
   "accessWidener": "empiric.accesswidener",
   "mixins": [
     "empiric.mixins.json",
-    "empiric-common.mixins.json"
+    "empiric-common.mixins.json",
+    "empiric-sable.mixins.json"
   ],
   "depends": {
     "fabric": "*",
     "minecraft": ">=${minecraft_version}",
     "veil": ">=${veil_version}"
+  },
+  "breaks": {
+    "sable": "<${sable_version}"
   }
 }

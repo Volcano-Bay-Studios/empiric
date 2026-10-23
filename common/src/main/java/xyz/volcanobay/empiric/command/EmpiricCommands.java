@@ -32,6 +32,7 @@ import xyz.volcanobay.empiric.core.data.Spec;
 import xyz.volcanobay.empiric.core.module.Module;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 import xyz.volcanobay.empiric.core.module.Side;
+import xyz.volcanobay.empiric.platform.ModCompat;
 import xyz.volcanobay.empiric.system.DebugSubscriptionSystem;
 
 public class EmpiricCommands {
@@ -51,6 +52,9 @@ public class EmpiricCommands {
         root.then(OctCommands.build());
         root.then(DropCommands.build());
         root.then(UiCommands.build());
+        if (ModCompat.SABLE) {
+            root.then(SubLevelCommands.build());
+        }
         dispatcher.register(root);
     }
 

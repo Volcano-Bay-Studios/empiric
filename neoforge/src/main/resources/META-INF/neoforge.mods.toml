@@ -14,6 +14,8 @@ description = '''${description}'''
 config="${mod_id}-common.mixins.json"
 [[mixins]]
 config="${mod_id}.mixins.json"
+[[mixins]]
+config="${mod_id}-sable.mixins.json"
 
 [[dependencies.${mod_id}]]
 modId = "neoforge"
@@ -33,5 +35,12 @@ side = "BOTH"
 modId = "veil"
 mandatory = true
 versionRange = "[${veil_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "sable"
+type = "optional"
+versionRange = "[${sable_version},)"
 ordering = "NONE"
 side = "BOTH"

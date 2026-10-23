@@ -10,6 +10,8 @@ import xyz.volcanobay.empiric.api.EmpiricEntrypoint;
 import xyz.volcanobay.empiric.core.plugin.EmpiricPlugin;
 import xyz.volcanobay.empiric.gametest.EmpiricGameTests;
 import xyz.volcanobay.empiric.gametest.EmpiricTestModules;
+import xyz.volcanobay.empiric.gametest.TestPlayers;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import org.objectweb.asm.Type;
 
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ public class EmpiricNeoForge {
     public EmpiricNeoForge(IEventBus modEventBus) {
         Empiric.init(plugins());
         if (EmpiricTestModules.enabled()) {
+            TestPlayers.setup(NetworkRegistry::configureMockConnection);
             modEventBus.addListener((RegisterGameTestsEvent event) -> event.register(EmpiricGameTests.class));
         }
     }

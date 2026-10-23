@@ -49,6 +49,19 @@ dependencies {
     // ImGuiMC is optional: dev runs get it so the editor inspectors work
     compileOnly("foundry.imguimc:imguimc-neoforge-${project.minecraft_version}:${project.imguimc_version}")
     runtimeOnly("foundry.imguimc:imguimc-neoforge-${project.minecraft_version}:${project.imguimc_version}")
+    compileOnly("dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}") {
+        exclude group: "foundry.veil"
+        transitive = false
+    }
+    if (!project.hasProperty('noSable')) {
+        runtimeOnly("dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}") {
+            exclude group: "foundry.veil"
+            transitive = false
+        }
+    }
+    compileOnly("dev.ryanhcode.sable-companion:sable-companion-common-${minecraft_version}:${sable_companion_version}") {
+        exclude group: "foundry.veil"
+    }
     jarJar(api(additionalRuntimeClasspath("xyz.volcanobay:empiric-core:${project.empiric_core_version}")) {
         exclude group: "it.unimi.dsi"
     })

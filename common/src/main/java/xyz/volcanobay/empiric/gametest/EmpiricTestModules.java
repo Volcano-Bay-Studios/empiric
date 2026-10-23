@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import xyz.volcanobay.empiric.platform.ModCompat;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.attachment.BlockAttachment;
 import xyz.volcanobay.empiric.api.attachment.BlockEntityAttachment;
@@ -115,6 +116,9 @@ public final class EmpiricTestModules implements EmpiricPlugin {
         SpatialNetworkSystem.register(modules, PIPES);
         SpatialNetworkSystem.register(modules, PROBES);
         UiGameTests.register(modules);
+        if (ModCompat.SABLE) {
+            SableGameTests.register(modules);
+        }
         AtmosphereSystem.subscribe(SUBSCRIBER);
         TemperatureSystem.subscribe(SUBSCRIBER);
         for (ModuleType<?, ?> type : new ModuleType<?, ?>[]{TICKER, TAG, COUNT, NOTE, TOGGLE, WATCHER, MARKER, TRANSIENT, GLASS, OCT_MARKER, GLOW, DIAL, KEPT, MORTAL, GROUNDED, POCKET, SESSION, GLOBAL, SCRATCH, PIPES.moduleType()}) {
