@@ -45,6 +45,12 @@ Well I did, so I made this project to make that slog a thing of the past (I hope
 - UIs feature seamless player interaction supporting multiple editors, and presence cursors.
 - Layouts can exist as a plain java class with annotations, or as a customizable json layout that can be edited using an in game editor.
 
+#### Data driven loading
+- Register a ``DataEntryType`` for any class with ``@Data`` fields, and any json file in its folder will become its own entry you can fetch by id.
+- Entries are loaded by data packs and reloaded with ``/reload``. They are automatically sent to players joining, and are resent when data is reloaded.
+- There are extra keys like ``blocks`` and ``dimensions`` and types like ``BlockDataTypes`` that allow you to register information that is attached to other data.
+- Chemicals, Reactions, Conductivity, Level Atmospheres, UI Themes, and Layouts, all use these types, allowing you to use these examples to build your own systems.
+
 #### Sable support
 - Modules can attach to sub-levels, are saved to the sublevel, are synced to the players tracking it, and keep working across sublevel loads and unloads.
 - Includes sub-level ``SplitBehavior`` that lets each module decide what happens when a sublevel splits.
@@ -56,4 +62,4 @@ Well I did, so I made this project to make that slog a thing of the past (I hope
 - Data driven information is also synchronized when players join and on ``/reload``
 - The core engine ``empiric-core`` is completely independent of Minecraft, allowing you to use it any java project, not just a mod!
 
-*P.S. This project is still WIP, so if I missed anything important, or if you encounter any major issues, please dm me on discord @modogthedev and or [join the discord server](discord.gg/smTR7d5muz)!
+*P.S. This project is still WIP, so if I missed anything important, or if you encounter any major issues, please dm me on discord @modogthedev and or [join the discord server](https://discord.gg/smTR7d5muz)!
