@@ -7,28 +7,28 @@ Do you ever get tired of writing the same boiler plate over and over again? Mayb
 Well I did, so I made this project to make that slog a thing of the past (I hope...). Empiric is similar to a component system, and it allows you to attach "moules" to many different "attachments." Never again will you have to write the same system code, or the same networking, or the same saving. I could go on and on, but instead heres what it does:
 
 ## What does it do?
-#### One attachment system does everything
-- Use modules to attach your own data and logic to anything: the server, levels, blocks, block entities, entities, oct cells, item stacks, spatial networks, and Sable sub-levels.
-- A module is a regular java class, without the boilerplate. Mark a field ``@Data`` and it will automatically be serialized, saved, and synced to clients without any packets or codecs.
-- Access is easy, simply register your module, attach with ``MODULE.attach()``, and fetch with ``MODULE.get(level, pos)`` or any other type of access.
-- Automatically attach modules with rules, "every dirt block," "every pig," "every sub-level," and more.
+#### Unified attachment system
+- Attach "Modules" to many different attachment types like the server, levels, blocks, block entities, entities, oct cells, item stacks, spatial networks, and Sable sub-levels.
+- A module is basically a component that can attach to something, and execute behaviors
+- Modules can be manually attached or set to attach automatically with rules like "dirt blocks," "all pigs," "all sublevels," etc.
+- Fields can be annotated ``@Data`` and their information will be automatically serialized, saved, and synced to tracking clients.
 
-#### Execute behaviors without any wasted effort
-- Add tick, render, block-change, item-render, network, and even sub-level split logic, and more just by implementing an interface.
-- Behaviors are indexed, only execute what is active, not what is idle.
+#### Behavior interfaces
+- Add tick, render, block-change, item-render, network, sub-level split logic, and more by implementing an interface.
+- Behaviors are indexed, and only execute when active.
 
-#### Networking without extra steps
+#### Data tracking and networking
 - Players are sent the full state when they begin tracking a module, and are sent updates only sending what changes.
 - Networked data is written as raw binary, without extra information.
 - ``@Data(watch = true)`` dirties a field whenever it is modified.
 - ``@Data(clientMutable = true)`` allows clients to modify the module, leaving the server to have the final say.
 
-#### Saved data built on the system you already use
+#### Saved data
 - Saved data is keyed by id, and versioned with optional data fixers, so your data always stays accurate.
 - Data that isn't used is left for later, and can be restored by giving it a field.
 - Drop policies like ``UNLOAD``, ``DEATH``, ``LEVEL_CHANGE``, ``INVENTORY_CLEAR`` decide when a module is destroyed.
 
-#### You only pay for what you use
+#### Dormant systems
 - Unused systems stay dormant until a mod subscribes to them. Dormant systems don't tick, save, or sync.
 
 ## Additional Features
