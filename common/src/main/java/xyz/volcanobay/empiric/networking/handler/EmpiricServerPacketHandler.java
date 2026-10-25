@@ -85,6 +85,7 @@ public class EmpiricServerPacketHandler {
                 modules.fire(module, ModuleEvents.SYNCED, new SyncedFields(spec, applied));
             }
             if (!rejected.isEmpty()) {
+                Empiric.LOGGER.warn("Refused {} edit(s) to {} from {}", rejected.cardinality(), module.type().id(), player.getGameProfile().getName());
                 PacketTarget sink = PacketTarget.player(player);
                 for (ModuleSyncS2CPacket correction : ModuleSyncS2CPacket.dirty(module, rejected)) {
                     ModuleSyncSystem.send(sink, correction);

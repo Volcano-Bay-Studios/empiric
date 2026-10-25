@@ -64,6 +64,8 @@ import xyz.volcanobay.empiric.core.ui.blueprint.BlueprintView;
 import xyz.volcanobay.empiric.core.ui.blueprint.Blueprints;
 import xyz.volcanobay.empiric.core.ui.graph.GraphLink;
 import xyz.volcanobay.empiric.core.ui.graph.GraphNode;
+import xyz.volcanobay.empiric.core.ui.graph.GraphNodeType;
+import xyz.volcanobay.empiric.core.ui.graph.GraphPalette;
 import xyz.volcanobay.empiric.core.ui.graph.NodeGraph;
 import xyz.volcanobay.empiric.core.ui.graph.NodeGraphView;
 import xyz.volcanobay.empiric.core.ui.graph.NodePicker;
@@ -567,6 +569,22 @@ final class UiGameTests {
         helper.assertTrue(dirty.nodes.size() == 4 && dirty.links.size() == 2 && dirty.linkInto(4, "a").from == 1 && dirty.linkInto(4, "b") == null,
                 "sanitizing left " + dirty.nodes.size() + " nodes and links " + dirty.links.stream().map(GraphLink::key).toList());
 
+        GraphPalette optional = GraphPalette.get("test:optional");
+        if (optional == null) {
+            optional = GraphPalette.register("test:optional")
+                    .add(GraphNodeType.of("source").output("out", "x"))
+                    .add(GraphNodeType.of("sink").optionalInput("fed", "Fed", "x", "fed.on"));
+        }
+        NodeGraph fed = new NodeGraph();
+        GraphNode feeder = fed.add("source", 0, 0);
+        GraphNode sink = fed.add("sink", 100, 0);
+        fed.links.add(new GraphLink(feeder.id, "out", sink.id, "fed"));
+        helper.assertTrue(sink.type.equals("sink") && optional.type("sink").inputs(sink).isEmpty(), "an optional port showed while off");
+        helper.assertTrue(fed.sanitize(optional) && fed.links.isEmpty(), "a link into a hidden port survived");
+        sink.set("fed.on", true);
+        fed.links.add(new GraphLink(feeder.id, "out", sink.id, "fed"));
+        helper.assertTrue(optional.type("sink").inputs(sink).size() == 1 && !fed.sanitize(optional) && fed.links.size() == 1, "a link into a shown optional port was dropped");
+
         ObjectSpec<NodeGraph> spec = EmpiricCore.modules().specs().objectSpec(NodeGraph.class);
         TreeDataBuffer writer = TreeDataBuffer.writer();
         spec.write(writer, data, EmpiricCore.modules().specs().context(Encoding.KEYED));
@@ -621,6 +639,33 @@ final class UiGameTests {
         GraphNode placed = console.graph.nodes.getLast();
         helper.assertTrue(root.popups().isEmpty() && placed.type.equals("multiply") && placed.x == 252 && placed.y == 152,
                 "the picker placed " + placed.type + " at " + placed.x + "," + placed.y);
+        root.pointerDown(0, 0, Keys.LEFT_BUTTON);
+        root.pointerUp(0, 0, Keys.LEFT_BUTTON);
+        view.view(0, 0, 0.5f);
+        root.layout();
+        NodeWidget zoomed = view.nodeWidget(sum.id);
+        float zoomedX = console.graph.node(sum.id).x;
+        UiPoint headerPoint = view.toRoot(view.panX() + (zoomed.x() + 10) * view.zoom(), view.panY() + (zoomed.y() + 4) * view.zoom());
+        root.pointerDown(headerPoint.x(), headerPoint.y(), Keys.LEFT_BUTTON);
+        root.pointerDrag(headerPoint.x() + 20, headerPoint.y(), 20, 0, Keys.LEFT_BUTTON);
+        root.pointerUp(headerPoint.x() + 20, headerPoint.y(), Keys.LEFT_BUTTON);
+        helper.assertTrue(Math.abs(console.graph.node(sum.id).x - (zoomedX + 40)) <= 4, "a drag at half zoom moved the node by "
+                + (console.graph.node(sum.id).x - zoomedX) + " instead of following the pointer");
+        helper.assertTrue(console.graph.node(sum.id).x % view.grid() == 0 && console.graph.node(sum.id).y % view.grid() == 0, "a dragged node didn't land on the grid");
+        view.view(0, 0, 1);
+        root.layout();
+
+        Label wrapped = new Label("alpha beta gamma delta epsilon zeta").wrap(true);
+        Widget narrow = new Widget().layout(FlexLayout.column(0).align(Align.STRETCH));
+        narrow.width(Length.px(6 * TestHost.CHAR));
+        narrow.add(wrapped);
+        UiRoot wrapRoot = new UiRoot(narrow, null, new TestHost());
+        wrapRoot.resize(300, 300);
+        wrapRoot.layout();
+        wrapRoot.layout();
+        helper.assertTrue(wrapped.height() > TestHost.LINE, "a wrapped label in a stretched column stayed one line tall: " + wrapped.height());
+        wrapRoot.dispose();
+
         root.dispose();
         console.graph = new NodeGraph();
         helper.succeed();

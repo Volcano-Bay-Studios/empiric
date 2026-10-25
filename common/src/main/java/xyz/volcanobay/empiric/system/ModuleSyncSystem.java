@@ -12,6 +12,7 @@ import xyz.volcanobay.empiric.api.attachment.ChunkAttachment;
 import xyz.volcanobay.empiric.api.attachment.EntityAttachment;
 import xyz.volcanobay.empiric.api.attachment.LevelAttachment;
 import xyz.volcanobay.empiric.api.attachment.ServerAttachment;
+import xyz.volcanobay.empiric.api.attachment.SpatialAttachment;
 import xyz.volcanobay.empiric.api.attachment.WorldAttachment;
 import xyz.volcanobay.empiric.api.behavior.NetworkBehavior;
 import xyz.volcanobay.empiric.core.EmpiricCore;
@@ -129,8 +130,24 @@ public final class ModuleSyncSystem {
         return attachment instanceof WorldAttachment world ? world.viewers() : null;
     }
 
+    private static void markUnsaved(Module<?> module) {
+        if (!module.type().persists()) {
+            return;
+        }
+        Attachment attachment = module.attachment();
+        while (attachment instanceof ModuleAttachment child) {
+            attachment = child.parent().attachment();
+        }
+        if (attachment instanceof ChunkAttachment chunk) {
+            chunk.chunk().setUnsaved(true);
+        } else if (attachment instanceof SpatialAttachment spatial && spatial.level() != null) {
+            spatial.level().getChunkAt(spatial.blockPos()).setUnsaved(true);
+        }
+    }
+
     public static void flush() {
         EmpiricCore.modules().flushDirty(Side.SERVER, (module, dirty) -> {
+            markUnsaved(module);
             if (module instanceof NetworkBehavior network) {
                 if (TrackingSystem.isTracked(module) && TrackingSystem.flush(module, dirty)) {
                     return;
