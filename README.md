@@ -21,11 +21,11 @@ Well I did, so I made this project to make that slog a thing of the past (I hope
 - Players are sent the full state when they begin tracking a module, and are sent updates only sending what changes.
 - Networked data is written as raw binary, without extra information.
 - ``@Data(watch = true)`` dirties a field whenever it is modified.
-- ``@Data(clientMutable = true)`` allows clients to modify the module, leaving the server to have the final say.
+- ``@Data(clientMutable = true)`` allows clients to modify the field, while the server still has the final say.
 
 #### Saved data
 - Saved data is keyed by id, and versioned with optional data fixers, so your data always stays accurate.
-- Data that isn't used is left for later, and can be restored by giving it a field.
+- Data that isn't used is left for later, and can be restored by giving it a field, or using key aliases.
 - Drop policies like ``UNLOAD``, ``DEATH``, ``LEVEL_CHANGE``, ``INVENTORY_CLEAR`` decide when a module is destroyed.
 
 #### Dormant systems
