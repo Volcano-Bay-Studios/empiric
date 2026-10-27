@@ -1,5 +1,5 @@
 # Empiric
-Multi-loader component attachment system that's quick, modular, and easy to use.
+Multi-loader component attachment and simulations systems that are quick, modular, and easy to use.
 
 ## Why use Empiric?
 Do you ever get tired of writing the same boiler plate over and over again? Maybe the same Map<Level,Object> for every system? Or ever writing the same packets that do the exact same things as the last, every single time you want to add one feature?
