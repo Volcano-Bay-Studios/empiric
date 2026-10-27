@@ -4,7 +4,7 @@ Multi-loader component attachment and simulations systems that are quick, modula
 ## Why use Empiric?
 Do you ever get tired of writing the same boiler plate over and over again? Maybe the same Map<Level,Object> for every system? Or ever writing the same packets that do the exact same things as the last, every single time you want to add one feature?
 
-Well I did, so I made this project to make that slog a thing of the past (I hope...). Empiric is similar to a component system, and it allows you to attach "moules" to many different "attachments." Never again will you have to write the same system code, or the same networking, or the same saving. I could go on and on, but instead heres what it does:
+Well I did, so I made this project to make that slog a thing of the past (I hope...). Empiric is similar to a component system, and it allows you to attach "modules" to many different "attachments." Never again will you have to write the same system code, or the same networking, or the same saving. I could go on and on, but instead here's what it does:
 
 ## What does it do?
 #### Unified attachment system
@@ -39,7 +39,7 @@ Well I did, so I made this project to make that slog a thing of the past (I hope
 - **Atmosphere** cached sealed rooms that connect to the world when broken. Includes pressure and heat exchange with surfaces.
 - **Chemistry** chemicals and reactions defined in data driven files including phase changes with temperature and pressure. Includes volumes and works with atmospheres for deep integration.
 
-#### A simple UI system, built to work for any application
+#### A simple UI system
 - A screen is just access to a modules synced fields, all viewers edit a live synced state, keeping the server in charge.
 - Any UI can work as a simple Screen, a container menu with vanilla slots, a surface projected and interactable in the world, or as a floating tooltip attached to a module.
 - UIs feature seamless player interaction supporting multiple editors, and presence cursors.
