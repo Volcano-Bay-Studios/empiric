@@ -20,9 +20,8 @@ import xyz.volcanobay.empiric.core.spatial.SpatialObjectMap;
 import xyz.volcanobay.empiric.system.SpatialModuleStore;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.Map;
 
 import java.util.function.Consumer;
 
@@ -30,7 +29,7 @@ public final class ChunkAttachment extends PersistentAttachment {
 
     private final LevelChunk chunk;
     private final ModuleHolder modules = new ModuleHolder(this);
-    private final Map<SpatialModuleStore<?>, SpatialObjectMap<?>> spatial = new IdentityHashMap<>();
+    private SpatialObjectMap<?>[] spatial = new SpatialObjectMap<?>[SpatialModuleStore.stores().size()];
     private CompoundTag pendingSpatial;
 
     public ChunkAttachment(LevelChunk chunk) {
@@ -39,7 +38,18 @@ public final class ChunkAttachment extends PersistentAttachment {
 
     @SuppressWarnings("unchecked")
     public <A extends SpatialAttachment> SpatialObjectMap<A> spatial(SpatialModuleStore<A> store) {
-        return (SpatialObjectMap<A>) spatial.computeIfAbsent(store, key -> new SpatialObjectMap<>(16));
+        int index = store.index();
+        SpatialObjectMap<?>[] maps = spatial;
+        SpatialObjectMap<?> map = index < maps.length ? maps[index] : null;
+        if (map == null) {
+            map = new SpatialObjectMap<>(16);
+            if (index >= maps.length) {
+                maps = Arrays.copyOf(maps, SpatialModuleStore.stores().size());
+                spatial = maps;
+            }
+            maps[index] = map;
+        }
+        return (SpatialObjectMap<A>) map;
     }
 
     public CompoundTag pendingSpatial() {

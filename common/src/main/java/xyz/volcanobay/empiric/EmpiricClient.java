@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import xyz.volcanobay.empiric.api.behavior.ClientTickBehavior;
 import xyz.volcanobay.empiric.api.behavior.EmpiricBehaviors;
 import xyz.volcanobay.empiric.api.behavior.RenderBehavior;
+import xyz.volcanobay.empiric.client.model.ModelRenderer;
 import xyz.volcanobay.empiric.client.overlay.OverlayRenderer;
 import xyz.volcanobay.empiric.client.ui.PresenceCursors;
 import xyz.volcanobay.empiric.client.ui.UiKeyboard;
@@ -25,6 +26,7 @@ public class EmpiricClient {
      * Called by the platform at each stage of level rendering.
      */
     public static void renderStage(RenderBehavior.Context context) {
+        ModelRenderer.renderStage(context.stage(), context.frustumMatrix(), context.projectionMatrix());
         OverlayRenderer.render(context.stage(), context.frustumMatrix(), context.projectionMatrix(), context.camera());
         SurfaceRenderer.render(context.stage(), context.frustumMatrix(), context.projectionMatrix(), context.camera());
         if (context.stage() == RenderBehavior.Stage.AFTER_LEVEL) {

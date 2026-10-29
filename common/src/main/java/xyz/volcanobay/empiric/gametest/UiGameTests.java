@@ -612,9 +612,9 @@ final class UiGameTests {
         helper.assertTrue(console.graph.linkInto(sum.id, "b") != null && console.isDirty("graph"), "dragging between ports didn't link them");
 
         root.pointerDown(source.x() + 10, source.y() + 4, Keys.LEFT_BUTTON);
-        root.pointerDrag(source.x() + 50, source.y() + 24, 40, 20, Keys.LEFT_BUTTON);
-        root.pointerUp(source.x() + 50, source.y() + 24, Keys.LEFT_BUTTON);
-        helper.assertTrue(console.graph.node(one.id).x == 40 && console.graph.node(one.id).y == 20, "dragging a header moved the node to "
+        root.pointerDrag(source.x() + 50, source.y() + 124, 40, 120, Keys.LEFT_BUTTON);
+        root.pointerUp(source.x() + 50, source.y() + 124, Keys.LEFT_BUTTON);
+        helper.assertTrue(console.graph.node(one.id).x == 40 && console.graph.node(one.id).y == 120, "dragging a header moved the node to "
                 + console.graph.node(one.id).x + "," + console.graph.node(one.id).y);
 
         NodeGraph remote = new NodeGraph();

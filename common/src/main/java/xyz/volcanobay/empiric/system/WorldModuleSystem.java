@@ -241,6 +241,9 @@ public final class WorldModuleSystem {
             return;
         }
         BLOCK_ENTITIES.get(attachment.side().ordinal()).remove(attachment);
+        if (!attachment.modules().isEmpty()) {
+            attachment.pending(encodeAll(attachment, ModuleType::persists));
+        }
         EmpiricCore.modules().unload(attachment);
         attachment.active(false);
     }
@@ -327,6 +330,14 @@ public final class WorldModuleSystem {
             return;
         }
         CHUNKS.get(attachment.side().ordinal()).remove(attachment);
+        CompoundTag spatial = new CompoundTag();
+        SpatialModuleStore.saveAll(attachment, spatial);
+        if (!spatial.isEmpty()) {
+            attachment.pendingSpatial(spatial);
+        }
+        if (!attachment.modules().isEmpty()) {
+            attachment.pending(encodeAll(attachment, ModuleType::persists));
+        }
         SpatialModuleStore.unloadAll(attachment);
         EmpiricCore.modules().unload(attachment);
         attachment.active(false);

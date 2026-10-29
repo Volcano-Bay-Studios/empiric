@@ -87,13 +87,20 @@ final class LayoutPreviewPane extends Widget {
         source.watch(view::module, module -> source.text(sourceLabel(module)));
         source.onPress(() -> openSources(source));
         source.hint("The module bindings read from and write to. Pick one to see real values; without one, bindings are listed as problems.");
-        toolbar.add(width);
-        toolbar.add(new Label("x").textColor("text_dim"));
-        toolbar.add(height);
+        if (!view.embedded()) {
+            toolbar.add(width);
+            toolbar.add(new Label("x").textColor("text_dim"));
+            toolbar.add(height);
+        }
         toolbar.add(fit);
-        toolbar.add(actual);
+        if (!view.embedded()) {
+            toolbar.add(actual);
+        }
         toolbar.add(interact);
-        toolbar.add(source);
+        if (!view.embedded()) {
+            toolbar.add(source);
+        }
+        toolbar.clip(true);
         add(toolbar);
 
         canvas.fill();

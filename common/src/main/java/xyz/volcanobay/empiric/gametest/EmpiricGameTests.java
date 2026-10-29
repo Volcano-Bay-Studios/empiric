@@ -113,6 +113,7 @@ public class EmpiricGameTests {
     public Collection<TestFunction> tests() {
         List<TestFunction> tests = new ArrayList<>(core());
         tests.addAll(UiGameTests.tests(EmpiricGameTests::test, EmpiricGameTests::isolated));
+        tests.addAll(ModelGameTests.tests(EmpiricGameTests::test));
         if (ModCompat.SABLE) {
             tests.addAll(SableGameTests.tests(EmpiricGameTests::test));
         }

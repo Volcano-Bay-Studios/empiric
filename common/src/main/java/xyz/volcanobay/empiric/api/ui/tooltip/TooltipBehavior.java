@@ -40,6 +40,13 @@ public interface TooltipBehavior {
      * Whether the viewer can point at and use the tooltip's widgets, for example only while holding a tool. Otherwise
      * it only displays.
      */
+    /**
+     * The id of the UI theme the tooltip is drawn with, or null for the default.
+     */
+    default String tooltipTheme() {
+        return null;
+    }
+
     default boolean canInteract(Player viewer) {
         return true;
     }

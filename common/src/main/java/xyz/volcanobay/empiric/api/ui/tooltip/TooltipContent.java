@@ -35,10 +35,11 @@ public class TooltipContent extends Panel {
      * Whether a module adds anything to tooltips for this viewer.
      */
     public static boolean provides(Module<?> module, Player viewer) {
-        if (module instanceof TooltipBehavior behavior) {
+        Object owner = TooltipTargets.owner(module);
+        if (owner instanceof TooltipBehavior behavior) {
             return behavior.showsTooltip(viewer);
         }
-        return TooltipFields.has(module.getClass());
+        return TooltipFields.has(owner.getClass());
     }
 
     /**
@@ -47,7 +48,8 @@ public class TooltipContent extends Panel {
     public static TooltipContent of(List<? extends Module<?>> modules, Player viewer) {
         TooltipContent content = new TooltipContent();
         for (Module<?> module : modules) {
-            if (module instanceof TooltipBehavior behavior) {
+            Object owner = TooltipTargets.owner(module);
+            if (owner instanceof TooltipBehavior behavior) {
                 String title = behavior.tooltipTitle(viewer);
                 if (title != null) {
                     ItemStack icon = behavior.tooltipIcon();
@@ -59,7 +61,7 @@ public class TooltipContent extends Panel {
                 }
             }
             TooltipFields.build(content, module);
-            if (module instanceof TooltipBehavior behavior) {
+            if (owner instanceof TooltipBehavior behavior) {
                 behavior.tooltip(content, viewer);
             }
         }

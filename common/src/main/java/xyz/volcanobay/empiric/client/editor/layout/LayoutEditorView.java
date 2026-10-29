@@ -31,7 +31,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * The layout editor, built from widgets.
@@ -51,8 +53,26 @@ public final class LayoutEditorView extends Panel {
     private LayoutPreviewPane previewPane;
     private LayoutPropertiesPane propertiesPane;
     private Widget dialog;
+    private boolean embedded;
+    private Predicate<WidgetType<?>> typeFilter = type -> true;
+    private BiPredicate<String, String> propertyFilter = (type, name) -> true;
+    private Consumer<BlueprintNode> changed;
+    private int sentVersion;
+    private int quiet;
+
+    /**
+     * An editor that only ever shows trees given to {@link #embed}: no browser to go back to.
+     */
+    public static LayoutEditorView embedded(EditorEnvironment environment) {
+        return new LayoutEditorView(environment, true);
+    }
 
     public LayoutEditorView(EditorEnvironment environment) {
+        this(environment, false);
+    }
+
+    private LayoutEditorView(EditorEnvironment environment, boolean embedded) {
+        this.embedded = embedded;
         this.environment = environment;
         style("panel", "panel_border");
         fill();
@@ -60,7 +80,9 @@ public final class LayoutEditorView extends Panel {
         layout(FlexLayout.column(0).align(Align.STRETCH));
         add(page);
         page.layout(FlexLayout.column(3).align(Align.STRETCH));
-        showBrowser();
+        if (!embedded) {
+            showBrowser();
+        }
     }
 
     public EditorEnvironment environment() {
@@ -159,17 +181,46 @@ public final class LayoutEditorView extends Panel {
         show(new LayoutDocument(id, "", LayoutEdits.starter()));
     }
 
+    /**
+     * Opens one tree for a mod that stores layouts itself: no browser, no files. {@code types} limits the widget types
+     * that can be added or chosen, {@code properties} says which properties a widget type shows (type id, property name), and {@code changed} gets the tree shortly after each edit.
+     */
+    public void embed(String id, BlueprintNode root, int previewWidth, int previewHeight, Predicate<WidgetType<?>> types, BiPredicate<String, String> properties, Consumer<BlueprintNode> changed) {
+        this.embedded = true;
+        this.typeFilter = types;
+        this.propertyFilter = properties;
+        this.changed = changed;
+        status = "";
+        show(new LayoutDocument(id, "", root));
+        sentVersion = document.version();
+        quiet = 0;
+        previewPane.canvas().previewSize(previewWidth, previewHeight);
+        previewPane.canvas().fit();
+    }
+
+    boolean embedded() {
+        return embedded;
+    }
+
+    boolean shows(String type, String property) {
+        return propertyFilter.test(type, property);
+    }
+
+    boolean allowed(WidgetType<?> type) {
+        return typeFilter.test(type);
+    }
+
     private void show(LayoutDocument document) {
         this.document = document;
         page.clear();
         page.add(toolbar());
         Widget body = new Widget().fill().layout(FlexLayout.row(0).align(Align.STRETCH));
         tree = treePane();
-        tree.width(Length.px(130));
+        tree.width(Length.px(embedded ? 90 : 130));
         previewPane = new LayoutPreviewPane(this);
         previewPane.fill();
         propertiesPane = new LayoutPropertiesPane(this);
-        propertiesPane.width(Length.px(190));
+        propertiesPane.width(Length.px(embedded ? 140 : 190));
         body.add(tree);
         body.add(new Splitter(tree, true).limits(60, 600));
         body.add(previewPane);
@@ -183,6 +234,9 @@ public final class LayoutEditorView extends Panel {
      * Goes back to the list, asking first if there are unsaved changes.
      */
     public void back() {
+        if (embedded) {
+            return;
+        }
         confirmDiscard(() -> {
             document = null;
             showBrowser();
@@ -232,6 +286,23 @@ public final class LayoutEditorView extends Panel {
     // Toolbar
 
     private Widget toolbar() {
+        if (embedded) {
+            Widget row = new Widget().layout(FlexLayout.row(3).align(Align.CENTER));
+            Label name = new TitleLabel(document.id()).width(Length.FILL);
+            name.watch(() -> document == null ? "" : document.id(), name::setValue);
+            Button undo = new Button("Undo", this::undo);
+            undo.hint("Undo the last change (Ctrl+Z)");
+            undo.watch(() -> document != null && document.canUndo(), undo::enabled);
+            undo.enabled(false);
+            Button redo = new Button("Redo", this::redo);
+            redo.hint("Redo what was undone (Ctrl+Y or Ctrl+Shift+Z)");
+            redo.watch(() -> document != null && document.canRedo(), redo::enabled);
+            redo.enabled(false);
+            row.add(name);
+            row.add(undo);
+            row.add(redo);
+            return row;
+        }
         Widget bar = new Widget().layout(FlexLayout.column(2).align(Align.STRETCH));
         Widget row = new Widget().layout(FlexLayout.row(3).align(Align.CENTER));
         Button back = new Button("< Layouts", this::back);
@@ -375,10 +446,10 @@ public final class LayoutEditorView extends Panel {
     /**
      * The widget types by category, each choosing a type when clicked.
      */
-    private static List<ContextEntry> typeMenu(boolean containersOnly, Consumer<String> chosen) {
+    private List<ContextEntry> typeMenu(boolean containersOnly, Consumer<String> chosen) {
         Map<String, List<WidgetType<?>>> categories = new LinkedHashMap<>();
         for (WidgetType<?> type : WidgetTypes.all()) {
-            if (!containersOnly || type.isContainer()) {
+            if (typeFilter.test(type) && (!containersOnly || type.isContainer())) {
                 categories.computeIfAbsent(type.category(), key -> new ArrayList<>()).add(type);
             }
         }
@@ -420,7 +491,7 @@ public final class LayoutEditorView extends Panel {
             redo();
             return true;
         }
-        if (control && key == Keys.S) {
+        if (control && key == Keys.S && !embedded) {
             save();
             return true;
         }
@@ -467,6 +538,11 @@ public final class LayoutEditorView extends Panel {
         }
         if (document != null && tree != null && tree.selected() != document.selected()) {
             tree.select(document.selected());
+        }
+        if (embedded && changed != null && document != null && document.version() != sentVersion && ++quiet >= 5) {
+            sentVersion = document.version();
+            quiet = 0;
+            changed.accept(document.root());
         }
     }
 

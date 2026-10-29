@@ -8,7 +8,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import xyz.volcanobay.empiric.api.model.EmpiricModels;
+import xyz.volcanobay.empiric.client.model.ModelRenderer;
 import xyz.volcanobay.empiric.client.ui.UiMenuScreen;
 import xyz.volcanobay.empiric.registry.EmpiricMenus;
 import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
@@ -25,6 +31,13 @@ public class EmpiricNeoForgeClient {
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> EmpiricClient.clientTick());
         modEventBus.addListener(this::registerGeometryLoaders);
         modEventBus.addListener((RegisterMenuScreensEvent event) -> event.register(EmpiricMenus.UI.get(), UiMenuScreen::new));
+        modEventBus.addListener((ModelEvent.RegisterAdditional event) -> {
+            for (ResourceLocation id : EmpiricModels.jsonIds()) {
+                event.register(ModelResourceLocation.standalone(id));
+            }
+        });
+        modEventBus.addListener((RegisterClientReloadListenersEvent event) ->
+                event.registerReloadListener((ResourceManagerReloadListener) manager -> ModelRenderer.invalidate()));
     }
 
     private void registerGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {

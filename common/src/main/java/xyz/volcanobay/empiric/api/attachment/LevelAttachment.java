@@ -22,6 +22,7 @@ import xyz.volcanobay.empiric.api.network.SpatialNetworkType;
 import xyz.volcanobay.empiric.system.SpatialModuleStore;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -33,7 +34,7 @@ public final class LevelAttachment implements WorldAttachment {
 
     private final Level level;
     private final ModuleHolder modules = new ModuleHolder(this);
-    private final Map<SpatialModuleStore<?>, SpatialObjectMap<?>> spatial = new IdentityHashMap<>();
+    private SpatialObjectMap<?>[] spatial = new SpatialObjectMap<?>[SpatialModuleStore.stores().size()];
     private final Map<SpatialNetworkType<?>, SpatialNetworkMap<?>> networks = new IdentityHashMap<>();
 
     public LevelAttachment(Level level) {
@@ -51,7 +52,18 @@ public final class LevelAttachment implements WorldAttachment {
 
     @SuppressWarnings("unchecked")
     public <A extends SpatialAttachment> SpatialObjectMap<A> spatial(SpatialModuleStore<A> store) {
-        return (SpatialObjectMap<A>) spatial.computeIfAbsent(store, key -> new SpatialObjectMap<>(64));
+        int index = store.index();
+        SpatialObjectMap<?>[] maps = spatial;
+        SpatialObjectMap<?> map = index < maps.length ? maps[index] : null;
+        if (map == null) {
+            map = new SpatialObjectMap<>(64);
+            if (index >= maps.length) {
+                maps = Arrays.copyOf(maps, SpatialModuleStore.stores().size());
+                spatial = maps;
+            }
+            maps[index] = map;
+        }
+        return (SpatialObjectMap<A>) map;
     }
 
     public static LevelAttachment of(Level level) {

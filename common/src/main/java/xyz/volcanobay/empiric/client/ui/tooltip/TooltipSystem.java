@@ -23,6 +23,7 @@ import xyz.volcanobay.empiric.api.attachment.BlockAttachment;
 import xyz.volcanobay.empiric.api.attachment.BlockEntityAttachment;
 import xyz.volcanobay.empiric.api.attachment.EntityAttachment;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipBehavior;
+import xyz.volcanobay.empiric.api.ui.tooltip.TooltipTargets;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipContent;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipPlacement;
 import xyz.volcanobay.empiric.client.ui.ClientUiHost;
@@ -155,7 +156,7 @@ public final class TooltipSystem {
         }
         interactive = true;
         for (Module<?> module : modules) {
-            if (module instanceof TooltipBehavior behavior && !behavior.canInteract(player)) {
+            if (TooltipTargets.owner(module) instanceof TooltipBehavior behavior && !behavior.canInteract(player)) {
                 interactive = false;
             }
         }
@@ -262,6 +263,12 @@ public final class TooltipSystem {
         content = built;
         host = new ClientUiHost(Minecraft.getInstance().font, TooltipSystem::close);
         root = new UiRoot(content, modules.getFirst(), host);
+        for (Module<?> module : modules) {
+            if (TooltipTargets.owner(module) instanceof TooltipBehavior behavior && behavior.tooltipTheme() != null) {
+                root.setTheme(host.theme(behavior.tooltipTheme()));
+                break;
+            }
+        }
         root.resize(content.measuredWidth(), content.measuredHeight());
         box = found.box();
         nearestCorner = -1;

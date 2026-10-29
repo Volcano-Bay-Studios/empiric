@@ -103,7 +103,7 @@ final class LayoutPropertiesPane extends ScrollPanel {
         if (node == null) {
             return;
         }
-        List<String> types = WidgetTypes.all().stream().map(WidgetType::id).toList();
+        List<String> types = WidgetTypes.all().stream().filter(view::allowed).map(WidgetType::id).toList();
         Dropdown<String> type = new Dropdown<>(String.class, types).width(Length.FILL);
         type.bind(new Property<>() {
             @Override
@@ -130,7 +130,9 @@ final class LayoutPropertiesPane extends ScrollPanel {
                 document.edit("id@" + System.identityHashCode(node), () -> node.id(value.trim()));
             }
         });
-        id.hint("Widget id. Java code finds widgets by id with @Ref, @OnClick and @ContextAction.");
+        id.hint(view.embedded()
+                ? "Names this element. Its value is read and written under this name: Set Element and Read Element use it, UI Event fires for it, and the monitor's output carries it."
+                : "Widget id. Java code finds widgets by id with @Ref, @OnClick and @ContextAction.");
         add(id);
 
         WidgetType<?> widgetType = WidgetTypes.get(node.type());
@@ -165,6 +167,9 @@ final class LayoutPropertiesPane extends ScrollPanel {
     private Section section(String title, BlueprintNode node, List<PropertyDef> defs) {
         Section section = new Section(title);
         for (PropertyDef def : defs) {
+            if (!view.shows(node.type(), def.name())) {
+                continue;
+            }
             section.add(row(node, def));
         }
         return section;

@@ -33,6 +33,7 @@ public final class SpatialModuleStore<A extends SpatialAttachment> {
     private static final List<SpatialModuleStore<?>> STORES = new ArrayList<>();
 
     private final String tag;
+    private final int index;
     private final BiFunction<Level, CompoundTag, A> reader;
     private final BiConsumer<A, CompoundTag> writer;
 
@@ -43,7 +44,15 @@ public final class SpatialModuleStore<A extends SpatialAttachment> {
         if (EmpiricCore.isBootstrapped()) {
             throw new IllegalStateException("Spatial module store " + tag + " was created after Empiric bootstrapped");
         }
+        this.index = STORES.size();
         STORES.add(this);
+    }
+
+    /**
+     * Position in {@link #stores()}. Attachments use it to find this store's map by array index.
+     */
+    public int index() {
+        return index;
     }
 
     public static List<SpatialModuleStore<?>> stores() {

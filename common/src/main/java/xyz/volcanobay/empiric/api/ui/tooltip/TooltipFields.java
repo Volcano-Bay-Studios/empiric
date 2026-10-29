@@ -69,7 +69,7 @@ public final class TooltipFields {
      * Adds a row for each {@code @Tooltip} field of the module.
      */
     public static void build(TooltipContent content, Module<?> module) {
-        for (Row row : ROWS.get(module.getClass())) {
+        for (Row row : ROWS.get(TooltipTargets.owner(module).getClass())) {
             content.row(row.label(), widget(row, module));
         }
     }
