@@ -3,6 +3,7 @@ package xyz.volcanobay.empiric.api.oct;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -123,6 +124,40 @@ public class OctBlock extends Block {
         return BOX;
     }
 
+    /**
+     * The part of this octant that entities collide with, in octant-local coordinates like {@link #getShape}.
+     * Defaults to the shape, so a block that should be walked through (small props) returns less here.
+     */
+    public VoxelShape getCollisionShape(BlockState state, OctGetter level, BlockPos pos, int octant, CollisionContext context) {
+        return getShape(state, level, pos, octant, context);
+    }
+
+    /**
+     * Called on the server when a block next to the oct block holding this octant changes.
+     */
+    public void neighborChanged(BlockState state, OctLevel octLevel, Level level, BlockPos pos, int octant, Block neighborBlock, BlockPos neighborPos) {
+
+    }
+
+    /**
+     * The outline drawn around what the player is looking at, in block coordinates (0 to 1, not octant-local).
+     * Return null to outline this octant's part of {@link #getShape}, which is what a block gets by default.
+     * A block that fills several octants uses this to outline itself as one.
+     */
+    public @Nullable VoxelShape getHitOutline(BlockState state, OctGetter level, BlockPos pos, int octant, CollisionContext context) {
+        return null;
+    }
+
+    /**
+     * Called when a player breaks this octant, before anything is removed.
+     *
+     * @return true if the block dealt with the break itself and the octant should stay (for example it removed one
+     * part of several); this runs on both sides, so it should only change the world on the server
+     */
+    public boolean destroyedByPlayer(BlockState state, OctLevel octLevel, Level level, BlockPos pos, int octant, Player player) {
+        return false;
+    }
+
     public List<OctPos> getComplements(BlockState state, OctLevel level, OctPos pos) {
         return new ArrayList<>();
     }
@@ -135,6 +170,15 @@ public class OctBlock extends Block {
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, OctLevel level, BlockPos pos,
                                            int octant, Player player, BlockHitResult hitResult) {
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+
+    /**
+     * Like {@link #useItemOn(ItemStack, BlockState, OctLevel, BlockPos, int, Player, BlockHitResult)}, with the hand
+     * holding the stack. This is the one the oct block calls; by default it hands over to the one without a hand.
+     */
+    public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, OctLevel level, BlockPos pos,
+                                           int octant, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        return useItemOn(stack, state, level, pos, octant, player, hitResult);
     }
 
     public SoundType getSoundType(BlockState state, OctGetter level, BlockPos pos, int octant,

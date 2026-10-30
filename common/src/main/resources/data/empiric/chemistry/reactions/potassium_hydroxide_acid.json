@@ -1,0 +1,13 @@
+{
+  "reactants": {
+    "empiric:potassium_hydroxide": 1,
+    "empiric:hydrochloric_acid": 1
+  },
+  "products": {
+    "empiric:potassium_chloride": 1,
+    "empiric:water": 1
+  },
+  "enthalpy": -57.3,
+  "rate": 2.0,
+  "requirements": {}
+}

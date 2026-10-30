@@ -1,0 +1,16 @@
+{
+  "name": "empiric:ethanol",
+  "boilTemp": 78.37,
+  "freezeTemp": -114.1,
+  "hVapKJ": 38.6,
+  "hFusKJ": 4.93,
+  "densityLiquid": 0.789,
+  "densitySolid": 0.99,
+  "molecularWeight": 46.07,
+  "expandsOnFreezing": false,
+  "color": 15790320,
+  "heatCapacityGas": 65.6,
+  "heatCapacityLiquid": 112,
+  "heatCapacitySolid": 70,
+  "opacityLiquid": 0.15
+}

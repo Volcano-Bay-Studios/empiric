@@ -1,0 +1,17 @@
+{
+  "reactants": {
+    "empiric:ethanol": 1,
+    "empiric:oxygen": 3
+  },
+  "products": {
+    "empiric:carbon_dioxide": 2,
+    "empiric:water": 3
+  },
+  "enthalpy": -1367,
+  "rate": 1.0,
+  "requirements": {
+    "empiric:heat": {
+      "min": 363
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "empiric:manganese_dioxide",
+  "boilTemp": 3000,
+  "freezeTemp": 535,
+  "hVapKJ": 250,
+  "hFusKJ": 30,
+  "densityLiquid": 4.5,
+  "densitySolid": 5.03,
+  "molecularWeight": 86.94,
+  "expandsOnFreezing": false,
+  "color": 3815994,
+  "heatCapacityLiquid": 100,
+  "heatCapacitySolid": 54.1
+}

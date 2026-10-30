@@ -1,0 +1,16 @@
+{
+  "reactants": {
+    "empiric:carbon": 1,
+    "empiric:oxygen": 1
+  },
+  "products": {
+    "empiric:carbon_dioxide": 1
+  },
+  "enthalpy": -393.5,
+  "rate": 0.2,
+  "requirements": {
+    "empiric:heat": {
+      "min": 400
+    }
+  }
+}

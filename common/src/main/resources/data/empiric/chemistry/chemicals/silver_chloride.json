@@ -1,0 +1,14 @@
+{
+  "name": "empiric:silver_chloride",
+  "boilTemp": 1547,
+  "freezeTemp": 455,
+  "hVapKJ": 180,
+  "hFusKJ": 13,
+  "densityLiquid": 4.8,
+  "densitySolid": 5.56,
+  "molecularWeight": 143.32,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 110,
+  "heatCapacitySolid": 50.8
+}

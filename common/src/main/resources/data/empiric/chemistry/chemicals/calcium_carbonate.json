@@ -1,0 +1,14 @@
+{
+  "name": "empiric:calcium_carbonate",
+  "boilTemp": 2850,
+  "freezeTemp": 1339,
+  "hVapKJ": 300,
+  "hFusKJ": 53,
+  "densityLiquid": 2.5,
+  "densitySolid": 2.71,
+  "molecularWeight": 100.09,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 120,
+  "heatCapacitySolid": 83.5
+}

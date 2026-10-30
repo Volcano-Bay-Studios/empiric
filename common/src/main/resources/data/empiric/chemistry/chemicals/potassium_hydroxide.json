@@ -1,0 +1,15 @@
+{
+  "name": "empiric:potassium_hydroxide",
+  "boilTemp": 1327,
+  "freezeTemp": 406,
+  "hVapKJ": 130,
+  "hFusKJ": 7.9,
+  "densityLiquid": 1.85,
+  "densitySolid": 2.12,
+  "molecularWeight": 56.11,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 80,
+  "heatCapacitySolid": 64.9,
+  "solubility": 19
+}

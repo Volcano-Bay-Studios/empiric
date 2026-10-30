@@ -1,0 +1,15 @@
+{
+  "name": "empiric:zinc_chloride",
+  "boilTemp": 732,
+  "freezeTemp": 290,
+  "hVapKJ": 119,
+  "hFusKJ": 10.3,
+  "densityLiquid": 2.5,
+  "densitySolid": 2.91,
+  "molecularWeight": 136.3,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 100,
+  "heatCapacitySolid": 71.3,
+  "solubility": 31
+}

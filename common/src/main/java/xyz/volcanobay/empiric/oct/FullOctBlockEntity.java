@@ -23,6 +23,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import xyz.volcanobay.empiric.api.oct.OctBlock;
 import xyz.volcanobay.empiric.api.oct.OctBlockEntity;
 import xyz.volcanobay.empiric.api.oct.OctBlockRendererRegistry;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.client.ClientLookup;
 import xyz.volcanobay.empiric.mixin.oct.LevelChunkInvoker;
 import xyz.volcanobay.empiric.api.oct.OctPos;
@@ -104,6 +105,7 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
             Tag data = tag.get(Integer.toString(i));
             if (data == null) {
                 this.octBlocks[i] = Blocks.AIR.defaultBlockState();
+                this.clearOctEntity(i);
                 continue;
             } else {
                 DataResult<Pair<BlockState, Tag>> result = BlockState.CODEC.decode(NbtOps.INSTANCE, data);
@@ -131,12 +133,16 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
                         }
                     }
                 } else {
-                    obe = null;
+                    obe = this.octBlockEntities[i] = null;
                 }
             } else {
                 obe = this.octBlockEntities[i];
                 if (obe != null) {
                     obe.updateBlockState(this.octBlocks[i]);
+                    if (this.level != null) {
+                        // entities that were kept still need their features, or an update drops the renderer
+                        requiredFeatures |= this.featuresFor(obe);
+                    }
                 }
             }
             if (obe != null && data instanceof CompoundTag remainingData) {
@@ -148,6 +154,13 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
                 this.modelChanged();
             }
             this.setFeatures(requiredFeatures);
+        }
+    }
+
+    private void clearOctEntity(int octant) {
+        if (this.octBlockEntities[octant] != null) {
+            this.octBlockEntities[octant].unload();
+            this.octBlockEntities[octant] = null;
         }
     }
 
@@ -264,6 +277,14 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
     }
 
     public VoxelShape getShape(BlockPos pos, CollisionContext context) {
+        return this.joinShapes(pos, context, false);
+    }
+
+    public VoxelShape getCollisionShape(BlockPos pos, CollisionContext context) {
+        return this.joinShapes(pos, context, true);
+    }
+
+    private VoxelShape joinShapes(BlockPos pos, CollisionContext context, boolean collision) {
         if (this.level == null) {
             return Shapes.empty();
         }
@@ -277,16 +298,38 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
                 double oX = ((octantIndex & 1) != 0) ? 0.5 : 0;
                 double oY = ((octantIndex & 2) != 0) ? 0.5 : 0;
                 double oZ = ((octantIndex & 4) != 0) ? 0.5 : 0;
-                shape = Shapes.joinUnoptimized(shape, octant.getShape(
-                        this.octBlocks[octantIndex],
-                        LevelOctExtension.get(this.level),
-                        pos,
-                        octantIndex,
-                        context
-                ).move(oX, oY, oZ), BooleanOp.OR);
+                OctLevel octLevel = LevelOctExtension.get(this.level);
+                VoxelShape part = collision
+                        ? octant.getCollisionShape(this.octBlocks[octantIndex], octLevel, pos, octantIndex, context)
+                        : octant.getShape(this.octBlocks[octantIndex], octLevel, pos, octantIndex, context);
+                shape = Shapes.joinUnoptimized(shape, part.move(oX, oY, oZ), BooleanOp.OR);
             }
         }
         return shape.optimize();
+    }
+
+    /**
+     * Called on the server when the whole block is replaced (not emptied octant by octant): every octant still
+     * here gets its remove callbacks, while the octants and their entities can still be read.
+     */
+    public void blockRemoved() {
+        if (this.level == null || this.level.isClientSide) {
+            return;
+        }
+        OctLevel octLevel = LevelOctExtension.get(this.level);
+        BlockState empty = Blocks.AIR.defaultBlockState();
+        for (int octant = 0; octant < 8; octant++) {
+            BlockState state = this.octBlocks[octant];
+            if (state.getBlock() instanceof OctBlock octBlock) {
+                octBlock.onRemove(state, octLevel, this.level, this.worldPosition, octant, empty);
+            }
+        }
+        for (int octant = 0; octant < 8; octant++) {
+            BlockState state = this.octBlocks[octant];
+            if (state.getBlock() instanceof OctBlock octBlock) {
+                octBlock.afterRemove(state, octLevel, this.level, this.worldPosition, octant, empty);
+            }
+        }
     }
 
     public BlockState destroyBlock(int octant) {
@@ -348,6 +391,10 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
         this.features = features;
         if ((changed & OCT_FEATURE_TICKED) != 0) {
             ((LevelChunkInvoker) this.level.getChunkAt(this.worldPosition)).empiric$updateBlockEntityTicker(this);
+        }
+        if ((changed & OCT_FEATURE_RENDERED) != 0 && this.level.isClientSide) {
+            // the section only collects block entities with renderers when it's rebuilt
+            ClientLookup.blockChanged(this.worldPosition);
         }
     }
 

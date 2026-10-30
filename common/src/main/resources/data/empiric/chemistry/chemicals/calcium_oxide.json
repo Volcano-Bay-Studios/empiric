@@ -1,0 +1,14 @@
+{
+  "name": "empiric:calcium_oxide",
+  "boilTemp": 2850,
+  "freezeTemp": 2613,
+  "hVapKJ": 400,
+  "hFusKJ": 80,
+  "densityLiquid": 3.0,
+  "densitySolid": 3.34,
+  "molecularWeight": 56.08,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 60,
+  "heatCapacitySolid": 42
+}

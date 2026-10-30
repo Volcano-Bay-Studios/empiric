@@ -1,0 +1,13 @@
+{
+  "reactants": {
+    "empiric:sodium_hydroxide": 1,
+    "empiric:acetic_acid": 1
+  },
+  "products": {
+    "empiric:sodium_acetate": 1,
+    "empiric:water": 1
+  },
+  "enthalpy": -56,
+  "rate": 1.0,
+  "requirements": {}
+}

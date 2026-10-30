@@ -1,0 +1,15 @@
+{
+  "name": "empiric:magnesium_chloride",
+  "boilTemp": 1412,
+  "freezeTemp": 714,
+  "hVapKJ": 136,
+  "hFusKJ": 43,
+  "densityLiquid": 1.9,
+  "densitySolid": 2.32,
+  "molecularWeight": 95.21,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 100,
+  "heatCapacitySolid": 71.1,
+  "solubility": 5.7
+}

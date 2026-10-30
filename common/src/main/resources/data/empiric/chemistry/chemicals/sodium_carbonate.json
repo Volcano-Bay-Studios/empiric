@@ -1,0 +1,15 @@
+{
+  "name": "empiric:sodium_carbonate",
+  "boilTemp": 1600,
+  "freezeTemp": 851,
+  "hVapKJ": 250,
+  "hFusKJ": 28,
+  "densityLiquid": 2.0,
+  "densitySolid": 2.54,
+  "molecularWeight": 105.99,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 130,
+  "heatCapacitySolid": 112,
+  "solubility": 2.0
+}

@@ -1,5 +1,6 @@
 package xyz.volcanobay.empiric.api.module;
 
+import net.minecraft.server.level.ServerPlayer;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.attachment.BlockEntityAttachment;
 import xyz.volcanobay.empiric.api.behavior.NetworkBehavior;
@@ -20,5 +21,20 @@ public final class SelfModule extends Module<BlockEntityAttachment> implements N
     public static void register(ModuleSystem modules) {
         modules.register(TYPE);
         modules.subscribe("empiric", TYPE);
+    }
+
+    @Override
+    public boolean acceptClientUpdate(ServerPlayer player, String field) {
+        if (!NetworkBehavior.super.acceptClientUpdate(player, field)) {
+            return false;
+        }
+        return !(attachment().blockEntity() instanceof SelfNetworkBehavior self) || self.acceptClientUpdate(player, field);
+    }
+
+    @Override
+    public void onClientUpdate(ServerPlayer player, String field) {
+        if (attachment().blockEntity() instanceof SelfNetworkBehavior self) {
+            self.onClientUpdate(player, field);
+        }
     }
 }

@@ -1,0 +1,15 @@
+{
+  "name": "empiric:sodium_hydroxide",
+  "boilTemp": 1388,
+  "freezeTemp": 323,
+  "hVapKJ": 175,
+  "hFusKJ": 6.6,
+  "densityLiquid": 1.78,
+  "densitySolid": 2.13,
+  "molecularWeight": 40.0,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 80,
+  "heatCapacitySolid": 59.5,
+  "solubility": 26
+}

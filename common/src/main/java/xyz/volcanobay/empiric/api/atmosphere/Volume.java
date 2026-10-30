@@ -38,21 +38,89 @@ public abstract class Volume implements Cloneable {
             occupiedVolume += calculateOccupiedVolume(component);
         }
 
-        double effectiveVolume = Math.max(0.001, this.volume - occupiedVolume);
+        return (gasMoles * R * this.temperature) / gasSpace(occupiedVolume);
+    }
 
-        return (gasMoles * R * this.temperature) / effectiveVolume;
+    /**
+     * The room the gas has in m³: the volume less what liquids and solids take up. Gas is never squeezed below 1% of the
+     * volume, so a brim-full container still has a finite pressure.
+     */
+    public double getGasSpace() {
+        return gasSpace(getOccupiedVolume());
+    }
+
+    private double gasSpace(double occupiedVolume) {
+        double floor = this.volume > 0 ? this.volume * 0.01 : 0.001;
+        return Math.max(floor, this.volume - occupiedVolume);
+    }
+
+    /**
+     * The room liquids and solids take up, in m³.
+     */
+    public double getOccupiedVolume() {
+        double occupied = 0;
+        for (ChemicalComponent component : chemicalComponentsList.values()) {
+            occupied += calculateOccupiedVolume(component);
+        }
+        return occupied;
     }
 
     private double calculateOccupiedVolume(ChemicalComponent comp) {
-        double liquidVol = (comp.getAmount(Volume.State.LIQUID) * comp.chemical.getMolecularWeight()) / comp.chemical.getMolecularWeight();
-        double solidVol = (comp.getAmount(Volume.State.SOLID) * comp.chemical.getMolecularWeight()) / comp.chemical.getMolecularWeight();
+        Chemical chemical = comp.chemical;
+        double liquidDensity = chemical.getDensityLiquid() > 0 ? chemical.getDensityLiquid() : 1;
+        double solidDensity = chemical.getDensitySolid() > 0 ? chemical.getDensitySolid() : liquidDensity;
+        double liquidVol = chemical.getMass(comp.getAmount(Volume.State.LIQUID)) / liquidDensity;
+        double solidVol = chemical.getMass(comp.getAmount(Volume.State.SOLID)) / solidDensity;
         return (liquidVol + solidVol) / 1000000.0;
+    }
+
+    /**
+     * Heat needed to warm everything in the volume by one kelvin, in J/K.
+     */
+    public double heatCapacity() {
+        double capacity = 0;
+        for (ChemicalComponent component : chemicalComponentsList.values()) {
+            capacity += heatCapacity(component.chemical, component.getAmount(State.GAS), State.GAS)
+                    + heatCapacity(component.chemical, component.getAmount(State.LIQUID), State.LIQUID)
+                    + heatCapacity(component.chemical, component.getAmount(State.SOLID), State.SOLID);
+        }
+        return capacity;
+    }
+
+    private static double heatCapacity(Chemical chemical, double moles, State state) {
+        return moles > 0 ? moles * chemical.getHeatCapacity(state) : 0;
+    }
+
+    /**
+     * Adds heat to the volume, or takes it away when negative, changing its temperature by its heat capacity.
+     * Nothing happens to an empty volume. The temperature never drops below 0.01 K.
+     *
+     * @param joules Heat in J
+     */
+    public void addHeat(double joules) {
+        double capacity = heatCapacity();
+        if (capacity <= 0 || joules == 0) {
+            return;
+        }
+        setTemperature(Math.max(0.01, temperature + joules / capacity));
+    }
+
+    /**
+     * Whether this volume is too big to be changed by what is moved in and out of it, like the open air.
+     */
+    public boolean isReservoir() {
+        return false;
     }
 
     public void tick() {
 
     }
 
+    /**
+     * @deprecated Its fixed step is tuned for room sized volumes and overshoots on small ones. Use
+     * {@link xyz.volcanobay.empiric.api.chemistry.sim.VolumeExchange#equalize}, which is stable at any size.
+     */
+    @Deprecated
     public void tickPressureFlow(Volume target) {
         double p1 = this.getGasPressure();
         double p2 = target.getGasPressure();
@@ -96,12 +164,14 @@ public abstract class Volume implements Cloneable {
      */
     public double setChemical(Chemical chemical, double amount, State state) {
         ChemicalComponent component = getOrCreateEntry(chemical);
+        amount = Math.max(0, amount);
         double change = amount - component.getAmount(state);
-        double newMass = chemical.getMolecularWeight() * change;
-        mass += newMass;
+        moles += change;
+        mass += chemical.getMass(change);
         component.setAmount(amount, state);
+        prune(component);
         markDirty();
-        return component.getAmount(state);
+        return amount;
     }
 
     /**
@@ -112,12 +182,23 @@ public abstract class Volume implements Cloneable {
      * @return The new amount (moles)
      */
     protected double addChemicalToEntry(ChemicalComponent component, double amount, State state) {
+        // never take more than there is, so rounding can't leave a negative amount behind
+        amount = Math.max(amount, -component.getAmount(state));
         moles += amount;
         double newMass = component.chemical.getMass(amount);
-        component.setAmount(amount + component.getAmount(state),state);
+        double result = Math.max(0, amount + component.getAmount(state));
+        component.setAmount(result, state);
         mass += newMass;
+        prune(component);
         markDirty();
-        return component.getAmount(state);
+        return result;
+    }
+
+    // drops a chemical's entry once every state of it has run out
+    private void prune(ChemicalComponent component) {
+        if (component.getSum() <= 0 && chemicalComponentsList.get(component.chemical) == component) {
+            chemicalComponentsList.remove(component.chemical);
+        }
     }
 
     /**
@@ -127,8 +208,8 @@ public abstract class Volume implements Cloneable {
      * @return The amount of the chemical (moles)
      */
     public double getChemicalAmount(Chemical chemical, State state) {
-        ChemicalComponent component = getOrCreateEntry(chemical);
-        return component.getAmount(state);
+        ChemicalComponent component = chemicalComponentsList.get(chemical);
+        return component == null ? 0 : component.getAmount(state);
     }
 
     /**
@@ -139,7 +220,10 @@ public abstract class Volume implements Cloneable {
      * @param amount
      */
     public void transferChemical(Chemical chemical, Volume target, double amount, State state) {
-        ChemicalComponent ourEntry = getOrCreateEntry(chemical);
+        ChemicalComponent ourEntry = chemicalComponentsList.get(chemical);
+        if (ourEntry == null || amount <= 0) {
+            return;
+        }
         double newAmount = Math.min(amount, ourEntry.getAmount(state));
 
         transferTemperature(chemical,target,newAmount, state);
@@ -148,11 +232,21 @@ public abstract class Volume implements Cloneable {
         target.addChemical(chemical, newAmount, state);
     }
 
+    /**
+     * Sets the target's temperature to what it would be once the given amount of a chemical arrived at this volume's
+     * temperature: the two mix weighted by heat capacity, the target's whole contents against the incoming amount.
+     */
     public void transferTemperature(Chemical chemical, Volume target, double amount, State state) {
-        double sourceMass = chemical.getMass(amount);
-        double targetMass = chemical.getMass(target.getChemicalAmount(chemical, state));
-
-        double finalTemperature = ((sourceMass * getTemperature()) + (targetMass * target.getTemperature())) / (sourceMass + targetMass);
+        double incoming = heatCapacity(chemical, amount, state);
+        double existing = target.heatCapacity();
+        if (incoming <= 0) {
+            return;
+        }
+        if (existing <= 0 || target.getTemperature() <= 0) {
+            target.setTemperature(getTemperature());
+            return;
+        }
+        double finalTemperature = (incoming * getTemperature() + existing * target.getTemperature()) / (incoming + existing);
 
         target.setTemperature(finalTemperature);
     }
@@ -334,7 +428,11 @@ public abstract class Volume implements Cloneable {
     public Volume clone() {
         try {
             Volume clone = (Volume) super.clone();
-            clone.chemicalComponentsList = (HashMap<Chemical, ChemicalComponent>) chemicalComponentsList.clone();
+            // components are mutable, so the clone gets its own copies rather than sharing them
+            clone.chemicalComponentsList = new HashMap<>();
+            for (Map.Entry<Chemical, ChemicalComponent> entry : chemicalComponentsList.entrySet()) {
+                clone.chemicalComponentsList.put(entry.getKey(), entry.getValue().copy());
+            }
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();

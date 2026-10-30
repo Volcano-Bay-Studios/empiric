@@ -1,0 +1,13 @@
+{
+  "reactants": {
+    "empiric:calcium_hydroxide": 1,
+    "empiric:carbon_dioxide": 1
+  },
+  "products": {
+    "empiric:calcium_carbonate": 1,
+    "empiric:water": 1
+  },
+  "enthalpy": -113,
+  "rate": 0.5,
+  "requirements": {}
+}

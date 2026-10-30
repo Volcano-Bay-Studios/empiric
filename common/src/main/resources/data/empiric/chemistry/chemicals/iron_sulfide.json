@@ -1,0 +1,14 @@
+{
+  "name": "empiric:iron_sulfide",
+  "boilTemp": 3000,
+  "freezeTemp": 1194,
+  "hVapKJ": 300,
+  "hFusKJ": 32,
+  "densityLiquid": 4.0,
+  "densitySolid": 4.84,
+  "molecularWeight": 87.91,
+  "expandsOnFreezing": false,
+  "color": 2829099,
+  "heatCapacityLiquid": 80,
+  "heatCapacitySolid": 50.5
+}

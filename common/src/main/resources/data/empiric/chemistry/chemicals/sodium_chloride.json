@@ -1,0 +1,15 @@
+{
+  "name": "empiric:sodium_chloride",
+  "boilTemp": 1413,
+  "freezeTemp": 801,
+  "hVapKJ": 170,
+  "hFusKJ": 28.2,
+  "densityLiquid": 1.55,
+  "densitySolid": 2.17,
+  "molecularWeight": 58.44,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 68,
+  "heatCapacitySolid": 50.5,
+  "solubility": 6.1
+}

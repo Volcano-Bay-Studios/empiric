@@ -6,6 +6,7 @@
   "products": {
     "empiric:water": 2.0
   },
+  "enthalpy": -483.6,
   "requirements": {
     "empiric:heat": {
       "min": 536.0

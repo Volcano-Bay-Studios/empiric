@@ -33,7 +33,14 @@ public final class ObjParser {
      * @throws IllegalArgumentException with the line number if the file is malformed
      */
     public static ModelGeometry parse(String obj, String namespace, Function<String, String> materialLibraries) {
-        Parser parser = new Parser(namespace, materialLibraries);
+        return parse(obj, namespace, "", materialLibraries);
+    }
+
+    /**
+     * @param folder the sprite folder bare texture names are in, such as {@code block/chemistry/}, with its trailing slash
+     */
+    public static ModelGeometry parse(String obj, String namespace, String folder, Function<String, String> materialLibraries) {
+        Parser parser = new Parser(namespace, folder, materialLibraries);
         String[] lines = obj.split("\\R");
         for (int i = 0; i < lines.length; i++) {
             try {
@@ -51,6 +58,7 @@ public final class ObjParser {
     private static final class Parser {
 
         private final String namespace;
+        private final String folder;
         private final Function<String, String> materialLibraries;
         private final List<Vector3f> positions = new ArrayList<>();
         private final List<Vector3f> normals = new ArrayList<>();
@@ -60,8 +68,9 @@ public final class ObjParser {
         private String group = ModelGeometry.DEFAULT_PART;
         private Material material = DEFAULT_MATERIAL;
 
-        Parser(String namespace, Function<String, String> materialLibraries) {
+        Parser(String namespace, String folder, Function<String, String> materialLibraries) {
             this.namespace = namespace;
+            this.folder = folder;
             this.materialLibraries = materialLibraries;
         }
 
@@ -196,6 +205,8 @@ public final class ObjParser {
             String name = colon >= 0 ? clean.substring(colon + 1) : clean;
             if (name.startsWith("textures/")) {
                 name = name.substring("textures/".length());
+            } else if (colon < 0 && !name.contains("/")) {
+                name = folder + name;
             }
             ResourceLocation id = ResourceLocation.tryBuild(space, name);
             return id != null ? id : MISSING;

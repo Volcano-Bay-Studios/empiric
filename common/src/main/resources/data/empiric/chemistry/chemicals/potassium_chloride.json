@@ -1,0 +1,15 @@
+{
+  "name": "empiric:potassium_chloride",
+  "boilTemp": 1420,
+  "freezeTemp": 770,
+  "hVapKJ": 165,
+  "hFusKJ": 26.3,
+  "densityLiquid": 1.5,
+  "densitySolid": 1.98,
+  "molecularWeight": 74.55,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 68,
+  "heatCapacitySolid": 51.3,
+  "solubility": 4.6
+}

@@ -1,0 +1,17 @@
+{
+  "name": "empiric:copper_sulfate",
+  "boilTemp": 650,
+  "freezeTemp": 560,
+  "hVapKJ": 150,
+  "hFusKJ": 30,
+  "densityLiquid": 3.0,
+  "densitySolid": 3.6,
+  "molecularWeight": 159.61,
+  "expandsOnFreezing": false,
+  "color": 3043288,
+  "heatCapacityLiquid": 130,
+  "heatCapacitySolid": 98.9,
+  "solubility": 1.3,
+  "opacityLiquid": 0.85,
+  "opacitySolid": 1
+}

@@ -1,0 +1,16 @@
+{
+  "name": "empiric:sulfur_dioxide",
+  "boilTemp": -10,
+  "freezeTemp": -72,
+  "hVapKJ": 24.9,
+  "hFusKJ": 7.4,
+  "densityLiquid": 1.46,
+  "densitySolid": 1.9,
+  "molecularWeight": 64.07,
+  "expandsOnFreezing": false,
+  "color": 15132344,
+  "heatCapacityGas": 39.9,
+  "heatCapacityLiquid": 87,
+  "heatCapacitySolid": 50,
+  "opacityGas": 0.15
+}

@@ -1,0 +1,13 @@
+{
+  "reactants": {
+    "empiric:magnesium": 1,
+    "empiric:hydrochloric_acid": 2
+  },
+  "products": {
+    "empiric:magnesium_chloride": 1,
+    "empiric:hydrogen": 1
+  },
+  "enthalpy": -467,
+  "rate": 0.5,
+  "requirements": {}
+}

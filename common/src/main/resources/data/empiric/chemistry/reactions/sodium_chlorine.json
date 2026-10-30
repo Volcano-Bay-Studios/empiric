@@ -1,0 +1,12 @@
+{
+  "reactants": {
+    "empiric:sodium": 2,
+    "empiric:chlorine": 1
+  },
+  "products": {
+    "empiric:sodium_chloride": 2
+  },
+  "enthalpy": -822,
+  "rate": 1.0,
+  "requirements": {}
+}

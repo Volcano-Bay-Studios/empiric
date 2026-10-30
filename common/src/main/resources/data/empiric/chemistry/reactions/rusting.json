@@ -1,0 +1,18 @@
+{
+  "reactants": {
+    "empiric:iron": 4,
+    "empiric:oxygen": 3
+  },
+  "products": {
+    "empiric:iron_oxide": 2
+  },
+  "enthalpy": -1648,
+  "rate": 0.002,
+  "requirements": {
+    "empiric:catalyst": {
+      "chemicals": {
+        "empiric:water": 0.5
+      }
+    }
+  }
+}

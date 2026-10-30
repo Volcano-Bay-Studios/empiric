@@ -1,0 +1,15 @@
+{
+  "name": "empiric:sodium_nitrate",
+  "boilTemp": 600,
+  "freezeTemp": 308,
+  "hVapKJ": 120,
+  "hFusKJ": 15.3,
+  "densityLiquid": 1.9,
+  "densitySolid": 2.26,
+  "molecularWeight": 84.99,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 120,
+  "heatCapacitySolid": 93,
+  "solubility": 10.8
+}

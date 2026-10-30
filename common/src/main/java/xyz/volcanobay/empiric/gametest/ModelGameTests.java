@@ -6,11 +6,13 @@ import net.minecraft.resources.ResourceLocation;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.model.EmpiricModel;
 import xyz.volcanobay.empiric.api.model.EmpiricModels;
+import xyz.volcanobay.empiric.client.model.TranslucentEntry;
 import xyz.volcanobay.empiric.model.ModelFace;
 import xyz.volcanobay.empiric.model.ModelGeometry;
 import xyz.volcanobay.empiric.model.ModelRenderKind;
 import xyz.volcanobay.empiric.model.ObjParser;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -54,7 +56,9 @@ final class ModelGameTests {
     }
 
     static List<TestFunction> tests(BiFunction<String, Consumer<GameTestHelper>, TestFunction> test) {
-        return List.of(test.apply("model_obj_parse", ModelGameTests::objParse),
+        return List.of(
+                test.apply("translucent_sort_order", ModelGameTests::translucentSortOrder),
+                test.apply("model_obj_parse", ModelGameTests::objParse),
                 test.apply("model_obj_errors", ModelGameTests::objErrors),
                 test.apply("model_registry", ModelGameTests::registry));
     }
@@ -85,6 +89,10 @@ final class ModelGameTests {
 
         ModelGeometry noLibrary = ObjParser.parse(OBJ, "empiric", name -> null);
         helper.assertTrue(noLibrary.parts().get("base").getFirst().texture().getPath().equals("missingno"), "a missing .mtl didn't fall back to the missing texture");
+        ModelGeometry exported = ObjParser.parse("mtllib plate.mtl\nv 0 0 0\nv 1 0 0\nv 1 0 1\nusemtl m\nf 1 2 3", "empiric", "block/chemistry/",
+                name -> name.equals("plate.mtl") ? "newmtl m\nmap_Kd plate.png" : null);
+        ResourceLocation bare = exported.parts().values().iterator().next().getFirst().texture();
+        helper.assertTrue(bare.equals(ResourceLocation.parse("empiric:block/chemistry/plate")), "a bare Blockbench texture name gave " + bare);
 
         helper.assertTrue(ModelRenderKind.fromName("minecraft:cutout_mipped", ModelRenderKind.SOLID) == ModelRenderKind.CUTOUT
                 && ModelRenderKind.fromName("translucent", ModelRenderKind.SOLID) == ModelRenderKind.TRANSLUCENT
@@ -123,6 +131,13 @@ final class ModelGameTests {
         List<ResourceLocation> ids = EmpiricModels.jsonIds();
         helper.assertTrue(ids.contains(json.id()) && !ids.contains(obj.id()), "only JSON models should go to the loaders");
         helper.assertTrue(json.part("blade").name().equals("blade") && json.part("blade").model() == json, "a part didn't remember its model and name");
+        helper.succeed();
+    }
+
+    private static void translucentSortOrder(GameTestHelper helper) {
+        // far first; at the same distance lower layers first; then the order queued
+        int[] order = TranslucentEntry.order(new double[]{1, 9, 4, 4, 4}, new int[]{0, 0, 2, 0, 0});
+        helper.assertTrue(Arrays.equals(order, new int[]{1, 3, 4, 2, 0}), "translucent draws sorted wrongly: " + Arrays.toString(order));
         helper.succeed();
     }
 }

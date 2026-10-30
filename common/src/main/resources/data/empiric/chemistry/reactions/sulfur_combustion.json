@@ -1,0 +1,16 @@
+{
+  "reactants": {
+    "empiric:sulfur": 1,
+    "empiric:oxygen": 1
+  },
+  "products": {
+    "empiric:sulfur_dioxide": 1
+  },
+  "enthalpy": -296.8,
+  "rate": 0.3,
+  "requirements": {
+    "empiric:heat": {
+      "min": 250
+    }
+  }
+}

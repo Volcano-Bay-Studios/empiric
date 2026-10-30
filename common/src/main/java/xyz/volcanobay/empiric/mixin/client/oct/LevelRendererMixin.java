@@ -2,6 +2,7 @@ package xyz.volcanobay.empiric.mixin.client.oct;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -22,7 +23,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import xyz.volcanobay.empiric.api.part.client.PartOutline;
 import xyz.volcanobay.empiric.api.oct.OctBlock;
 import xyz.volcanobay.empiric.api.oct.OctBlockComplement;
 import xyz.volcanobay.empiric.api.oct.OctMultiblock;
@@ -36,6 +39,8 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -68,6 +73,14 @@ public abstract class LevelRendererMixin {
     @Final
     private RenderBuffers renderBuffers;
     
+    @Inject(method = "renderHitOutline", at = @At("HEAD"), cancellable = true)
+    private void renderPartOutline(PoseStack pose, VertexConsumer consumer, Entity entity, double camX, double camY, double camZ,
+                                   BlockPos pos, BlockState state, CallbackInfo ci) {
+        if (state.getBlock() instanceof FullOctBlock && PartOutline.render(pose, consumer, entity, camX, camY, camZ, pos)) {
+            ci.cancel();
+        }
+    }
+
     @WrapOperation(method = "renderHitOutline", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;getShape(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/phys/shapes/CollisionContext;)Lnet/minecraft/world/phys/shapes/VoxelShape;"))
     private VoxelShape getOctShape(BlockState instance,
                                    BlockGetter blockGetter,
@@ -95,6 +108,10 @@ public abstract class LevelRendererMixin {
                 }
                 Block block = octState.getBlock();
                 if (block instanceof OctBlock octBlock) {
+                    VoxelShape outline = octBlock.getHitOutline(octState, octLevel, blockPos, octant, collisionContext);
+                    if (outline != null) {
+                        return outline;
+                    }
                     return octBlock.getFullShape(octState, octLevel, blockPos, octant, collisionContext).get(octant);
                 }
             }

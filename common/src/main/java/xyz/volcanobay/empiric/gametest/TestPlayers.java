@@ -7,6 +7,8 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.world.level.GameType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -27,6 +29,13 @@ public final class TestPlayers {
     }
 
     public static ServerPlayer mock(GameTestHelper helper) {
+        return mock(helper, null);
+    }
+
+    /**
+     * @param mode The game mode the player is in; null for a creative player that still reports survival abilities
+     */
+    public static ServerPlayer mock(GameTestHelper helper, @Nullable GameType mode) {
         CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-mock-player"), false);
         ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation()) {
             @Override
@@ -36,13 +45,16 @@ public final class TestPlayers {
 
             @Override
             public boolean isCreative() {
-                return true;
+                return mode == null || mode == GameType.CREATIVE;
             }
         };
         Connection connection = new Connection(PacketFlow.SERVERBOUND);
         new EmbeddedChannel(connection);
         setup.accept(connection);
         helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+        if (mode != null) {
+            player.setGameMode(mode);
+        }
         return player;
     }
 }

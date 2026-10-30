@@ -68,6 +68,24 @@ public class TooltipContent extends Panel {
         return content;
     }
 
+    /**
+     * The tooltip of a target that isn't a module, such as one from a {@link TooltipSource}.
+     */
+    public static TooltipContent of(TooltipBehavior behavior, Player viewer) {
+        TooltipContent content = new TooltipContent();
+        String title = behavior.tooltipTitle(viewer);
+        if (title != null) {
+            ItemStack icon = behavior.tooltipIcon();
+            if (icon.isEmpty()) {
+                content.title(title);
+            } else {
+                content.title(icon, title);
+            }
+        }
+        behavior.tooltip(content, viewer);
+        return content;
+    }
+
     public boolean isEmpty() {
         return children().isEmpty();
     }

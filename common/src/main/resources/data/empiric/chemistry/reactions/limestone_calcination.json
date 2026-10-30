@@ -1,0 +1,16 @@
+{
+  "reactants": {
+    "empiric:calcium_carbonate": 1
+  },
+  "products": {
+    "empiric:calcium_oxide": 1,
+    "empiric:carbon_dioxide": 1
+  },
+  "enthalpy": 178,
+  "rate": 0.2,
+  "requirements": {
+    "empiric:heat": {
+      "min": 840
+    }
+  }
+}

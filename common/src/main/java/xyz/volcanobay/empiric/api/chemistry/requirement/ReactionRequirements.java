@@ -13,6 +13,10 @@ public class ReactionRequirements {
     private HeatReactionRequirement heat;
     @Data(id = "empiric:electrolysis", optional = true)
     private ElectrolysisRequirement electrolysis;
+    @Data(id = "empiric:pressure", optional = true)
+    private PressureReactionRequirement pressure;
+    @Data(id = "empiric:catalyst", optional = true)
+    private CatalystReactionRequirement catalyst;
 
     public HeatReactionRequirement getHeat() {
         return heat;
@@ -22,7 +26,15 @@ public class ReactionRequirements {
         return electrolysis;
     }
 
+    public PressureReactionRequirement getPressure() {
+        return pressure;
+    }
+
+    public CatalystReactionRequirement getCatalyst() {
+        return catalyst;
+    }
+
     public int count() {
-        return (heat == null ? 0 : 1) + (electrolysis == null ? 0 : 1);
+        return (heat == null ? 0 : 1) + (electrolysis == null ? 0 : 1) + (pressure == null ? 0 : 1) + (catalyst == null ? 0 : 1);
     }
 }

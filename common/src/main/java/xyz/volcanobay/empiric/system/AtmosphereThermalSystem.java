@@ -4,6 +4,7 @@ import net.minecraft.world.level.Level;
 import xyz.volcanobay.empiric.api.atmosphere.Volume;
 import xyz.volcanobay.empiric.api.atmosphere.module.AtmosphereNetwork;
 import xyz.volcanobay.empiric.api.atmosphere.volume.AtmosphereVolume;
+import xyz.volcanobay.empiric.api.chemistry.sim.CellHeat;
 import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
 
 import java.util.HashMap;
@@ -88,12 +89,7 @@ public final class AtmosphereThermalSystem {
             int cell = TemperatureSystem.get(level, pos.x(), pos.y(), pos.z());
             double flow = scale * entry.getValue()[0] * (before - (cell / 10.0 + 273.15));
             heat += flow;
-            double wanted = flow / CELL_HEAT_CAPACITY * 10 + carry.getOrDefault(pos, 0.0);
-            int applied = (int) wanted;
-            if (applied != 0) {
-                TemperatureSystem.set(level, pos.x(), pos.y(), pos.z(), cell + applied);
-            }
-            double left = wanted - applied;
+            double left = CellHeat.apply(level, pos.x(), pos.y(), pos.z(), flow, CELL_HEAT_CAPACITY, carry.getOrDefault(pos, 0.0));
             if (left != 0) {
                 carry.put(pos, left);
             } else {

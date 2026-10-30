@@ -32,14 +32,18 @@ public interface TooltipBehavior {
     default void tooltip(TooltipContent content, Player viewer) {
     }
 
+    /**
+     * While open, the tooltip is built again whenever this changes, for content that comes and goes rather than rows
+     * whose values change.
+     */
+    default int tooltipRevision(Player viewer) {
+        return 0;
+    }
+
     default boolean showsTooltip(Player viewer) {
         return true;
     }
 
-    /**
-     * Whether the viewer can point at and use the tooltip's widgets, for example only while holding a tool. Otherwise
-     * it only displays.
-     */
     /**
      * The id of the UI theme the tooltip is drawn with, or null for the default.
      */
@@ -47,6 +51,10 @@ public interface TooltipBehavior {
         return null;
     }
 
+    /**
+     * Whether the viewer can point at and use the tooltip's widgets, for example only while holding a tool. Otherwise
+     * it only displays, and looking away from it closes it rather than the crosshair holding it open.
+     */
     default boolean canInteract(Player viewer) {
         return true;
     }

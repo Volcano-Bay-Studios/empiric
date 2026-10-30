@@ -41,6 +41,7 @@ public class Empiric {
         if (EmpiricTestModules.enabled()) {
             plugins.add(new EmpiricTestModules());
             EmpiricTestBlocks.bootstrap();
+            EmpiricTestBlocks.parts();
         }
         LOGGER.info("Empiric is initializing with {} plugins.", plugins.size());
 

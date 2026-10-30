@@ -1,0 +1,16 @@
+{
+  "name": "empiric:hydrogen_peroxide",
+  "boilTemp": 150.2,
+  "freezeTemp": -0.43,
+  "hVapKJ": 51.6,
+  "hFusKJ": 12.5,
+  "densityLiquid": 1.45,
+  "densitySolid": 1.64,
+  "molecularWeight": 34.01,
+  "expandsOnFreezing": false,
+  "color": 15134453,
+  "heatCapacityGas": 43,
+  "heatCapacityLiquid": 89,
+  "heatCapacitySolid": 50,
+  "opacityLiquid": 0.25
+}

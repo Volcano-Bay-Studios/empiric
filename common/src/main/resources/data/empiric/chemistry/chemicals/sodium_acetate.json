@@ -1,0 +1,15 @@
+{
+  "name": "empiric:sodium_acetate",
+  "boilTemp": 881,
+  "freezeTemp": 324,
+  "hVapKJ": 100,
+  "hFusKJ": 18,
+  "densityLiquid": 1.4,
+  "densitySolid": 1.53,
+  "molecularWeight": 82.03,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 120,
+  "heatCapacitySolid": 79.9,
+  "solubility": 5.0
+}

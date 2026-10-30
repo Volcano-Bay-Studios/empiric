@@ -1,0 +1,15 @@
+{
+  "name": "empiric:calcium_chloride",
+  "boilTemp": 1935,
+  "freezeTemp": 772,
+  "hVapKJ": 200,
+  "hFusKJ": 28,
+  "densityLiquid": 2.08,
+  "densitySolid": 2.15,
+  "molecularWeight": 110.98,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 100,
+  "heatCapacitySolid": 72.9,
+  "solubility": 6.7
+}

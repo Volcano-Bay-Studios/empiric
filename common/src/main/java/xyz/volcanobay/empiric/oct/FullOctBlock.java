@@ -16,11 +16,19 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.LiquidBlockContainer;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -38,7 +46,7 @@ import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import xyz.volcanobay.empiric.networking.packet.OctBreakS2CPacket;
 import xyz.volcanobay.empiric.registry.EmpiricBlockEntities;
 
-public class FullOctBlock extends Block implements EntityBlock {
+public class FullOctBlock extends Block implements EntityBlock, LiquidBlockContainer {
     public FullOctBlock(Properties ignored) {
         super(Properties.of().noOcclusion().dynamicShape());
     }
@@ -77,6 +85,73 @@ public class FullOctBlock extends Block implements EntityBlock {
     }
 
     @Override
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return FullOctBlockEntity.get(level, pos).map(be -> be.getCollisionShape(pos, context)).orElseGet(Shapes::empty);
+    }
+
+    /**
+     * Lets every octant know the block is going away when something other than an octant break replaces it
+     * (explosions, commands, pistons), so their contents can drop. Octants already cleared one by one are air by now.
+     */
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!newState.is(this)) {
+            FullOctBlockEntity.get(level, pos).ifPresent(FullOctBlockEntity::blockRemoved);
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
+    }
+
+    @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (level.isClientSide) {
+            return;
+        }
+        FullOctBlockEntity.get(level, pos).ifPresent(be -> {
+            for (int octant = 0; octant < 8; octant++) {
+                BlockState octState = be.getOctState(octant);
+                if (octState.getBlock() instanceof OctBlock octBlock) {
+                    octBlock.neighborChanged(octState, LevelOctExtension.get(level), level, pos, octant, neighborBlock, neighborPos);
+                }
+            }
+        });
+    }
+
+    /**
+     * What the whole block drops when it isn't broken octant by octant (explosions): every octant's own drops.
+     */
+    @Override
+    protected List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
+        List<ItemStack> drops = new ArrayList<>();
+        if (params.getOptionalParameter(LootContextParams.BLOCK_ENTITY) instanceof FullOctBlockEntity be) {
+            for (int octant = 0; octant < 8; octant++) {
+                BlockState octState = be.getOctState(octant);
+                if (!octState.isAir()) {
+                    drops.addAll(octState.getDrops(params));
+                }
+            }
+        }
+        return drops;
+    }
+
+    // fluids neither replace nor fill oct blocks, so their contents can't be washed away
+
+    @Override
+    protected boolean canBeReplaced(BlockState state, Fluid fluid) {
+        return false;
+    }
+
+    @Override
+    public boolean canPlaceLiquid(@Nullable Player player, BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
+        return false;
+    }
+
+    @Override
+    public boolean placeLiquid(LevelAccessor level, BlockPos pos, BlockState state, FluidState fluidState) {
+        return false;
+    }
+
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         int octant = OctUtil.getOctant(hitResult);
         return FullOctBlockEntity.get(level, pos)
@@ -112,6 +187,7 @@ public class FullOctBlock extends Block implements EntityBlock {
                                 pos,
                                 octant,
                                 player,
+                                hand,
                                 hitResult
                         )
                 ).orElse(ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION);
@@ -139,6 +215,10 @@ public class FullOctBlock extends Block implements EntityBlock {
             BlockState octState = be.getOctState(octant);
             if (octState.isAir()) {
                 return false;
+            }
+            if (octState.getBlock() instanceof OctBlock octBlock
+                    && octBlock.destroyedByPlayer(octState, LevelOctExtension.get(level), level, pos, octant, player)) {
+                return true;
             }
             if (level instanceof ServerLevel serverLevel) {
                 PacketTarget.tracking(serverLevel, pos).send(new OctBreakS2CPacket(new OctPos(pos, octant), octState));

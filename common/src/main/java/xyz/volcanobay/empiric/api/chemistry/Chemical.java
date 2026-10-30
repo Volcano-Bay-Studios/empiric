@@ -31,6 +31,20 @@ public class Chemical {
     private boolean expandsOnFreezing; //Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.
     @Data
     private int color = 0xcccccc; // The color of the chemical
+    @Data
+    private double heatCapacityGas = 29.1; // Molar heat capacity of the gas in J/(mol K).
+    @Data
+    private double heatCapacityLiquid = 30; // Molar heat capacity of the liquid in J/(mol K).
+    @Data
+    private double heatCapacitySolid = 25; // Molar heat capacity of the solid in J/(mol K).
+    @Data
+    private double solubility; // How much of the solid dissolves in a litre of liquid, in mol/L. 0 if it doesn't dissolve.
+    @Data
+    private double opacitySolid = 1; // How opaque the solid is, 0 (clear) to 1.
+    @Data
+    private double opacityLiquid = 0.7; // How opaque the liquid is, 0 (clear) to 1.
+    @Data
+    private double opacityGas = 0.1; // How opaque the gas is, 0 (clear) to 1.
 
     public Chemical() {
     }
@@ -87,6 +101,92 @@ public class Chemical {
 
     public int getColor() {
         return color;
+    }
+
+    /**
+     * Molar heat capacity in J/(mol K) of the chemical in a state.
+     */
+    public double getHeatCapacity(Volume.State state) {
+        return switch (state) {
+            case GAS -> heatCapacityGas;
+            case LIQUID -> heatCapacityLiquid;
+            case SOLID -> heatCapacitySolid;
+        };
+    }
+
+    /**
+     * Sets the heat capacities, for chemicals made in code rather than loaded from data.
+     * @return This chemical
+     */
+    public Chemical withHeatCapacities(double gas, double liquid, double solid) {
+        this.heatCapacityGas = gas;
+        this.heatCapacityLiquid = liquid;
+        this.heatCapacitySolid = solid;
+        return this;
+    }
+
+    /**
+     * @return How opaque the chemical is in a state, 0 (clear) to 1
+     */
+    public double getOpacity(Volume.State state) {
+        return switch (state) {
+            case GAS -> opacityGas;
+            case LIQUID -> opacityLiquid;
+            case SOLID -> opacitySolid;
+        };
+    }
+
+    /**
+     * Sets the opacities, 0 (clear) to 1, for chemicals made in code rather than loaded from data.
+     * @return This chemical
+     */
+    public Chemical withOpacities(double gas, double liquid, double solid) {
+        this.opacityGas = gas;
+        this.opacityLiquid = liquid;
+        this.opacitySolid = solid;
+        return this;
+    }
+
+    /**
+     * Sets the solubility in mol/L, for chemicals made in code rather than loaded from data.
+     * @return This chemical
+     */
+    public Chemical withSolubility(double solubility) {
+        this.solubility = solubility;
+        return this;
+    }
+
+    /**
+     * @return How much of the solid dissolves in a litre of liquid, in mol/L, 0 if it doesn't
+     */
+    public double getSolubility() {
+        return solubility;
+    }
+
+    /**
+     * The boiling point in Celsius at a pressure, from {@link ChemicalPhaseCalculator}. Chemicals without enthalpies keep their 1 atm point.
+     * @param atm Pressure in atmospheres
+     */
+    public double boilingPointAt(double atm) {
+        if (atm == 1 || hVapKJ <= 0 || hFusKJ <= 0) {
+            return boilTemp;
+        }
+        return ChemicalPhaseCalculator.calculate(Math.max(atm, MIN_PRESSURE), boilTemp, freezeTemp, hVapKJ, hFusKJ,
+                densityLiquid, densitySolid, molecularWeight, expandsOnFreezing).boilingPointC();
+    }
+
+    /**
+     * The pressure of this chemical's vapour over its liquid at a temperature, from the Clausius–Clapeyron relation
+     * around the standard boiling point. 0 for chemicals without an enthalpy of vaporization.
+     * @param kelvin Temperature in kelvin
+     * @return Pressure in Pa
+     */
+    public double vapourPressure(double kelvin) {
+        if (hVapKJ <= 0 || kelvin <= 0) {
+            return 0;
+        }
+        double boil = boilTemp + 273.15;
+        return 101325 * Math.exp(-hVapKJ * 1000 / 8.314 * (1 / kelvin - 1 / boil));
     }
 
 

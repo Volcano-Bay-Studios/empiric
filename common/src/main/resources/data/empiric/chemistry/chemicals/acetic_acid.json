@@ -1,0 +1,16 @@
+{
+  "name": "empiric:acetic_acid",
+  "boilTemp": 117.9,
+  "freezeTemp": 16.6,
+  "hVapKJ": 23.7,
+  "hFusKJ": 11.7,
+  "densityLiquid": 1.049,
+  "densitySolid": 1.27,
+  "molecularWeight": 60.05,
+  "expandsOnFreezing": false,
+  "color": 15790304,
+  "heatCapacityGas": 63.4,
+  "heatCapacityLiquid": 123,
+  "heatCapacitySolid": 80,
+  "opacityLiquid": 0.25
+}

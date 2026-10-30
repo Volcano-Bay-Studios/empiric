@@ -1,0 +1,18 @@
+{
+  "reactants": {
+    "empiric:hydrogen_peroxide": 2
+  },
+  "products": {
+    "empiric:water": 2,
+    "empiric:oxygen": 1
+  },
+  "enthalpy": -196,
+  "rate": 0.3,
+  "requirements": {
+    "empiric:catalyst": {
+      "chemicals": {
+        "empiric:manganese_dioxide": 0.001
+      }
+    }
+  }
+}

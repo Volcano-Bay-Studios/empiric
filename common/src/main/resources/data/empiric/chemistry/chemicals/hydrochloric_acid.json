@@ -1,0 +1,16 @@
+{
+  "name": "empiric:hydrochloric_acid",
+  "boilTemp": 110,
+  "freezeTemp": -27.3,
+  "hVapKJ": 40,
+  "hFusKJ": 4,
+  "densityLiquid": 1.18,
+  "densitySolid": 1.3,
+  "molecularWeight": 36.46,
+  "expandsOnFreezing": false,
+  "color": 15332036,
+  "heatCapacityGas": 29.1,
+  "heatCapacityLiquid": 100,
+  "heatCapacitySolid": 60,
+  "opacityLiquid": 0.3
+}

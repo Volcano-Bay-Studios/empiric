@@ -1,0 +1,14 @@
+{
+  "name": "empiric:iron_oxide",
+  "boilTemp": 3000,
+  "freezeTemp": 1565,
+  "hVapKJ": 400,
+  "hFusKJ": 138,
+  "densityLiquid": 4.5,
+  "densitySolid": 5.24,
+  "molecularWeight": 159.69,
+  "expandsOnFreezing": false,
+  "color": 9124378,
+  "heatCapacityLiquid": 150,
+  "heatCapacitySolid": 104.6
+}

@@ -1,0 +1,13 @@
+{
+  "reactants": {
+    "empiric:silver_nitrate": 1,
+    "empiric:sodium_chloride": 1
+  },
+  "products": {
+    "empiric:silver_chloride": 1,
+    "empiric:sodium_nitrate": 1
+  },
+  "enthalpy": -65,
+  "rate": 2.0,
+  "requirements": {}
+}

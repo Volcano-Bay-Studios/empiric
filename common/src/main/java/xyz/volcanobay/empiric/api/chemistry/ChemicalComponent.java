@@ -50,6 +50,14 @@ public class ChemicalComponent {
         }
     }
 
+    public ChemicalComponent copy() {
+        ChemicalComponent copy = new ChemicalComponent(chemical);
+        copy.gasAmount = gasAmount;
+        copy.liquidAmount = liquidAmount;
+        copy.solidAmount = solidAmount;
+        return copy;
+    }
+
     public double getSum() {
         return gasAmount+liquidAmount+solidAmount;
     }

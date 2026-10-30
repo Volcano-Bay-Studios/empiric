@@ -1,0 +1,16 @@
+{
+  "reactants": {
+    "empiric:magnesium": 2,
+    "empiric:oxygen": 1
+  },
+  "products": {
+    "empiric:magnesium_oxide": 2
+  },
+  "enthalpy": -1204,
+  "rate": 2.0,
+  "requirements": {
+    "empiric:heat": {
+      "min": 600
+    }
+  }
+}

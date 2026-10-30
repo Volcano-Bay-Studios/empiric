@@ -8,6 +8,7 @@ import xyz.volcanobay.empiric.model.ModelRenderKind;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * The faces of one render kind of a model or part, uploaded once, plus the instances queued to draw it this frame.
@@ -91,6 +92,21 @@ final class ModelMesh implements AutoCloseable {
     void drawSingle(Matrix4fc pose, Matrix3fc normal, int light, int overlay, int tint) {
         write(scratch, 0, pose, normal, light, overlay, tint);
         draw(scratch, 1);
+    }
+
+    /**
+     * Draws a run of queued translucent entries of this mesh, in their order, in one instanced draw.
+     */
+    void drawBatch(List<TranslucentEntry> entries, int from, int to) {
+        int instances = to - from;
+        if (instances * STRIDE > scratch.capacity()) {
+            scratch = MemoryUtil.memRealloc(scratch, Math.max(instances * STRIDE, scratch.capacity() * 2));
+        }
+        for (int i = 0; i < instances; i++) {
+            TranslucentEntry entry = entries.get(from + i);
+            write(scratch, i * STRIDE, entry.pose, entry.normal, entry.light, entry.overlay, entry.tint);
+        }
+        draw(scratch, instances);
     }
 
     private ByteBuffer sorted() {

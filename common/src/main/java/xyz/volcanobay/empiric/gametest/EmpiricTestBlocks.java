@@ -45,6 +45,10 @@ public final class EmpiricTestBlocks {
         PIPE_BLOCK = blocks.register("test_pipe_block", () -> new TestPipeBlock(BlockBehaviour.Properties.of()));
     }
 
+    public static void parts() {
+        PartGameTests.bootstrap();
+    }
+
     public static class TestOctBlock extends OctBlock {
 
         public TestOctBlock(Properties properties) {
@@ -59,6 +63,32 @@ public final class EmpiricTestBlocks {
         @Override
         public @Nullable OctBlockEntity createOctEntity(BlockPos pos, int octant, BlockState state) {
             return new TestOctEntity(pos, octant, state);
+        }
+
+        public static int removed;
+        public static int neighborChanges;
+        public static @Nullable net.minecraft.world.InteractionHand lastHand;
+
+        @Override
+        public void onRemove(BlockState state, xyz.volcanobay.empiric.api.oct.OctLevel octLevel, net.minecraft.world.level.Level level, BlockPos pos, int octant, BlockState newState) {
+            removed++;
+        }
+
+        @Override
+        public void neighborChanged(BlockState state, xyz.volcanobay.empiric.api.oct.OctLevel octLevel, net.minecraft.world.level.Level level, BlockPos pos, int octant, Block neighborBlock, BlockPos neighborPos) {
+            neighborChanges++;
+        }
+
+        // walked through, but still selectable
+        @Override
+        public net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState state, xyz.volcanobay.empiric.api.oct.OctGetter level, BlockPos pos, int octant, net.minecraft.world.phys.shapes.CollisionContext context) {
+            return net.minecraft.world.phys.shapes.Shapes.empty();
+        }
+
+        @Override
+        public net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack stack, BlockState state, xyz.volcanobay.empiric.api.oct.OctLevel level, BlockPos pos, int octant, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hitResult) {
+            lastHand = hand;
+            return net.minecraft.world.ItemInteractionResult.SUCCESS;
         }
     }
 
@@ -145,6 +175,33 @@ public final class EmpiricTestBlocks {
 
         public TestSelfEntity(BlockPos pos, BlockState state) {
             super(BlockEntityType.CHEST, pos, state);
+        }
+    }
+
+    @SelfSpec
+    public static class TestEditEntity extends BlockEntity implements xyz.volcanobay.empiric.api.module.SelfNetworkBehavior {
+
+        @Data(clientMutable = true)
+        public int level;
+        @Data(clientMutable = true)
+        public int locked;
+        public final java.util.List<String> updated = new java.util.ArrayList<>();
+
+        public TestEditEntity(BlockPos pos, BlockState state) {
+            super(BlockEntityType.CHEST, pos, state);
+        }
+
+        @Override
+        public boolean acceptClientUpdate(net.minecraft.server.level.ServerPlayer player, String field) {
+            return !field.equals("locked");
+        }
+
+        @Override
+        public void onClientUpdate(net.minecraft.server.level.ServerPlayer player, String field) {
+            updated.add(field);
+            if (field.equals("level")) {
+                level = Math.min(level, 10);
+            }
         }
     }
 }

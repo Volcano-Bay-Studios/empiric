@@ -1,0 +1,17 @@
+{
+  "name": "empiric:ammonia",
+  "boilTemp": -33.34,
+  "freezeTemp": -77.7,
+  "hVapKJ": 23.35,
+  "hFusKJ": 5.65,
+  "densityLiquid": 0.682,
+  "densitySolid": 0.82,
+  "molecularWeight": 17.03,
+  "expandsOnFreezing": false,
+  "color": 14477552,
+  "heatCapacityGas": 35.1,
+  "heatCapacityLiquid": 80.8,
+  "heatCapacitySolid": 40,
+  "opacityLiquid": 0.2,
+  "opacityGas": 0.05
+}

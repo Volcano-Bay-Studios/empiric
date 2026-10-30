@@ -27,6 +27,15 @@ public class PlanetAtmosphereVolume extends AtmosphereVolume {
     }
 
     @Override
+    public void addHeat(double joules) {
+    }
+
+    @Override
+    public boolean isReservoir() {
+        return true;
+    }
+
+    @Override
     public void clear() {
     }
 

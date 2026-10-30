@@ -1,0 +1,15 @@
+{
+  "name": "empiric:zinc_sulfate",
+  "boilTemp": 740,
+  "freezeTemp": 680,
+  "hVapKJ": 150,
+  "hFusKJ": 30,
+  "densityLiquid": 3.0,
+  "densitySolid": 3.54,
+  "molecularWeight": 161.47,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 130,
+  "heatCapacitySolid": 117,
+  "solubility": 3.6
+}

@@ -15,6 +15,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
@@ -26,6 +27,8 @@ import xyz.volcanobay.empiric.api.ui.tooltip.TooltipBehavior;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipTargets;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipContent;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipPlacement;
+import xyz.volcanobay.empiric.api.ui.tooltip.TooltipSource;
+import xyz.volcanobay.empiric.api.ui.tooltip.TooltipSources;
 import xyz.volcanobay.empiric.client.ui.ClientUiHost;
 import xyz.volcanobay.empiric.client.ui.GuiCanvas;
 import xyz.volcanobay.empiric.core.attachment.Attachment;
@@ -69,6 +72,8 @@ public final class TooltipSystem {
 
     private static Object target;
     private static List<Module<?>> modules = List.of();
+    private static TooltipBehavior behavior;
+    private static int revision;
     private static TooltipContent content;
     private static ClientUiHost host;
     private static UiRoot root;
@@ -92,7 +97,10 @@ public final class TooltipSystem {
     private static double lastX;
     private static double lastY;
 
-    private record Found(Object key, List<Module<?>> modules, AABB box) {
+    /**
+     * @param behavior The tooltip of a {@link TooltipSource} target, which has no modules
+     */
+    private record Found(Object key, List<Module<?>> modules, @Nullable TooltipBehavior behavior, AABB box) {
     }
 
     private TooltipSystem() {
@@ -135,6 +143,12 @@ public final class TooltipSystem {
         if (same) {
             box = found.box();
             lostTicks = 0;
+            if (found.behavior() != null) {
+                behavior = found.behavior();
+            }
+            if (revision(player) != revision) {
+                rebuild(player);
+            }
         } else if (root != null && found == null && !held) {
             if (++lostTicks > GRACE_TICKS) {
                 close();
@@ -155,8 +169,8 @@ public final class TooltipSystem {
             }
         }
         interactive = true;
-        for (Module<?> module : modules) {
-            if (TooltipTargets.owner(module) instanceof TooltipBehavior behavior && !behavior.canInteract(player)) {
+        for (TooltipBehavior each : behaviors()) {
+            if (!each.canInteract(player)) {
                 interactive = false;
             }
         }
@@ -176,6 +190,10 @@ public final class TooltipSystem {
         Object key;
         AABB at;
         if (hit instanceof BlockHitResult blockHit && hit.getType() == HitResult.Type.BLOCK) {
+            TooltipSource.Target sourced = TooltipSources.find(level, blockHit, player);
+            if (sourced != null) {
+                return new Found(sourced.key(), List.of(), sourced.behavior(), sourced.box());
+            }
             BlockPos pos = blockHit.getBlockPos();
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity != null) {
@@ -203,7 +221,7 @@ public final class TooltipSystem {
                 }
             });
         }
-        return providers.isEmpty() ? null : new Found(key, providers, at);
+        return providers.isEmpty() ? null : new Found(key, providers, null, at);
     }
 
     /**
@@ -254,22 +272,15 @@ public final class TooltipSystem {
     }
 
     private static void open(Found found, Player player) {
-        TooltipContent built = TooltipContent.of(found.modules(), player);
+        TooltipContent built = found.behavior() != null ? TooltipContent.of(found.behavior(), player) : TooltipContent.of(found.modules(), player);
         if (built.isEmpty()) {
             return;
         }
         target = found.key();
         modules = List.copyOf(found.modules());
-        content = built;
+        behavior = found.behavior();
         host = new ClientUiHost(Minecraft.getInstance().font, TooltipSystem::close);
-        root = new UiRoot(content, modules.getFirst(), host);
-        for (Module<?> module : modules) {
-            if (TooltipTargets.owner(module) instanceof TooltipBehavior behavior && behavior.tooltipTheme() != null) {
-                root.setTheme(host.theme(behavior.tooltipTheme()));
-                break;
-            }
-        }
-        root.resize(content.measuredWidth(), content.measuredHeight());
+        show(built, player);
         box = found.box();
         nearestCorner = -1;
         desired = chooseAnchor(Minecraft.getInstance().gameRenderer.getMainCamera(), false);
@@ -278,6 +289,55 @@ public final class TooltipSystem {
         anchor = desired.add(0, -0.15, 0);
         previousAnchor = anchor;
         age = 0;
+    }
+
+    private static void show(TooltipContent built, Player player) {
+        content = built;
+        root = new UiRoot(content, modules.isEmpty() ? null : modules.getFirst(), host);
+        for (TooltipBehavior each : behaviors()) {
+            if (each.tooltipTheme() != null) {
+                root.setTheme(host.theme(each.tooltipTheme()));
+                break;
+            }
+        }
+        root.resize(content.measuredWidth(), content.measuredHeight());
+        revision = revision(player);
+    }
+
+    /**
+     * Builds the open tooltip again where it is, keeping its place and fade.
+     */
+    private static void rebuild(Player player) {
+        TooltipContent built = behavior != null ? TooltipContent.of(behavior, player) : TooltipContent.of(modules, player);
+        if (built.isEmpty()) {
+            close();
+            return;
+        }
+        root.dispose();
+        pointerOn = false;
+        capturedButton = -1;
+        show(built, player);
+    }
+
+    private static List<TooltipBehavior> behaviors() {
+        if (behavior != null) {
+            return List.of(behavior);
+        }
+        List<TooltipBehavior> behaviors = new ArrayList<>();
+        for (Module<?> module : modules) {
+            if (TooltipTargets.owner(module) instanceof TooltipBehavior each) {
+                behaviors.add(each);
+            }
+        }
+        return behaviors;
+    }
+
+    private static int revision(Player player) {
+        int hash = 1;
+        for (TooltipBehavior each : behaviors()) {
+            hash = hash * 31 + each.tooltipRevision(player);
+        }
+        return hash;
     }
 
     public static void close() {
@@ -289,6 +349,7 @@ public final class TooltipSystem {
         host = null;
         target = null;
         modules = List.of();
+        behavior = null;
         pointerOn = false;
         nearPanel = false;
         lostTicks = 0;
@@ -328,7 +389,7 @@ public final class TooltipSystem {
         panelX = Math.clamp(x, EDGE, Math.max(EDGE, screenWidth - width - EDGE));
         panelY = Math.clamp(y, EDGE, Math.max(EDGE, screenHeight - height - EDGE));
         followCrosshair(minecraft, screenWidth, screenHeight, width, height, point != null);
-        nearPanel = point != null && crosshairBetween(point, screenWidth / 2f, screenHeight / 2f, width, height);
+        nearPanel = interactive && point != null && crosshairBetween(point, screenWidth / 2f, screenHeight / 2f, width, height);
         float fade = Math.clamp((age + partialTick) / FADE_TICKS, 0, 1);
         RenderSystem.setShaderColor(1, 1, 1, fade);
         GuiCanvas canvas = new GuiCanvas(graphics, host.font(), minecraft.font);

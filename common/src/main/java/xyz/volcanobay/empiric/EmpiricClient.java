@@ -4,6 +4,11 @@ import net.minecraft.client.Minecraft;
 import xyz.volcanobay.empiric.api.behavior.ClientTickBehavior;
 import xyz.volcanobay.empiric.api.behavior.EmpiricBehaviors;
 import xyz.volcanobay.empiric.api.behavior.RenderBehavior;
+import xyz.volcanobay.empiric.api.oct.OctBlockRendererRegistry;
+import xyz.volcanobay.empiric.api.part.PartOctEntity;
+import xyz.volcanobay.empiric.api.part.Placement;
+import xyz.volcanobay.empiric.api.part.client.PartRenderer;
+import xyz.volcanobay.empiric.api.part.client.PlacementPreview;
 import xyz.volcanobay.empiric.client.model.ModelRenderer;
 import xyz.volcanobay.empiric.client.overlay.OverlayRenderer;
 import xyz.volcanobay.empiric.client.ui.PresenceCursors;
@@ -12,6 +17,8 @@ import xyz.volcanobay.empiric.client.ui.surface.SurfaceRenderer;
 import xyz.volcanobay.empiric.client.ui.tooltip.TooltipSystem;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
+import xyz.volcanobay.empiric.api.part.client.PartTooltips;
+import xyz.volcanobay.empiric.api.ui.tooltip.TooltipSources;
 import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.platform.Platform;
 import xyz.volcanobay.empiric.system.ModuleSyncSystem;
@@ -20,6 +27,9 @@ public class EmpiricClient {
 
     public static void init() {
         Platform.initClient();
+        OctBlockRendererRegistry.register(PartOctEntity.class, PartRenderer::new);
+        Placement.clientPlaced = PlacementPreview::placed;
+        TooltipSources.register(PartTooltips.INSTANCE);
     }
 
     /**
@@ -29,6 +39,9 @@ public class EmpiricClient {
         ModelRenderer.renderStage(context.stage(), context.frustumMatrix(), context.projectionMatrix());
         OverlayRenderer.render(context.stage(), context.frustumMatrix(), context.projectionMatrix(), context.camera());
         SurfaceRenderer.render(context.stage(), context.frustumMatrix(), context.projectionMatrix(), context.camera());
+        if (context.stage() == RenderBehavior.Stage.AFTER_ENTITIES) {
+            PlacementPreview.render(context.camera().getPosition());
+        }
         if (context.stage() == RenderBehavior.Stage.AFTER_LEVEL) {
             TooltipSystem.captureView(context.frustumMatrix(), context.projectionMatrix(), context.camera().getPosition());
         }

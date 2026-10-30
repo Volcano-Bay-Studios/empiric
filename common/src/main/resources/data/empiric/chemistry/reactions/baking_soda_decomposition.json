@@ -1,0 +1,17 @@
+{
+  "reactants": {
+    "empiric:sodium_bicarbonate": 2
+  },
+  "products": {
+    "empiric:sodium_carbonate": 1,
+    "empiric:water": 1,
+    "empiric:carbon_dioxide": 1
+  },
+  "enthalpy": 129,
+  "rate": 0.05,
+  "requirements": {
+    "empiric:heat": {
+      "min": 80
+    }
+  }
+}

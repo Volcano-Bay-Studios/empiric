@@ -27,7 +27,8 @@ final class ModelLoader {
         }
         ResourceLocation file = model.file();
         String directory = file.getPath().substring(0, file.getPath().lastIndexOf('/') + 1);
-        return ObjParser.parse(read(manager, file), file.getNamespace(), name -> {
+        String folder = directory.startsWith("models/") ? directory.substring("models/".length()) : "";
+        return ObjParser.parse(read(manager, file), file.getNamespace(), folder, name -> {
             try {
                 return read(manager, file.withPath(directory + name));
             } catch (IOException e) {

@@ -1,0 +1,14 @@
+{
+  "reactants": {
+    "empiric:calcium_carbonate": 1,
+    "empiric:hydrochloric_acid": 2
+  },
+  "products": {
+    "empiric:calcium_chloride": 1,
+    "empiric:water": 1,
+    "empiric:carbon_dioxide": 1
+  },
+  "enthalpy": -15,
+  "rate": 0.3,
+  "requirements": {}
+}

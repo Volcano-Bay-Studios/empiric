@@ -29,6 +29,10 @@ public final class ClientLookup {
         return Minecraft.getInstance().player;
     }
 
+    public static boolean hasControlDown() {
+        return net.minecraft.client.gui.screens.Screen.hasControlDown();
+    }
+
     public static void blockChanged(BlockPos pos) {
         Minecraft.getInstance().levelRenderer.setBlocksDirty(pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ());
     }

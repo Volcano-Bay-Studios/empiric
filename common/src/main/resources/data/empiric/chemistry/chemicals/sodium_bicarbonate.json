@@ -1,0 +1,15 @@
+{
+  "name": "empiric:sodium_bicarbonate",
+  "boilTemp": 1000,
+  "freezeTemp": 270,
+  "hVapKJ": 150,
+  "hFusKJ": 16,
+  "densityLiquid": 1.6,
+  "densitySolid": 2.2,
+  "molecularWeight": 84.01,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 100,
+  "heatCapacitySolid": 87.6,
+  "solubility": 1.1
+}

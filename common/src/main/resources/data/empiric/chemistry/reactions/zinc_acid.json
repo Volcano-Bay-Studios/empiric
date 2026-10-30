@@ -1,0 +1,13 @@
+{
+  "reactants": {
+    "empiric:zinc": 1,
+    "empiric:hydrochloric_acid": 2
+  },
+  "products": {
+    "empiric:zinc_chloride": 1,
+    "empiric:hydrogen": 1
+  },
+  "enthalpy": -154,
+  "rate": 0.2,
+  "requirements": {}
+}

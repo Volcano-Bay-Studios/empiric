@@ -1,0 +1,25 @@
+{
+  "reactants": {
+    "empiric:nitrogen": 1,
+    "empiric:hydrogen": 3
+  },
+  "products": {
+    "empiric:ammonia": 2
+  },
+  "enthalpy": -92,
+  "rate": 0.05,
+  "requirements": {
+    "empiric:heat": {
+      "min": 300,
+      "max": 600
+    },
+    "empiric:pressure": {
+      "min": 2
+    },
+    "empiric:catalyst": {
+      "chemicals": {
+        "empiric:iron": 0.01
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "reactants": {
+    "empiric:sodium_bicarbonate": 1,
+    "empiric:acetic_acid": 1
+  },
+  "products": {
+    "empiric:sodium_acetate": 1,
+    "empiric:water": 1,
+    "empiric:carbon_dioxide": 1
+  },
+  "enthalpy": 19,
+  "rate": 0.5,
+  "requirements": {}
+}

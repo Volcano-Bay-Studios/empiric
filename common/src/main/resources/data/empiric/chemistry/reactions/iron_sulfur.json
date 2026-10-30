@@ -1,0 +1,16 @@
+{
+  "reactants": {
+    "empiric:iron": 1,
+    "empiric:sulfur": 1
+  },
+  "products": {
+    "empiric:iron_sulfide": 1
+  },
+  "enthalpy": -100,
+  "rate": 0.2,
+  "requirements": {
+    "empiric:heat": {
+      "min": 150
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "empiric:calcium_hydroxide",
+  "boilTemp": 2850,
+  "freezeTemp": 580,
+  "hVapKJ": 200,
+  "hFusKJ": 30,
+  "densityLiquid": 2.0,
+  "densitySolid": 2.21,
+  "molecularWeight": 74.09,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 100,
+  "heatCapacitySolid": 87.5,
+  "solubility": 0.02
+}

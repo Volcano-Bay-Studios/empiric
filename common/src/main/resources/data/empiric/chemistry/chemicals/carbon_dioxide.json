@@ -1,0 +1,16 @@
+{
+  "name": "empiric:carbon_dioxide",
+  "boilTemp": -78.5,
+  "freezeTemp": -78.6,
+  "hVapKJ": 25.2,
+  "hFusKJ": 8.9,
+  "densityLiquid": 1.03,
+  "densitySolid": 1.56,
+  "molecularWeight": 44.01,
+  "expandsOnFreezing": false,
+  "color": 14540253,
+  "heatCapacityGas": 37.1,
+  "heatCapacityLiquid": 85,
+  "heatCapacitySolid": 54,
+  "opacityGas": 0.03
+}

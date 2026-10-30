@@ -17,5 +17,9 @@
   // Set to true for Water, Bismuth, Gallium, Silicon, or Antimony. Otherwise, set to false.,
   "expandsOnFreezing": true,
   // The color in decimal
-  "color": 1118685
+  "color": 1118685,
+  // Molar heat capacities of the gas, liquid and solid in J/(mol K).
+  "heatCapacityGas": 33.6,
+  "heatCapacityLiquid": 75.3,
+  "heatCapacitySolid": 37.9
 }

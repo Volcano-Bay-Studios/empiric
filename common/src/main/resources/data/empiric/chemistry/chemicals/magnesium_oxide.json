@@ -1,0 +1,14 @@
+{
+  "name": "empiric:magnesium_oxide",
+  "boilTemp": 3600,
+  "freezeTemp": 2852,
+  "hVapKJ": 500,
+  "hFusKJ": 77,
+  "densityLiquid": 3.0,
+  "densitySolid": 3.58,
+  "molecularWeight": 40.3,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 60,
+  "heatCapacitySolid": 37.2
+}

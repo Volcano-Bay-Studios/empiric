@@ -9,12 +9,18 @@ import java.util.HashMap;
 @SelfSpec
 public class ChemicalReaction {
 
+    public static final double DEFAULT_RATE = 0.5;
+
     @Data
     private HashMap<String, Float> reactants = new HashMap<>();
     @Data
     private HashMap<String, Float> products = new HashMap<>();
     @Data
     private ReactionRequirements requirements = new ReactionRequirements();
+    @Data(optional = true)
+    private Double rate;
+    @Data(optional = true)
+    private Double enthalpy;
 
     public ChemicalReaction() {
     }
@@ -29,6 +35,20 @@ public class ChemicalReaction {
 
     public ReactionRequirements getRequirements() {
         return requirements;
+    }
+
+    /**
+     * @return Rate in 1/s at which the limiting reactant runs out while the requirements are met
+     */
+    public double getRate() {
+        return rate == null ? DEFAULT_RATE : rate;
+    }
+
+    /**
+     * @return kJ taken in per run of the equation as written (negative gives heat off)
+     */
+    public double getEnthalpyKJ() {
+        return enthalpy == null ? 0 : enthalpy;
     }
 
     public float getEnergyOutput() {

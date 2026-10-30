@@ -1,0 +1,15 @@
+{
+  "name": "empiric:silver_nitrate",
+  "boilTemp": 444,
+  "freezeTemp": 212,
+  "hVapKJ": 100,
+  "hFusKJ": 11.5,
+  "densityLiquid": 3.9,
+  "densitySolid": 4.35,
+  "molecularWeight": 169.87,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 130,
+  "heatCapacitySolid": 93,
+  "solubility": 12
+}

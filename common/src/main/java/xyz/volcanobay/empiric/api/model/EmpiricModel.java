@@ -88,6 +88,14 @@ public final class EmpiricModel {
         ModelRenderer.queue(this, null, pose, normal, light, overlay, tint);
     }
 
+    /**
+     * Queues the model with its translucent faces sorted by the order, against every other translucent draw.
+     */
+    public void render(PoseStack pose, int light, int overlay, int tint, RenderOrder order) {
+        PoseStack.Pose last = pose.last();
+        ModelRenderer.queue(this, null, last.pose(), last.normal(), light, overlay, tint, order);
+    }
+
     public void renderNow(PoseStack pose, int light, int overlay) {
         renderNow(pose, light, overlay, NO_TINT);
     }
@@ -95,6 +103,14 @@ public final class EmpiricModel {
     public void renderNow(PoseStack pose, int light, int overlay, int tint) {
         PoseStack.Pose last = pose.last();
         ModelRenderer.drawNow(this, null, last.pose(), last.normal(), light, overlay, tint);
+    }
+
+    /**
+     * Draws only some of the faces now, so a hollow translucent model can be drawn back, then contents, then front.
+     */
+    public void renderNow(PoseStack pose, int light, int overlay, int tint, RenderOrder.Cull cull) {
+        PoseStack.Pose last = pose.last();
+        ModelRenderer.drawNow(this, null, last.pose(), last.normal(), light, overlay, tint, cull);
     }
 
     @Override

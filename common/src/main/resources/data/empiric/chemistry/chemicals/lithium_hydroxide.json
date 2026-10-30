@@ -1,0 +1,15 @@
+{
+  "name": "empiric:lithium_hydroxide",
+  "boilTemp": 924,
+  "freezeTemp": 462,
+  "hVapKJ": 130,
+  "hFusKJ": 20.9,
+  "densityLiquid": 1.4,
+  "densitySolid": 1.46,
+  "molecularWeight": 23.95,
+  "expandsOnFreezing": false,
+  "color": 15921906,
+  "heatCapacityLiquid": 80,
+  "heatCapacitySolid": 49.7,
+  "solubility": 5.3
+}

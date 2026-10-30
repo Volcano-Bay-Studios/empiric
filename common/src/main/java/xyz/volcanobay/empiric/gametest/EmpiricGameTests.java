@@ -14,6 +14,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -114,6 +115,8 @@ public class EmpiricGameTests {
         List<TestFunction> tests = new ArrayList<>(core());
         tests.addAll(UiGameTests.tests(EmpiricGameTests::test, EmpiricGameTests::isolated));
         tests.addAll(ModelGameTests.tests(EmpiricGameTests::test));
+        tests.addAll(ChemistryGameTests.tests(EmpiricGameTests::test));
+        tests.addAll(PartGameTests.tests(EmpiricGameTests::test));
         if (ModCompat.SABLE) {
             tests.addAll(SableGameTests.tests(EmpiricGameTests::test));
         }
@@ -125,6 +128,7 @@ public class EmpiricGameTests {
                 test("data_round_trip", EmpiricGameTests::dataRoundTrip),
                 test("block_entity_module", EmpiricGameTests::blockEntityModule),
                 test("self_spec_block_entity", EmpiricGameTests::selfSpecBlockEntity),
+                test("self_spec_client_edit", EmpiricGameTests::selfSpecClientEdit),
                 test("self_spec_skips_unloadable_fields", EmpiricGameTests::selfSpecSkipsUnloadableFields),
                 test("entity_module", EmpiricGameTests::entityModule),
                 test("entity_save_load", EmpiricGameTests::entitySaveLoad),
@@ -138,6 +142,7 @@ public class EmpiricGameTests {
                 isolated("block_chunk_reload", EmpiricGameTests::blockChunkReload),
                 test("oct_place_and_remove", EmpiricGameTests::octPlaceAndRemove),
                 test("oct_entity_tick_and_save", EmpiricGameTests::octEntityTickAndSave),
+                test("oct_block_hooks", EmpiricGameTests::octBlockHooks),
                 test("oct_module", EmpiricGameTests::octModule),
                 isolated("spatial_network", EmpiricGameTests::spatialNetwork),
                 isolated("spatial_network_discovery_update", EmpiricGameTests::spatialNetworkDiscoveryUpdate),
@@ -218,6 +223,41 @@ public class EmpiricGameTests {
         helper.assertTrue(level.getBlockState(absolute).is(EmpiricBlocks.OCT_BLOCK.get()), "oct block vanished while an octant was still filled");
         octLevel.setOctState(absolute, 4, Blocks.AIR.defaultBlockState());
         helper.assertTrue(level.getBlockState(absolute).isAir(), "emptying every octant didn't remove the oct block");
+        helper.succeed();
+    }
+
+    private static void octBlockHooks(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        OctLevel octLevel = LevelOctExtension.get(level);
+        BlockPos absolute = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockState test = EmpiricTestBlocks.TEST_OCT.get().defaultBlockState();
+        octLevel.setOctState(absolute, 0, test);
+        octLevel.setOctState(absolute, 1, test);
+        BlockState full = level.getBlockState(absolute);
+        helper.assertTrue(!full.getShape(level, absolute).isEmpty(), "test octs should have a shape");
+        helper.assertTrue(full.getCollisionShape(level, absolute).isEmpty(), "collision should come from the oct block's collision hook");
+        helper.assertTrue(!full.canBeReplaced(net.minecraft.world.level.material.Fluids.WATER), "water shouldn't replace an oct block");
+
+        EmpiricTestBlocks.TestOctBlock.neighborChanges = 0;
+        level.setBlock(absolute.above(), Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
+        helper.assertTrue(EmpiricTestBlocks.TestOctBlock.neighborChanges == 2, "neighbour change wasn't forwarded to each octant: " + EmpiricTestBlocks.TestOctBlock.neighborChanges);
+
+        net.minecraft.world.entity.player.Player player = TestPlayers.mock(helper);
+        player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
+        EmpiricTestBlocks.TestOctBlock.lastHand = null;
+        Vec3 hit = Vec3.atLowerCornerOf(absolute).add(0.25, 0.25, 0.25);
+        full.useItemOn(player.getOffhandItem(), level, player, net.minecraft.world.InteractionHand.OFF_HAND,
+                new net.minecraft.world.phys.BlockHitResult(hit, net.minecraft.core.Direction.UP, absolute, false));
+        helper.assertTrue(EmpiricTestBlocks.TestOctBlock.lastHand == net.minecraft.world.InteractionHand.OFF_HAND, "the hand wasn't passed to the oct block");
+
+        EmpiricTestBlocks.TestOctBlock.removed = 0;
+        level.setBlock(absolute, Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
+        helper.assertTrue(EmpiricTestBlocks.TestOctBlock.removed == 2, "replacing the block didn't tell each octant: " + EmpiricTestBlocks.TestOctBlock.removed);
+
+        octLevel.setOctState(absolute.east(), 0, test);
+        EmpiricTestBlocks.TestOctBlock.removed = 0;
+        octLevel.setOctState(absolute.east(), 0, Blocks.AIR.defaultBlockState());
+        helper.assertTrue(EmpiricTestBlocks.TestOctBlock.removed == 0, "emptying the last octant shouldn't run the whole-block removal");
         helper.succeed();
     }
 
@@ -628,12 +668,14 @@ public class EmpiricGameTests {
         BlockPos opposite = helper.absolutePos(new BlockPos(2, 2, 3));
         helper.assertTrue(TemperatureSystem.get(level, opposite) > ambient, "the warm air didn't pass heat to the opposite wall");
         TemperatureSystem.unsubscribe(EmpiricTestModules.SUBSCRIBER);
+        // other mods in the run may keep the system subscribed, and then heat is meant to keep moving
+        boolean off = !TemperatureSystem.TEMPERATURE.isEnabled();
         double held = room.getVolume().getTemperature();
         for (int i = 0; i < 50; i++) {
             AtmosphereThermalSystem.exchange(room);
         }
         TemperatureSystem.subscribe(EmpiricTestModules.SUBSCRIBER);
-        helper.assertTrue(room.getVolume().getTemperature() == held, "heat moved while the temperature system wasn't subscribed");
+        helper.assertTrue(!off || room.getVolume().getTemperature() == held, "heat moved while the temperature system wasn't subscribed");
         helper.succeed();
     }
 
@@ -1417,6 +1459,26 @@ public class EmpiricGameTests {
         helper.assertTrue(loaded.energy == 42, "energy loaded as " + loaded.energy);
         helper.assertTrue("boiler".equals(loaded.label), "label loaded as " + loaded.label);
         helper.assertTrue(SelfModule.TYPE.get(loaded) != null, "the loaded block entity has no self module");
+        helper.succeed();
+    }
+
+    private static void selfSpecClientEdit(GameTestHelper helper) {
+        ServerPlayer player = TestPlayers.mock(helper);
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+        player.teleportTo(pos.getX(), pos.getY(), pos.getZ());
+        EmpiricTestBlocks.TestEditEntity entity = new EmpiricTestBlocks.TestEditEntity(pos, Blocks.CHEST.defaultBlockState());
+        entity.setLevel(helper.getLevel());
+        SelfModule module = SelfModule.TYPE.get(entity);
+        helper.assertTrue(module != null, "the edit entity has no self module");
+        helper.assertTrue(module.acceptClientUpdate(player, "level"), "an edit the block entity accepts was refused");
+        helper.assertTrue(!module.acceptClientUpdate(player, "locked"), "the block entity's acceptClientUpdate didn't refuse the locked field");
+        player.teleportTo(pos.getX() + 500, pos.getY(), pos.getZ());
+        helper.assertTrue(!module.acceptClientUpdate(player, "level"), "the range check didn't refuse a far player");
+        entity.level = 50;
+        module.onClientUpdate(player, "level");
+        helper.assertTrue(entity.level == 10, "onClientUpdate didn't reach the block entity, got " + entity.level);
+        helper.assertTrue(entity.updated.contains("level"), "onClientUpdate calls were " + entity.updated);
+        player.discard();
         helper.succeed();
     }
 

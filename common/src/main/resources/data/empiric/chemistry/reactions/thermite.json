@@ -1,0 +1,17 @@
+{
+  "reactants": {
+    "empiric:aluminum": 2,
+    "empiric:iron_oxide": 1
+  },
+  "products": {
+    "empiric:aluminum_oxide": 1,
+    "empiric:iron": 2
+  },
+  "enthalpy": -851.5,
+  "rate": 2.0,
+  "requirements": {
+    "empiric:heat": {
+      "min": 900
+    }
+  }
+}

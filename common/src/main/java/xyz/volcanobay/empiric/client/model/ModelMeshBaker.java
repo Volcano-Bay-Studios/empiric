@@ -63,7 +63,8 @@ final class ModelMeshBaker {
 
     @Nullable
     private static ModelMesh mesh(ModelRenderKind kind, List<ModelFace> faces, Function<ResourceLocation, TextureAtlasSprite> sprites, boolean doubleSided) {
-        MeshData mesh;
+        int vertices;
+        VertexArray vertexArray;
         try (ByteBufferBuilder bytes = new ByteBufferBuilder(DefaultVertexFormat.BLOCK.getVertexSize() * 4 * Math.max(16, faces.size()))) {
             BufferBuilder builder = new BufferBuilder(bytes, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
             for (ModelFace face : faces) {
@@ -71,14 +72,15 @@ final class ModelMeshBaker {
                     quad(builder, face, sprites.apply(face.texture()));
                 }
             }
-            mesh = builder.build();
+            // the mesh reads from the byte buffer, so it has to be uploaded before the buffer is closed
+            MeshData mesh = builder.build();
+            if (mesh == null) {
+                return null;
+            }
+            vertices = mesh.drawState().vertexCount();
+            vertexArray = VertexArray.create();
+            vertexArray.upload(mesh, VertexArray.DrawUsage.STATIC);
         }
-        if (mesh == null) {
-            return null;
-        }
-        int vertices = mesh.drawState().vertexCount();
-        VertexArray vertexArray = VertexArray.create();
-        vertexArray.upload(mesh, VertexArray.DrawUsage.STATIC);
         int instanceBuffer = vertexArray.getOrCreateBuffer(VertexArray.INSTANCE_BUFFER);
         defineInstances(vertexArray.editFormat(), instanceBuffer);
         VertexArray.unbind();
