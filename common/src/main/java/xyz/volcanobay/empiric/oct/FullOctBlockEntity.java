@@ -30,9 +30,6 @@ import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.system.OctModuleSystem;
 import xyz.volcanobay.empiric.system.SpatialNetworkSystem;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
-import xyz.volcanobay.empiric.oct.TickableBlockEntity;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
-import xyz.volcanobay.empiric.registry.EmpiricBlockEntities;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -298,7 +295,7 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
                 double oX = ((octantIndex & 1) != 0) ? 0.5 : 0;
                 double oY = ((octantIndex & 2) != 0) ? 0.5 : 0;
                 double oZ = ((octantIndex & 4) != 0) ? 0.5 : 0;
-                OctLevel octLevel = LevelOctExtension.get(this.level);
+                OctLevel octLevel = OctLevel.get(this.level);
                 VoxelShape part = collision
                         ? octant.getCollisionShape(this.octBlocks[octantIndex], octLevel, pos, octantIndex, context)
                         : octant.getShape(this.octBlocks[octantIndex], octLevel, pos, octantIndex, context);
@@ -316,7 +313,7 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
         if (this.level == null || this.level.isClientSide) {
             return;
         }
-        OctLevel octLevel = LevelOctExtension.get(this.level);
+        OctLevel octLevel = OctLevel.get(this.level);
         BlockState empty = Blocks.AIR.defaultBlockState();
         for (int octant = 0; octant < 8; octant++) {
             BlockState state = this.octBlocks[octant];
@@ -336,11 +333,11 @@ public class FullOctBlockEntity extends BlockEntity implements TickableBlockEnti
         BlockState state = this.octBlocks[octant];
         BlockState empty = Blocks.AIR.defaultBlockState();
         if (state.getBlock() instanceof OctBlock octBlock) {
-            octBlock.onRemove(state, LevelOctExtension.get(this.level), this.level, this.worldPosition, octant, empty);
+            octBlock.onRemove(state, OctLevel.get(this.level), this.level, this.worldPosition, octant, empty);
         }
         this.setOctState(octant, empty);
         if (state.getBlock() instanceof OctBlock octBlock) {
-            octBlock.afterRemove(state, LevelOctExtension.get(this.level), this.level, this.worldPosition, octant, empty);
+            octBlock.afterRemove(state, OctLevel.get(this.level), this.level, this.worldPosition, octant, empty);
         }
         return state;
     }

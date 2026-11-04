@@ -2,12 +2,22 @@ package xyz.volcanobay.empiric.api.oct;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+import xyz.volcanobay.empiric.oct.OctGetterImpl;
 
 import java.util.Optional;
 
 public interface OctGetter {
+    
+    static OctGetter get(BlockGetter getter) {
+        if (getter instanceof Level level) {
+            return OctLevel.get(level);
+        }
+        return new OctGetterImpl(getter);
+    }
+
     BlockGetter blockGetter();
 
     /**

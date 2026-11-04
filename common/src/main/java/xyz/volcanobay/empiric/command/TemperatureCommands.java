@@ -15,14 +15,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.phys.Vec3;
 import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.networking.packet.TemperatureOverlayS2CPacket;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 
@@ -89,7 +87,7 @@ public final class TemperatureCommands {
         StringBuilder octs = new StringBuilder("octant  heat  conductivity  state");
         for (int octant = 0; octant < 8; octant++) {
             OctPos oct = new OctPos(pos, octant);
-            BlockState state = LevelOctExtension.get(level).getBlockState(oct);
+            BlockState state = OctLevel.get(level).getBlockState(oct);
             octs.append('\n').append(octant).append(" (").append(octant & 1).append(' ').append((octant >> 1) & 1).append(' ').append((octant >> 2) & 1).append(")  ")
                     .append(TemperatureModule.format(TemperatureSystem.get(level, oct))).append("  ")
                     .append(conductivity(TemperatureSystem.conductivity(level, oct.getLongX(), oct.getLongY(), oct.getLongZ()))).append("  ")

@@ -45,7 +45,6 @@ import xyz.volcanobay.empiric.data.JsonNodes;
 import com.google.gson.JsonElement;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctPos;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import xyz.volcanobay.empiric.oct.FullOctBlockEntity;
 import xyz.volcanobay.empiric.registry.EmpiricBlocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -209,7 +208,7 @@ public class EmpiricGameTests {
 
     private static void octPlaceAndRemove(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         BlockPos absolute = helper.absolutePos(new BlockPos(1, 1, 1));
         BlockState plain = EmpiricTestBlocks.PLAIN_OCT.get().defaultBlockState();
         helper.assertTrue(octLevel.setOctState(absolute, 3, plain), "setting an oct state failed");
@@ -228,7 +227,7 @@ public class EmpiricGameTests {
 
     private static void octBlockHooks(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         BlockPos absolute = helper.absolutePos(new BlockPos(1, 1, 1));
         BlockState test = EmpiricTestBlocks.TEST_OCT.get().defaultBlockState();
         octLevel.setOctState(absolute, 0, test);
@@ -263,7 +262,7 @@ public class EmpiricGameTests {
 
     private static void octEntityTickAndSave(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         BlockPos absolute = helper.absolutePos(new BlockPos(3, 1, 3));
         octLevel.setOctState(absolute, 5, EmpiricTestBlocks.TEST_OCT.get().defaultBlockState());
         EmpiricTestBlocks.TestOctEntity entity = (EmpiricTestBlocks.TestOctEntity) octLevel.getOctEntity(absolute, 5);
@@ -281,7 +280,7 @@ public class EmpiricGameTests {
 
     private static void octModule(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         BlockPos absolute = helper.absolutePos(new BlockPos(2, 1, 1));
         OctPos pos = new OctPos(absolute, 6);
         octLevel.setOctState(absolute, 6, EmpiricTestBlocks.PLAIN_OCT.get().defaultBlockState());
@@ -298,7 +297,7 @@ public class EmpiricGameTests {
     }
 
     private static OctPos placePipe(ServerLevel level, OctPos pos) {
-        LevelOctExtension.get(level).setOctState(pos.pos(), pos.octant(), EmpiricTestBlocks.PIPE.get().defaultBlockState());
+        OctLevel.get(level).setOctState(pos.pos(), pos.octant(), EmpiricTestBlocks.PIPE.get().defaultBlockState());
         EmpiricTestBlocks.PIPE.get().place(pos, level);
         return pos;
     }
@@ -321,7 +320,7 @@ public class EmpiricGameTests {
         helper.assertTrue(map.getNetwork(line.get(4)) == network, "both ends of the pipe should share a network");
         OctPos middle = line.get(2);
         EmpiricTestBlocks.PIPE.get().destroy(middle, level);
-        LevelOctExtension.get(level).setOctState(middle.pos(), middle.octant(), Blocks.AIR.defaultBlockState());
+        OctLevel.get(level).setOctState(middle.pos(), middle.octant(), Blocks.AIR.defaultBlockState());
         EmpiricTestModules.PipeNetwork left = map.getNetworkSoft(line.get(0).getLongX(), line.get(0).getLongY(), line.get(0).getLongZ());
         EmpiricTestModules.PipeNetwork right = map.getNetworkSoft(line.get(4).getLongX(), line.get(4).getLongY(), line.get(4).getLongZ());
         helper.assertTrue(left != null && right != null && left != right, "breaking the middle pipe didn't split the network");
@@ -339,7 +338,7 @@ public class EmpiricGameTests {
         EmpiricApi.subscribe(EmpiricTestModules.SUBSCRIBER, EmpiricTestModules.PIPES.moduleType());
         for (OctPos pos : line) {
             EmpiricTestBlocks.PIPE.get().destroy(pos, level);
-            LevelOctExtension.get(level).setOctState(pos.pos(), pos.octant(), Blocks.AIR.defaultBlockState());
+            OctLevel.get(level).setOctState(pos.pos(), pos.octant(), Blocks.AIR.defaultBlockState());
         }
         helper.succeed();
     }
@@ -366,7 +365,7 @@ public class EmpiricGameTests {
         BlockPos center = helper.absolutePos(new BlockPos(1, 1, 1));
         BlockPos above = center.above();
         level.setBlockAndUpdate(center, EmpiricTestBlocks.MULTIBLOCK.get().defaultBlockState());
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         helper.assertTrue(level.getBlockState(above).is(EmpiricBlocks.OCT_BLOCK.get()), "multiblock didn't fill the block above with octs");
         for (int octant = 0; octant < 8; octant++) {
             boolean lower = (octant & 2) == 0;
@@ -444,7 +443,7 @@ public class EmpiricGameTests {
         BlockPos oct = next.east();
         helper.setBlock(new BlockPos(1, 1, 2), Blocks.STONE);
         helper.setBlock(new BlockPos(2, 1, 2), Blocks.STONE);
-        LevelOctExtension.get(level).setOctState(oct, 0, EmpiricTestBlocks.PLAIN_OCT.get().defaultBlockState());
+        OctLevel.get(level).setOctState(oct, 0, EmpiricTestBlocks.PLAIN_OCT.get().defaultBlockState());
         int ambient = TemperatureSystem.ambient(level);
         TemperatureSystem.set(level, hot, ambient + 250);
         helper.assertTrue(TemperatureSystem.get(level, hot) == ambient + 250, "setting a block's temperature didn't stick");
@@ -773,7 +772,7 @@ public class EmpiricGameTests {
             helper.assertTrue(TemperatureSystem.get(level, new OctPos(block, octant)) == ambient, "heating one oct heated octant " + octant + " too");
         }
         helper.assertTrue(TemperatureSystem.get(level, block) == ambient + 25, "the block average should be an eighth of one oct, got " + TemperatureSystem.get(level, block));
-        LevelOctExtension.get(level).setOctState(block.east(), 0, EmpiricTestBlocks.PLAIN_OCT.get().defaultBlockState());
+        OctLevel.get(level).setOctState(block.east(), 0, EmpiricTestBlocks.PLAIN_OCT.get().defaultBlockState());
         helper.assertTrue(TemperatureSystem.conductivity(level, new OctPos(block.east(), 0).getLongX(), new OctPos(block.east(), 0).getLongY(), new OctPos(block.east(), 0).getLongZ()) > 0, "a filled oct should conduct");
         helper.assertTrue(TemperatureSystem.conductivity(level, new OctPos(block.east(), 1).getLongX(), new OctPos(block.east(), 1).getLongY(), new OctPos(block.east(), 1).getLongZ()) < 0, "an empty oct in an oct block should count as air");
         helper.succeedWhen(() -> {
@@ -828,7 +827,7 @@ public class EmpiricGameTests {
         command(helper, "empiric dump chunk " + at);
         command(helper, "empiric dump level");
         EmpiricTestBlocks.PIPE.get().destroy(new OctPos(pos.above(2), 0), helper.getLevel());
-        LevelOctExtension.get(helper.getLevel()).setOctState(pos.above(2), 0, Blocks.AIR.defaultBlockState());
+        OctLevel.get(helper.getLevel()).setOctState(pos.above(2), 0, Blocks.AIR.defaultBlockState());
         helper.succeed();
     }
 
@@ -1304,7 +1303,7 @@ public class EmpiricGameTests {
         SpatialNetworkSystem.processDropped();
         helper.assertTrue(!attachment.isViewer(player), "a player tracking none of the network's chunks stayed a viewer");
         EmpiricTestBlocks.PIPE.get().destroy(pipe, level);
-        LevelOctExtension.get(level).setOctState(pipe.pos(), pipe.octant(), Blocks.AIR.defaultBlockState());
+        OctLevel.get(level).setOctState(pipe.pos(), pipe.octant(), Blocks.AIR.defaultBlockState());
         player.discard();
         helper.succeed();
     }

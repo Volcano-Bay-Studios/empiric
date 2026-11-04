@@ -40,7 +40,6 @@ import xyz.volcanobay.empiric.api.part.trait.Shapes;
 import xyz.volcanobay.empiric.api.part.trait.Socketed;
 import xyz.volcanobay.empiric.api.part.trait.Sockets;
 import xyz.volcanobay.empiric.api.part.trait.Support;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import xyz.volcanobay.empiric.oct.FullOctBlockEntity;
 import xyz.volcanobay.empiric.registry.EmpiricBlocks;
 
@@ -124,7 +123,7 @@ final class PartGameTests {
     }
 
     private static List<Piece> pieces(ServerLevel level, BlockPos host) {
-        Workspace workspace = Workspace.of(LevelOctExtension.get(level), host);
+        Workspace workspace = Workspace.of(OctLevel.get(level), host);
         return workspace.pieces().stream().filter(workspace::isHome).toList();
     }
 
@@ -159,13 +158,13 @@ final class PartGameTests {
         }
         helper.assertTrue(level.getBlockState(host).is(EmpiricBlocks.OCT_BLOCK.get()), "placing didn't make an oct block");
         helper.assertTrue(pieces(level, host).size() == 4, "expected 4 crates, found " + pieces(level, host).size());
-        helper.assertTrue(LevelOctExtension.get(level).getOctState(host, 0).is(EmpiricBlocks.PART.get()), "octant 0 isn't the crate's cell");
+        helper.assertTrue(OctLevel.get(level).getOctState(host, 0).is(EmpiricBlocks.PART.get()), "octant 0 isn't the crate's cell");
         helper.succeed();
     }
 
     private static void overlapAcrossBlocks(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         BlockPos host = host(helper);
         helper.assertTrue(place(level, new Spot(host, 6, 0, 6), CRATE), "first crate wasn't placed");
         helper.assertTrue(!Parts.canFit(level, host, CRATE, 7, 0, 6, 0, null), "an overlapping crate was allowed");
@@ -184,7 +183,7 @@ final class PartGameTests {
 
     private static void spanOctants(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         BlockPos host = host(helper);
         helper.assertTrue(place(level, new Spot(host, 6, 0, 6), CRATE), "crate wasn't placed");
         List<Integer> cells = Parts.cells(CRATE, 6, 0, 6);
@@ -200,7 +199,7 @@ final class PartGameTests {
 
     private static void shareBlock(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         BlockPos host = host(helper);
         complement(oct, host, 7);
         helper.assertTrue(place(level, new Spot(host, 0, 0, 0), CRATE), "a part should fit beside other oct content");
@@ -211,7 +210,7 @@ final class PartGameTests {
 
     private static void allOrNothing(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         BlockPos host = host(helper);
         complement(oct, host, 1);
         helper.assertTrue(Parts.place(level, new Spot(host, 6, 0, 0), CRATE, ItemStack.EMPTY) == null, "a crate reaching into other oct content was placed");
@@ -383,7 +382,7 @@ final class PartGameTests {
         ServerLevel level = helper.getLevel();
         BlockPos host = host(helper);
         helper.assertTrue(place(level, new Spot(host, 2, 0, 2), PANEL), "the panel wasn't placed");
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         Vec3 origin = Vec3.atLowerCornerOf(host);
         double angle = Math.atan2(4, 8);
         Vec3 knob = origin.add((2 + 5) / 16.0, 0, (2 + 4 * Math.cos(angle)) / 16.0);

@@ -8,7 +8,7 @@ import xyz.volcanobay.empiric.api.part.Workspace;
 import xyz.volcanobay.empiric.api.part.DrawOffset;
 import xyz.volcanobay.empiric.api.part.PartOctEntity;
 import xyz.volcanobay.empiric.api.part.Piece;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 
 public class PartRenderer implements OctBlockRenderer<PartOctEntity> {
 
@@ -22,7 +22,7 @@ public class PartRenderer implements OctBlockRenderer<PartOctEntity> {
             pose.pushPose();
             pose.translate(-offsetX / 16f, -offsetY / 16f + PartRendering.LIFT, -offsetZ / 16f);
             if (!piece.type.hooks(DrawOffset.class).isEmpty() && entity.level() != null) {
-                Vec3 shift = Workspace.of(LevelOctExtension.get(entity.level()), entity.pos()).drawOffset(piece);
+                Vec3 shift = Workspace.of(OctLevel.get(entity.level()), entity.pos()).drawOffset(piece);
                 pose.translate(shift.x / 16, shift.y / 16, shift.z / 16);
             }
             PartRendering.toPiece(pose, piece.type, piece.x, piece.y, piece.z, piece.rotation);

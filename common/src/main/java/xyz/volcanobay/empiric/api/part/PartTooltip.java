@@ -3,8 +3,8 @@ package xyz.volcanobay.empiric.api.part;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipBehavior;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 
 import java.util.UUID;
 
@@ -25,7 +25,7 @@ public interface PartTooltip {
     record Ref(Level level, BlockPos pos, UUID id) {
 
         public @Nullable Piece get() {
-            return Workspace.of(LevelOctExtension.get(level), pos).find(id);
+            return Workspace.of(OctLevel.get(level), pos).find(id);
         }
     }
 }

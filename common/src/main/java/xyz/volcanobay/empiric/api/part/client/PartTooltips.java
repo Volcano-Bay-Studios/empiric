@@ -14,7 +14,6 @@ import xyz.volcanobay.empiric.api.part.Piece;
 import xyz.volcanobay.empiric.api.part.Selection;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipBehavior;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipSource;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 
 /**
  * The floating tooltip of the aimed-at piece, from its type's {@link PartTooltip} hooks.
@@ -29,7 +28,7 @@ public final class PartTooltips implements TooltipSource {
     @Override
     public @Nullable Target find(Level level, BlockHitResult hit, Player viewer) {
         BlockPos pos = hit.getBlockPos();
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         if (!(oct.getOctState(pos, OctUtil.getOctant(hit)).getBlock() instanceof PartOctBlock)) {
             return null;
         }

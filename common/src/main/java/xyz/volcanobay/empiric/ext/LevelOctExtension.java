@@ -6,7 +6,11 @@ import xyz.volcanobay.empiric.api.oct.OctLevel;
 public interface LevelOctExtension {
     OctLevel empiric$getOctLevel();
 
+    /**
+     * @deprecated Use {@link OctLevel#get(Level)} instead.
+     */
+    @Deprecated
     static OctLevel get(Level level) {
-        return ((LevelOctExtension) level).empiric$getOctLevel();
+        return OctLevel.get(level);
     }
 }

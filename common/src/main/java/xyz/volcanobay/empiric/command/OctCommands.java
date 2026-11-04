@@ -16,7 +16,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import xyz.volcanobay.empiric.api.attachment.OctAttachment;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctPos;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import xyz.volcanobay.empiric.oct.FullOctBlockEntity;
 
 public final class OctCommands {
@@ -35,7 +34,7 @@ public final class OctCommands {
         ServerLevel level = context.getSource().getLevel();
         BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
         BlockEntity blockEntity = level.getBlockEntity(pos);
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         String kind = blockEntity instanceof FullOctBlockEntity ? "oct block" : "full block";
         EmpiricCommands.send(context, EmpiricCommands.label("Octs at " + EmpiricCommands.describe(pos) + " (" + kind + ")"));
         for (int octant = 0; octant < 8; octant++) {

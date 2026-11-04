@@ -12,7 +12,6 @@ import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.api.network.NetworkModule;
 import xyz.volcanobay.empiric.api.network.SpatialNetworkType;
 import xyz.volcanobay.empiric.api.network.SpatialNetworkMap;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
@@ -50,7 +49,7 @@ public class NetworkPortConfig {
         NetworkPort<T> port = getPort(key, networkType);
         if (port != null) {
             SpatialNetworkMap<T> networkMap = port.getNetworkType().get(level);
-            OctLevel octLevel = LevelOctExtension.get(level);
+            OctLevel octLevel = OctLevel.get(level);
 
             BlockState state = octLevel.getBlockState(pos);
             Direction facing = Direction.NORTH;
@@ -74,7 +73,7 @@ public class NetworkPortConfig {
     public <T extends NetworkModule> Vector3d getEdgePos(Level level, OctPos pos, String key, SpatialNetworkType<T> networkType) {
         NetworkPort<T> port = getPort(key, networkType);
         if (port != null) {
-            OctLevel octLevel = LevelOctExtension.get(level);
+            OctLevel octLevel = OctLevel.get(level);
             BlockState state = octLevel.getBlockState(pos);
             Direction facing = Direction.NORTH;
             OctPos edge = getEdgeOct(level, pos, port);
@@ -88,7 +87,7 @@ public class NetworkPortConfig {
     }
 
     private static <T extends NetworkModule> @NotNull OctPos getEdgeOct(Level level, OctPos pos, NetworkPort<T> port) {
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
 
         BlockState state = octLevel.getBlockState(pos);
         Direction facing = Direction.NORTH;

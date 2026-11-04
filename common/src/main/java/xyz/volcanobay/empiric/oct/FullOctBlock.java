@@ -41,8 +41,8 @@ import xyz.volcanobay.empiric.api.oct.OctBlockComplement;
 import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.api.oct.OctUtil;
 import xyz.volcanobay.empiric.client.ClientLookup;
-import xyz.volcanobay.empiric.ext.BlockGetterOctExtension;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
+import xyz.volcanobay.empiric.api.oct.OctGetter;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.networking.packet.OctBreakS2CPacket;
 import xyz.volcanobay.empiric.registry.EmpiricBlockEntities;
 
@@ -60,11 +60,11 @@ public class FullOctBlock extends Block implements EntityBlock, LiquidBlockConta
     @Override
     protected float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
         int octant = OctUtil.getTargetedOctant(player, pos);
-        BlockPos center = OctBlockComplement.getMultiblockCenter(BlockGetterOctExtension.get(level), pos, octant);
+        BlockPos center = OctBlockComplement.getMultiblockCenter(OctGetter.get(level), pos, octant);
         if (center != null) {
             return level.getBlockState(center).getDestroyProgress(player, level, center);
         }
-        BlockState octState = BlockGetterOctExtension.get(level).getOctState(pos, octant);
+        BlockState octState = OctGetter.get(level).getOctState(pos, octant);
         return octState.getDestroyProgress(player, level, pos);
     }
 
@@ -72,7 +72,7 @@ public class FullOctBlock extends Block implements EntityBlock, LiquidBlockConta
     protected void spawnDestroyParticles(Level level, Player player, BlockPos pos, BlockState state) {
         if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
             int octant = OctUtil.getTargetedOctant(player, pos);
-            BlockState octState = BlockGetterOctExtension.get(level).getOctState(pos, octant);
+            BlockState octState = OctGetter.get(level).getOctState(pos, octant);
             PacketTarget.tracking(serverLevel, pos).send(
                     new OctBreakS2CPacket(new OctPos(pos, octant), octState)
             );
@@ -111,7 +111,7 @@ public class FullOctBlock extends Block implements EntityBlock, LiquidBlockConta
             for (int octant = 0; octant < 8; octant++) {
                 BlockState octState = be.getOctState(octant);
                 if (octState.getBlock() instanceof OctBlock octBlock) {
-                    octBlock.neighborChanged(octState, LevelOctExtension.get(level), level, pos, octant, neighborBlock, neighborPos);
+                    octBlock.neighborChanged(octState, OctLevel.get(level), level, pos, octant, neighborBlock, neighborPos);
                 }
             }
         });
@@ -159,7 +159,7 @@ public class FullOctBlock extends Block implements EntityBlock, LiquidBlockConta
                 .map(octState -> ((OctBlock) octState.getBlock())
                         .useWithoutItem(
                                 octState,
-                                LevelOctExtension.get(level),
+                                OctLevel.get(level),
                                 pos,
                                 octant,
                                 player,
@@ -183,7 +183,7 @@ public class FullOctBlock extends Block implements EntityBlock, LiquidBlockConta
                         .useItemOn(
                                 stack,
                                 octState,
-                                LevelOctExtension.get(level),
+                                OctLevel.get(level),
                                 pos,
                                 octant,
                                 player,
@@ -217,7 +217,7 @@ public class FullOctBlock extends Block implements EntityBlock, LiquidBlockConta
                 return false;
             }
             if (octState.getBlock() instanceof OctBlock octBlock
-                    && octBlock.destroyedByPlayer(octState, LevelOctExtension.get(level), level, pos, octant, player)) {
+                    && octBlock.destroyedByPlayer(octState, OctLevel.get(level), level, pos, octant, player)) {
                 return true;
             }
             if (level instanceof ServerLevel serverLevel) {
@@ -244,7 +244,7 @@ public class FullOctBlock extends Block implements EntityBlock, LiquidBlockConta
                 .map(state1 -> ((OctBlock) state1.getBlock())
                         .getSoundType(
                                 state1,
-                                BlockGetterOctExtension.get(level),
+                                OctGetter.get(level),
                                 pos,
                                 octant,
                                 entity)
@@ -266,7 +266,7 @@ public class FullOctBlock extends Block implements EntityBlock, LiquidBlockConta
                         .getCloneItemStack(
                                 state1,
                                 hit,
-                                BlockGetterOctExtension.get(level),
+                                OctGetter.get(level),
                                 pos,
                                 octant,
                                 player)

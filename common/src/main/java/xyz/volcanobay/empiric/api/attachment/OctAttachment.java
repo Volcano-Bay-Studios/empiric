@@ -8,7 +8,7 @@ import xyz.volcanobay.empiric.core.attachment.AttachmentType;
 import xyz.volcanobay.empiric.core.data.DataBuffer;
 import xyz.volcanobay.empiric.core.data.DataContext;
 import xyz.volcanobay.empiric.core.module.Side;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.system.OctModuleSystem;
 import xyz.volcanobay.empiric.system.SpatialModuleStore;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
@@ -37,7 +37,7 @@ public final class OctAttachment extends SpatialAttachment {
     }
 
     public BlockState state() {
-        return LevelOctExtension.get(level).getOctState(pos);
+        return OctLevel.get(level).getOctState(pos);
     }
 
     @Override

@@ -11,8 +11,7 @@ import xyz.volcanobay.empiric.api.oct.OctBlockComplement;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctMultiblock;
 import xyz.volcanobay.empiric.api.oct.OctPos;
-import xyz.volcanobay.empiric.ext.BlockGetterOctExtension;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
+import xyz.volcanobay.empiric.api.oct.OctGetter;
 import xyz.volcanobay.empiric.oct.FullOctBlock;
 
 import java.util.LinkedHashSet;
@@ -52,7 +51,7 @@ public final class OctMultiblockSystem {
     }
 
     public static boolean canPlace(Level level, BlockPos center, BlockState state) {
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         for (OctPos cell : cells(state, level, center)) {
             if (!octLevel.getBlockState(cell).canBeReplaced()) {
                 return false;
@@ -62,7 +61,7 @@ public final class OctMultiblockSystem {
     }
 
     public static void fill(Level level, BlockPos center, BlockState state) {
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         for (OctPos cell : cells(state, level, center)) {
             BlockState current = octLevel.getBlockState(cell);
             if (current.isAir() || (current.canBeReplaced() && !current.is(Blocks.WATER))) {
@@ -72,7 +71,7 @@ public final class OctMultiblockSystem {
     }
 
     public static void clear(Level level, BlockPos center, BlockState state) {
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         for (OctPos cell : cells(state, level, center)) {
             if (center.equals(OctBlockComplement.getMultiblockCenter(octLevel, cell.pos(), cell.octant()))) {
                 octLevel.setOctState(cell.pos(), cell.octant(), Blocks.AIR.defaultBlockState());
@@ -102,6 +101,6 @@ public final class OctMultiblockSystem {
         if (octant < 0) {
             return null;
         }
-        return OctBlockComplement.getMultiblockCenter(BlockGetterOctExtension.get(level), pos, octant);
+        return OctBlockComplement.getMultiblockCenter(OctGetter.get(level), pos, octant);
     }
 }

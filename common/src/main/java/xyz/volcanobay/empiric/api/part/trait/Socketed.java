@@ -14,7 +14,7 @@ import xyz.volcanobay.empiric.api.part.Piece;
 import xyz.volcanobay.empiric.api.part.Placement;
 import xyz.volcanobay.empiric.api.part.PlacementRule;
 import xyz.volcanobay.empiric.api.part.Spot;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 
 /**
  * The part snaps into the {@link Sockets} of a part it's aimed near, and may stand inside it there.
@@ -31,7 +31,7 @@ public record Socketed(int reach) implements PlacementRule, OverlapRule {
     public @Nullable Placement.Result place(Level level, PartType type, BlockPos host, Vec3 aim, int rotation) {
         Spot best = null;
         double bestDistance = reach * reach;
-        for (Piece rack : Workspace.of(LevelOctExtension.get(level), host).pieces()) {
+        for (Piece rack : Workspace.of(OctLevel.get(level), host).pieces()) {
             Sockets sockets = rack.type.get(PartTraits.SOCKETS);
             if (sockets == null) {
                 continue;

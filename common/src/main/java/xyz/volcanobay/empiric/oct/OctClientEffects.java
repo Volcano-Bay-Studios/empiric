@@ -20,7 +20,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import xyz.volcanobay.empiric.api.oct.OctBlock;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctUtil;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 
 public final class OctClientEffects {
 
@@ -30,7 +29,7 @@ public final class OctClientEffects {
     }
 
     public static void playBreak(Minecraft client, Level level, BlockPos pos, int octant, BlockState state) {
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         if (state.getBlock() instanceof OctBlock octBlock) {
             SoundType soundType = octBlock.getSoundType(state, octLevel, pos, octant, null);
             level.playLocalSound(pos, soundType.getBreakSound(), SoundSource.BLOCKS,
@@ -40,7 +39,7 @@ public final class OctClientEffects {
     }
 
     public static void spawnBreakParticles(Minecraft client, BlockState state, Level level, BlockPos pos, int octant) {
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         if (state.getBlock() instanceof OctBlock octBlock) {
             VoxelShape voxelshape = octBlock.getShape(state, octLevel, pos, octant, CollisionContext.empty());
             voxelshape.forAllBoxes((x0, y0, z0, x1, y1, z1) -> {
@@ -77,7 +76,7 @@ public final class OctClientEffects {
             return false;
         }
         int octant = OctUtil.getOctant(hit);
-        BlockState octState = LevelOctExtension.get(level).getOctState(pos, octant);
+        BlockState octState = OctLevel.get(level).getOctState(pos, octant);
         if (!(octState.getBlock() instanceof OctBlock octBlock)) {
             return true;
         }
@@ -85,7 +84,7 @@ public final class OctClientEffects {
             int x = pos.getX(), y = pos.getY(), z = pos.getZ();
             AABB aabb = octBlock.getShape(
                     octState,
-                    LevelOctExtension.get(level),
+                    OctLevel.get(level),
                     pos,
                     octant,
                     CollisionContext.empty()

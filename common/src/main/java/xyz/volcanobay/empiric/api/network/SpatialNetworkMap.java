@@ -15,7 +15,6 @@ import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -169,7 +168,7 @@ public class SpatialNetworkMap<N extends NetworkModule> extends ManagedSpatialNe
         if (!loaded(x1, z1) || !loaded(x2, z2)) {
             return false;
         }
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         OctPos first = new OctPos(x1, y1, z1);
         OctPos second = new OctPos(x2, y2, z2);
         return type.shouldConnect(octLevel.getBlockState(first), octLevel.getBlockState(second), level, octLevel, first, second);
@@ -180,7 +179,7 @@ public class SpatialNetworkMap<N extends NetworkModule> extends ManagedSpatialNe
         if (!loaded(x, z)) {
             return false;
         }
-        OctLevel octLevel = LevelOctExtension.get(level);
+        OctLevel octLevel = OctLevel.get(level);
         return type.isMember(x, y, z, octLevel, level);
     }
 

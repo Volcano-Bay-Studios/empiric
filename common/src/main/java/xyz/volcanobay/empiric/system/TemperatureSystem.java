@@ -18,7 +18,7 @@ import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
 import xyz.volcanobay.empiric.core.module.ModuleEvent;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 
@@ -148,7 +148,7 @@ public final class TemperatureSystem {
         if (chunk == null) {
             return -1;
         }
-        return conductivityOf(LevelOctExtension.get(level).getBlockState(new OctPos(x, y, z)));
+        return conductivityOf(OctLevel.get(level).getBlockState(new OctPos(x, y, z)));
     }
 
     public static short get(Level level, OctPos pos) {

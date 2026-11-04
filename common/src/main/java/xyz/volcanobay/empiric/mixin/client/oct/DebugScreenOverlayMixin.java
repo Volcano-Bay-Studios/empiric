@@ -17,7 +17,6 @@ import net.minecraft.world.phys.HitResult;
 import xyz.volcanobay.empiric.api.oct.OctBlock;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctPos;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -42,7 +41,7 @@ public abstract class DebugScreenOverlayMixin {
     public BlockState getBlockState(ClientLevel instance, BlockPos pos, Operation<BlockState> original, @Local(ordinal = 0)List<String> list) {
         if (block instanceof BlockHitResult result) {
             OctPos octPos = new OctPos(result);
-            OctLevel octLevel = LevelOctExtension.get(instance);
+            OctLevel octLevel = OctLevel.get(instance);
             BlockState blockState = octLevel.getBlockState(octPos);
             if (blockState.getBlock() instanceof OctBlock) {
                 list.add("");

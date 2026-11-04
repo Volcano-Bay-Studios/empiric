@@ -11,7 +11,6 @@ import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 import xyz.volcanobay.empiric.api.oct.OctGetter;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import xyz.volcanobay.empiric.registry.EmpiricBlocks;
 
 import java.util.ArrayList;
@@ -107,7 +106,7 @@ public final class Parts {
      * @return Whether every block the box touches is free there: replaceable, or oct content that is air or a part
      */
     public static boolean roomFor(Level level, BlockPos host, AABB box) {
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         for (BlockPos block : blocksOf(host, box)) {
             if (!level.getBlockState(block).is(EmpiricBlocks.OCT_BLOCK.get())) {
                 if (!isFreeHost(level, block)) {
@@ -137,7 +136,7 @@ public final class Parts {
         if (!roomFor(level, home, box)) {
             return false;
         }
-        return !Workspace.of(LevelOctExtension.get(level), home).blocked(new Piece(PROBE, type, spot.x(), spot.y(), spot.z(), rotation, ItemStack.EMPTY), ignore);
+        return !Workspace.of(OctLevel.get(level), home).blocked(new Piece(PROBE, type, spot.x(), spot.y(), spot.z(), rotation, ItemStack.EMPTY), ignore);
     }
 
     public static boolean isFreeHost(Level level, BlockPos host) {
@@ -167,7 +166,7 @@ public final class Parts {
             return null;
         }
         reconcile(level, host, piece.box());
-        PartOctEntity owner = entity(LevelOctExtension.get(level), host, piece.anchor());
+        PartOctEntity owner = entity(OctLevel.get(level), host, piece.anchor());
         if (owner != null) {
             owner.changed();
         }
@@ -175,7 +174,7 @@ public final class Parts {
     }
 
     private static boolean adopt(Level level, BlockPos host, Piece piece) {
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         int anchor = piece.anchor();
         BlockState state = oct.getOctState(host, anchor);
         if (!isPart(state) && !oct.setOctState(host, anchor, piece.type.cell().defaultBlockState())) {
@@ -193,7 +192,7 @@ public final class Parts {
      * @return The piece's stack, empty if it wasn't found
      */
     public static ItemStack remove(Level level, BlockPos host, UUID id) {
-        Workspace workspace = Workspace.of(LevelOctExtension.get(level), host);
+        Workspace workspace = Workspace.of(OctLevel.get(level), host);
         Piece piece = workspace.find(id);
         PartOctEntity owner = piece == null ? null : workspace.owner(piece);
         if (owner == null) {
@@ -225,7 +224,7 @@ public final class Parts {
      * @param y     In the host's pixels
      */
     public static boolean move(Level level, BlockPos host, Piece piece, int y) {
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         Workspace workspace = Workspace.of(oct, host);
         PartOctEntity owner = workspace.owner(piece);
         Piece stored = workspace.stored(piece);
@@ -262,7 +261,7 @@ public final class Parts {
      * of different cells share an octant, the hardest cell block wins.
      */
     public static void reconcile(Level level, BlockPos host) {
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         boolean isOct = level.getBlockState(host).is(EmpiricBlocks.OCT_BLOCK.get());
         Workspace workspace = Workspace.of(oct, host);
         PartOctBlock[] wanted = new PartOctBlock[8];
@@ -305,7 +304,7 @@ public final class Parts {
     }
 
     public static void requestSettle(Level level, BlockPos pos) {
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         for (int octant = 0; octant < 8; octant++) {
             PartOctEntity entity = entity(oct, pos, octant);
             if (entity != null && !entity.isEmpty()) {

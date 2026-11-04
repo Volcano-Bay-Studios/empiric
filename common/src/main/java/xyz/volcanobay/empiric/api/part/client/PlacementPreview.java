@@ -21,7 +21,7 @@ import xyz.volcanobay.empiric.api.part.Piece;
 import xyz.volcanobay.empiric.api.part.Placement;
 import xyz.volcanobay.empiric.api.part.PlacementFailure;
 import xyz.volcanobay.empiric.api.part.Spot;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 
 import java.util.UUID;
 
@@ -96,7 +96,7 @@ public final class PlacementPreview {
         PoseStack pose = new PoseStack();
         pose.translate(host.getX() - camera.x, host.getY() + PartRendering.LIFT - camera.y, host.getZ() - camera.z);
         if (!piece.type.hooks(DrawOffset.class).isEmpty()) {
-            Vec3 shift = Workspace.of(LevelOctExtension.get(level), host).drawOffset(piece);
+            Vec3 shift = Workspace.of(OctLevel.get(level), host).drawOffset(piece);
             pose.translate(shift.x / 16, shift.y / 16, shift.z / 16);
         }
         PartRendering.toPiece(pose, piece.type, piece.x, piece.y, piece.z, piece.rotation);

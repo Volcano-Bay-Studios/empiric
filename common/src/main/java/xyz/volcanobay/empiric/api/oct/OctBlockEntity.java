@@ -6,7 +6,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import xyz.volcanobay.empiric.oct.FullOctBlockEntity;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -111,7 +110,7 @@ public class OctBlockEntity {
      */
     @ApiStatus.Internal
     public void setOwner(FullOctBlockEntity owner) {
-        this.octLevel = LevelOctExtension.get(owner.getLevel());
+        this.octLevel = OctLevel.get(owner.getLevel());
         this.level = owner.getLevel();
         this.owner = owner;
     }

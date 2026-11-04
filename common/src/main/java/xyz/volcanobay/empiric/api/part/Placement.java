@@ -14,7 +14,6 @@ import xyz.volcanobay.empiric.api.oct.OctBlock;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.part.trait.Sockets;
 import xyz.volcanobay.empiric.api.part.trait.Support;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 import xyz.volcanobay.empiric.registry.EmpiricBlocks;
 
 import java.util.ArrayList;
@@ -146,7 +145,7 @@ public final class Placement {
      * @param fromY Highest surface to consider, in the host's pixels
      */
     public static Stand support(Level level, BlockPos host, int x, int z, int width, int depth, int fromY, @Nullable UUID ignore) {
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         Workspace workspace = Workspace.of(oct, host);
         List<AABB> solids = new ArrayList<>();
         for (int dx = -1; dx <= 1; dx++) {
@@ -262,7 +261,7 @@ public final class Placement {
      * Lets the block's own pieces fall onto what's under them now, lowest first, and drops those with nothing to stand on.
      */
     public static void settle(Level level, BlockPos pos) {
-        OctLevel oct = LevelOctExtension.get(level);
+        OctLevel oct = OctLevel.get(level);
         Workspace start = Workspace.of(oct, pos);
         List<Piece> pieces = new ArrayList<>(start.pieces().stream().filter(start::isHome).toList());
         pieces.sort(Comparator.comparingInt(piece -> piece.y));

@@ -14,7 +14,6 @@ import xyz.volcanobay.empiric.api.oct.OctUtil;
 import xyz.volcanobay.empiric.api.part.OrientedBox;
 import xyz.volcanobay.empiric.api.part.PartOctBlock;
 import xyz.volcanobay.empiric.api.part.Selection;
-import xyz.volcanobay.empiric.ext.LevelOctExtension;
 
 public final class PartOutline {
 
@@ -48,7 +47,7 @@ public final class PartOutline {
         if (!(entity instanceof Player player) || !(Minecraft.getInstance().hitResult instanceof BlockHitResult hit) || !hit.getBlockPos().equals(pos)) {
             return null;
         }
-        OctLevel oct = LevelOctExtension.get(player.level());
+        OctLevel oct = OctLevel.get(player.level());
         if (!(oct.getOctState(pos, OctUtil.getOctant(hit)).getBlock() instanceof PartOctBlock)) {
             return null;
         }
