@@ -9,7 +9,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import xyz.volcanobay.empiric.api.oct.OctUtil;
+import org.joml.Vector3f;
 
 import java.util.stream.IntStream;
 
@@ -59,7 +59,26 @@ public record OctPos(BlockPos pos, byte octant) {
     public long getLongZ() {
         return (long) this.pos.getZ() * 2 + ((this.octant & 4) != 0 ? 1 : 0);
     }
-
+    
+    public Vector3f getCenterPos() {
+        return pos.getCenter().toVector3f().add(
+                (octant & 1) != 0 ? 0.25f : -0.25f,
+                (octant & 2) != 0 ? 0.25f : -0.25f,
+                (octant & 4) != 0 ? 0.25f : -0.25f
+        );
+    }
+    
+    public Vector3f getCenterPos(Vector3f dest) {
+        Vec3 center = pos.getCenter();
+        dest.set(center.x, center.y, center.z);
+        dest.add(
+                (octant & 1) != 0 ? 0.25f : -0.25f,
+                (octant & 2) != 0 ? 0.25f : -0.25f,
+                (octant & 4) != 0 ? 0.25f : -0.25f
+        );
+        return dest;
+    }
+    
     public OctPos relative(Direction direction) {
         return relative(direction, 1);
     }
@@ -74,24 +93,33 @@ public record OctPos(BlockPos pos, byte octant) {
                 this.getLongZ() + (long) direction.getStepZ() * distance
         );
     }
+    
     public double distSqr(OctPos otherPos) {
-        long dx = getLongX() - otherPos.getLongX();
-        long dy = getLongY() - otherPos.getLongY();
-        long dz = getLongZ() - otherPos.getLongZ();
+        long dx = this.getLongX() - otherPos.getLongX();
+        long dy = this.getLongY() - otherPos.getLongY();
+        long dz = this.getLongZ() - otherPos.getLongZ();
         return Math.sqrt((double)dx * dx + (double)dy * dy + (double)dz * dz) / 2.0;
     }
     public double distManhattan(OctPos otherPos) {
-        long dx = getLongX() - otherPos.getLongX();
-        long dy = getLongY() - otherPos.getLongY();
-        long dz = getLongZ() - otherPos.getLongZ();
+        long dx = this.getLongX() - otherPos.getLongX();
+        long dy = this.getLongY() - otherPos.getLongY();
+        long dz = this.getLongZ() - otherPos.getLongZ();
         return (Math.abs(dx)+Math.abs(dy)+Math.abs(dz)) / 2.0;
     }
 
     public Vec3 sub(OctPos other) {
-        return new Vec3(getLongX() - other.getLongX(), getLongY() - other.getLongY(), getLongZ() - other.getLongZ());
+        return new Vec3(
+                this.getLongX() - other.getLongX(),
+                this.getLongY() - other.getLongY(),
+                this.getLongZ() - other.getLongZ()
+        );
     }
 
     public Direction dir(OctPos other) {
-        return Direction.getNearest(getLongX() - other.getLongX(), getLongY() - other.getLongY(), getLongZ() - other.getLongZ());
+        return Direction.getNearest(
+                this.getLongX() - other.getLongX(),
+                this.getLongY() - other.getLongY(),
+                this.getLongZ() - other.getLongZ()
+        );
     }
 }
