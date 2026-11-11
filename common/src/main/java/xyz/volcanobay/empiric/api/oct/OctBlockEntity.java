@@ -114,10 +114,25 @@ public class OctBlockEntity {
         this.level = owner.getLevel();
         this.owner = owner;
     }
-
+    
+    /**
+     * @return The world oct position of this block entity.
+     */
     public OctPos getOctPos() {
-        return new OctPos(worldPosition,octantPosition);
+        return new OctPos(worldPosition, octantPosition);
     }
-
-
+    
+    /**
+     * @return The world block position of this block entity.
+     */
+    public BlockPos getBlockPos() {
+        return worldPosition;
+    }
+    
+    /**
+     * @return The block state of this block entity.
+     */
+    public BlockState getBlockState() {
+        return this.blockState;
+    }
 }

@@ -9,6 +9,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 
 import java.util.stream.IntStream;
@@ -60,23 +61,37 @@ public record OctPos(BlockPos pos, byte octant) {
         return (long) this.pos.getZ() * 2 + ((this.octant & 4) != 0 ? 1 : 0);
     }
     
-    public Vector3f getCenterPos() {
-        return pos.getCenter().toVector3f().add(
-                (octant & 1) != 0 ? 0.25f : -0.25f,
-                (octant & 2) != 0 ? 0.25f : -0.25f,
-                (octant & 4) != 0 ? 0.25f : -0.25f
+    public Vec3 getCenter() {
+        double x = pos.getX() + 0.5;
+        double y = pos.getY() + 0.5;
+        double z = pos.getZ() + 0.5;
+        return new Vec3(
+                x + ((octant & 1) != 0 ? 0.25 : -0.25),
+                y + ((octant & 2) != 0 ? 0.25 : -0.25),
+                z + ((octant & 4) != 0 ? 0.25 : -0.25)
         );
     }
     
-    public Vector3f getCenterPos(Vector3f dest) {
-        Vec3 center = pos.getCenter();
-        dest.set(center.x, center.y, center.z);
-        dest.add(
-                (octant & 1) != 0 ? 0.25f : -0.25f,
-                (octant & 2) != 0 ? 0.25f : -0.25f,
-                (octant & 4) != 0 ? 0.25f : -0.25f
+    public Vector3f getCenter(Vector3f dest) {
+        double x = pos.getX() + 0.5f;
+        double y = pos.getY() + 0.5f;
+        double z = pos.getZ() + 0.5f;
+        return dest.set(
+                x + ((octant & 1) != 0 ? 0.25f : -0.25f),
+                y + ((octant & 2) != 0 ? 0.25f : -0.25f),
+                z + ((octant & 4) != 0 ? 0.25f : -0.25f)
         );
-        return dest;
+    }
+    
+    public Vector3d getCenter(Vector3d dest) {
+        double x = pos.getX() + 0.5;
+        double y = pos.getY() + 0.5;
+        double z = pos.getZ() + 0.5;
+        return dest.set(
+                x + ((octant & 1) != 0 ? 0.25 : -0.25),
+                y + ((octant & 2) != 0 ? 0.25 : -0.25),
+                z + ((octant & 4) != 0 ? 0.25 : -0.25)
+        );
     }
     
     public OctPos relative(Direction direction) {
