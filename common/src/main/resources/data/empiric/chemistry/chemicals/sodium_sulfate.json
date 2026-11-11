@@ -1,0 +1,16 @@
+{
+  "name": "empiric:sodium_sulfate",
+  "boilTemp": 1429,
+  "freezeTemp": 884,
+  "hVapKJ": 100,
+  "hFusKJ": 23.4,
+  "densityLiquid": 2.1,
+  "densitySolid": 2.66,
+  "molecularWeight": 142.04,
+  "expandsOnFreezing": false,
+  "color": 16316664,
+  "heatCapacityLiquid": 180,
+  "heatCapacitySolid": 128,
+  "solubility": 1.4,
+  "solidForm": "crystal"
+}

@@ -1,0 +1,22 @@
+{
+  "reactants": {
+    "empiric:sulfur_dioxide": 2,
+    "empiric:oxygen": 1
+  },
+  "products": {
+    "empiric:sulfur_trioxide": 2
+  },
+  "enthalpy": -198,
+  "rate": 0.3,
+  "requirements": {
+    "empiric:heat": {
+      "min": 400,
+      "max": 600
+    },
+    "empiric:catalyst": {
+      "chemicals": {
+        "empiric:vanadium_pentoxide": 0.001
+      }
+    }
+  }
+}

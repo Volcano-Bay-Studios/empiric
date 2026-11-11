@@ -1,0 +1,14 @@
+{
+  "name": "empiric:formaldehyde",
+  "boilTemp": -19,
+  "freezeTemp": -92,
+  "hVapKJ": 24.5,
+  "hFusKJ": 7.6,
+  "densityLiquid": 0.815,
+  "densitySolid": 0.9,
+  "molecularWeight": 30.03,
+  "expandsOnFreezing": false,
+  "color": 15790320,
+  "heatCapacityGas": 35,
+  "opacityLiquid": 0.15
+}

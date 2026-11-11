@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:sugar",
+  "chemicals": {
+    "empiric:glucose": 0.15
+  },
+  "state": "solid"
+}

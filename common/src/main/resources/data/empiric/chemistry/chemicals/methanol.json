@@ -1,0 +1,15 @@
+{
+  "name": "empiric:methanol",
+  "boilTemp": 64.7,
+  "freezeTemp": -97.6,
+  "hVapKJ": 35.3,
+  "hFusKJ": 3.2,
+  "densityLiquid": 0.792,
+  "densitySolid": 1.0,
+  "molecularWeight": 32.04,
+  "expandsOnFreezing": false,
+  "color": 15266040,
+  "heatCapacityLiquid": 81,
+  "heatCapacityGas": 44,
+  "opacityLiquid": 0.15
+}

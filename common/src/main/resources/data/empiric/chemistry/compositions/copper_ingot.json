@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:copper_ingot",
+  "chemicals": {
+    "empiric:copper": 0.5
+  },
+  "state": "solid"
+}

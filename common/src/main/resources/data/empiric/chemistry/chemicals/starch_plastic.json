@@ -1,0 +1,14 @@
+{
+  "name": "empiric:starch_plastic",
+  "boilTemp": 450,
+  "freezeTemp": 250,
+  "hVapKJ": 0,
+  "hFusKJ": 0,
+  "densityLiquid": 1.3,
+  "densitySolid": 1.3,
+  "molecularWeight": 162.14,
+  "expandsOnFreezing": false,
+  "color": 15129794,
+  "heatCapacitySolid": 160,
+  "solidForm": "hard"
+}

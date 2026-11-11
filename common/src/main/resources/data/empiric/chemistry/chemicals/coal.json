@@ -1,0 +1,14 @@
+{
+  "name": "empiric:coal",
+  "boilTemp": 4000,
+  "freezeTemp": 3500,
+  "hVapKJ": 0,
+  "hFusKJ": 0,
+  "densityLiquid": 1.5,
+  "densitySolid": 1.4,
+  "molecularWeight": 12.01,
+  "expandsOnFreezing": false,
+  "color": 2829099,
+  "heatCapacitySolid": 11,
+  "solidForm": "hard"
+}

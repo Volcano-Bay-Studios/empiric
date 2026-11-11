@@ -1,0 +1,16 @@
+{
+  "name": "empiric:potassium_nitrate",
+  "boilTemp": 400,
+  "freezeTemp": 334,
+  "hVapKJ": 120,
+  "hFusKJ": 10.3,
+  "densityLiquid": 1.9,
+  "densitySolid": 2.11,
+  "molecularWeight": 101.1,
+  "expandsOnFreezing": false,
+  "color": 16119285,
+  "heatCapacityLiquid": 140,
+  "heatCapacitySolid": 96,
+  "solubility": 3.1,
+  "solidForm": "crystal"
+}

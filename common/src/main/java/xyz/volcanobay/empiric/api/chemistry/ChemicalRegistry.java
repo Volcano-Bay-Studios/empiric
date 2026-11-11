@@ -3,6 +3,7 @@ package xyz.volcanobay.empiric.api.chemistry;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import xyz.volcanobay.empiric.core.entry.DataEntry;
 import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
@@ -19,6 +20,9 @@ public final class ChemicalRegistry {
     public static final DataEntryType<Chemical> CHEMICALS = new DataEntryType<>("empiric:chemistry/chemicals", Chemical.class, Chemical::new);
     public static final DataEntryType<ChemicalReaction> REACTIONS = new DataEntryType<>("empiric:chemistry/reactions", ChemicalReaction.class, ChemicalReaction::new);
 
+    public static final DataEntryType<ChemicalComposition> COMPOSITIONS = new DataEntryType<>("empiric:chemistry/compositions", ChemicalComposition.class, ChemicalComposition::new);
+    public static final DataEntryType<ChemicalSolidForm> SOLID_FORMS = new DataEntryType<>("empiric:chemistry/solid_forms", ChemicalSolidForm.class, ChemicalSolidForm::new);
+
     private static final SuggestionProvider<?> CHEMICALS_SUGGESTION_PROVIDER = (unused, builder) -> SharedSuggestionProvider.suggest(CHEMICALS.entries().stream().map(DataEntry::id), builder);
 
     private ChemicalRegistry() {
@@ -27,6 +31,8 @@ public final class ChemicalRegistry {
     public static void registerData(DataEntrySystem data) {
         data.register(CHEMICALS);
         data.register(REACTIONS);
+        data.register(COMPOSITIONS);
+        data.register(SOLID_FORMS);
     }
 
     @SuppressWarnings("unchecked")
@@ -90,6 +96,42 @@ public final class ChemicalRegistry {
             reactions.add(entry.value());
         }
         return reactions;
+    }
+
+    /**
+     * @return What one of the item is made of, or null if it isn't a chemical source
+     */
+    public static @Nullable ChemicalComposition compositionOf(ItemStack stack) {
+        for (DataEntry<ChemicalComposition> entry : COMPOSITIONS.entries()) {
+            if (entry.value().matches(stack)) {
+                return entry.value();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @return How the chemical's solid is taken out as an item, or null if it has no item of its own
+     */
+    public static @Nullable ChemicalSolidForm solidFormOf(Chemical chemical) {
+        for (DataEntry<ChemicalSolidForm> entry : SOLID_FORMS.entries()) {
+            if (chemical == getChemical(entry.value().getChemical())) {
+                return entry.value();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @return The chemical an item is the solid form of, or null if it isn't one
+     */
+    public static @Nullable ChemicalSolidForm solidFormOf(ItemStack stack) {
+        for (DataEntry<ChemicalSolidForm> entry : SOLID_FORMS.entries()) {
+            if (entry.value().matches(stack)) {
+                return entry.value();
+            }
+        }
+        return null;
     }
 
     private static Map<ResourceLocation, ChemicalReaction> reactionsMatching(Predicate<ChemicalReaction> filter) {

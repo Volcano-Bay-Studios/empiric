@@ -1,0 +1,26 @@
+{
+  "reactants": {
+    "empiric:methanol": 2,
+    "empiric:oxygen": 1
+  },
+  "products": {
+    "empiric:formaldehyde": 2,
+    "empiric:water": 2
+  },
+  "reactant_states": {
+    "empiric:methanol": "gas"
+  },
+  "enthalpy": -300,
+  "rate": 0.4,
+  "requirements": {
+    "empiric:heat": {
+      "min": 300,
+      "max": 650
+    },
+    "empiric:catalyst": {
+      "chemicals": {
+        "empiric:copper": 0.001
+      }
+    }
+  }
+}

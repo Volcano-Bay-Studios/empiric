@@ -1,0 +1,12 @@
+{
+  "reactants": {
+    "empiric:sulfur_trioxide": 1,
+    "empiric:water": 1
+  },
+  "products": {
+    "empiric:sulfuric_acid": 1
+  },
+  "enthalpy": -130,
+  "rate": 0.6,
+  "requirements": {}
+}

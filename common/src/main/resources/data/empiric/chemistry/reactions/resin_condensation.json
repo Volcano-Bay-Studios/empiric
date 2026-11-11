@@ -1,0 +1,26 @@
+{
+  "reactants": {
+    "empiric:phenol": 1,
+    "empiric:formaldehyde": 1
+  },
+  "products": {
+    "empiric:novolac_resin": 1,
+    "empiric:water": 1
+  },
+  "enthalpy": -30,
+  "rate": 0.1,
+  "requirements": {
+    "empiric:heat": {
+      "min": 60,
+      "max": 130
+    },
+    "empiric:mixing": {
+      "min": 0.3
+    },
+    "empiric:catalyst": {
+      "chemicals": {
+        "empiric:hydrochloric_acid": 0.001
+      }
+    }
+  }
+}

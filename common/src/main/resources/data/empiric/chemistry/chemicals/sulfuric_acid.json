@@ -1,0 +1,15 @@
+{
+  "name": "empiric:sulfuric_acid",
+  "boilTemp": 337,
+  "freezeTemp": 10.3,
+  "hVapKJ": 50,
+  "hFusKJ": 10.7,
+  "densityLiquid": 1.84,
+  "densitySolid": 1.9,
+  "molecularWeight": 98.08,
+  "expandsOnFreezing": false,
+  "color": 15328964,
+  "heatCapacityLiquid": 139,
+  "heatCapacitySolid": 100,
+  "opacityLiquid": 0.25
+}

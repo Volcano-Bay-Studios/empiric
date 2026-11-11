@@ -45,8 +45,17 @@ public class Chemical {
     private double opacityLiquid = 0.7; // How opaque the liquid is, 0 (clear) to 1.
     @Data
     private double opacityGas = 0.1; // How opaque the gas is, 0 (clear) to 1.
+    @Data
+    private String solidForm = "powder"; // What the solid looks like by default: powder, crystal, hard, ...
 
     public Chemical() {
+    }
+
+    /**
+     * @return The name of the form the solid has unless something says how it formed
+     */
+    public String getSolidForm() {
+        return solidForm;
     }
 
     public Chemical(String name, double boilTemp, double freezeTemp, double hVapKJ, double hFusKJ, double densityLiquid, double densitySolid, double molecularWeight, boolean expandsOnFreezing, int color) {

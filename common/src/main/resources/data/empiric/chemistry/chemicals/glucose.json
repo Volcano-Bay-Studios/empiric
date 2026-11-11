@@ -1,0 +1,17 @@
+{
+  "name": "empiric:glucose",
+  "boilTemp": 450,
+  "freezeTemp": 146,
+  "hVapKJ": 60,
+  "hFusKJ": 32.4,
+  "densityLiquid": 1.54,
+  "densitySolid": 1.54,
+  "molecularWeight": 180.16,
+  "expandsOnFreezing": false,
+  "color": 16183780,
+  "heatCapacityLiquid": 300,
+  "heatCapacitySolid": 218,
+  "solubility": 5.0,
+  "opacityLiquid": 0.2,
+  "solidForm": "crystal"
+}

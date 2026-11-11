@@ -1,0 +1,15 @@
+{
+  "name": "empiric:sulfur_trioxide",
+  "boilTemp": 45,
+  "freezeTemp": 16.9,
+  "hVapKJ": 41.8,
+  "hFusKJ": 8.2,
+  "densityLiquid": 1.92,
+  "densitySolid": 2.14,
+  "molecularWeight": 80.06,
+  "expandsOnFreezing": false,
+  "color": 16053492,
+  "heatCapacityGas": 50,
+  "heatCapacityLiquid": 125,
+  "opacityGas": 0.05
+}

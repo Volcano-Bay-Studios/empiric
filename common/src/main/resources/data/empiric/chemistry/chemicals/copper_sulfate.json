@@ -13,5 +13,6 @@
   "heatCapacitySolid": 98.9,
   "solubility": 1.3,
   "opacityLiquid": 0.85,
-  "opacitySolid": 1
+  "opacitySolid": 1,
+  "solidForm": "crystal"
 }

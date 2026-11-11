@@ -1,0 +1,14 @@
+{
+  "name": "empiric:nitric_acid",
+  "boilTemp": 83,
+  "freezeTemp": -42,
+  "hVapKJ": 39.1,
+  "hFusKJ": 10.5,
+  "densityLiquid": 1.51,
+  "densitySolid": 1.6,
+  "molecularWeight": 63.01,
+  "expandsOnFreezing": false,
+  "color": 15920834,
+  "heatCapacityLiquid": 110,
+  "opacityLiquid": 0.2
+}

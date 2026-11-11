@@ -1,0 +1,15 @@
+{
+  "name": "empiric:milk_protein",
+  "boilTemp": 400,
+  "freezeTemp": 200,
+  "hVapKJ": 0,
+  "hFusKJ": 0,
+  "densityLiquid": 1.1,
+  "densitySolid": 1.25,
+  "molecularWeight": 100,
+  "expandsOnFreezing": false,
+  "color": 16183526,
+  "solubility": 50,
+  "opacityLiquid": 0.9,
+  "solidForm": "powder"
+}

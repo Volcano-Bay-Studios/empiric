@@ -1,0 +1,13 @@
+{
+  "name": "empiric:vanadium_pentoxide",
+  "boilTemp": 1750,
+  "freezeTemp": 690,
+  "hVapKJ": 0,
+  "hFusKJ": 65,
+  "densityLiquid": 3.36,
+  "densitySolid": 3.36,
+  "molecularWeight": 181.88,
+  "expandsOnFreezing": false,
+  "color": 14721056,
+  "heatCapacitySolid": 127
+}

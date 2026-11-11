@@ -1,0 +1,17 @@
+{
+  "reactants": {
+    "empiric:coal_tar": 1
+  },
+  "products": {
+    "empiric:phenol": 0.5,
+    "empiric:carbon": 3
+  },
+  "enthalpy": 30,
+  "rate": 0.08,
+  "requirements": {
+    "empiric:heat": {
+      "min": 180,
+      "max": 450
+    }
+  }
+}

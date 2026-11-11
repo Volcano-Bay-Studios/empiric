@@ -1,0 +1,19 @@
+{
+  "reactants": {
+    "empiric:novolac_resin": 1
+  },
+  "products": {
+    "empiric:bakelite": 1
+  },
+  "product_states": {
+    "empiric:bakelite": "solid"
+  },
+  "enthalpy": -20,
+  "rate": 0.05,
+  "requirements": {
+    "empiric:heat": {
+      "min": 140,
+      "max": 260
+    }
+  }
+}

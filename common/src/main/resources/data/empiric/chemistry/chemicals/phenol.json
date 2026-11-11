@@ -1,0 +1,15 @@
+{
+  "name": "empiric:phenol",
+  "boilTemp": 181.7,
+  "freezeTemp": 40.9,
+  "hVapKJ": 46,
+  "hFusKJ": 11.5,
+  "densityLiquid": 1.07,
+  "densitySolid": 1.07,
+  "molecularWeight": 94.11,
+  "expandsOnFreezing": false,
+  "color": 15981008,
+  "heatCapacityLiquid": 220,
+  "heatCapacitySolid": 127,
+  "opacityLiquid": 0.4
+}

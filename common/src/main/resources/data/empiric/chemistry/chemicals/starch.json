@@ -1,0 +1,13 @@
+{
+  "name": "empiric:starch",
+  "boilTemp": 450,
+  "freezeTemp": 250,
+  "hVapKJ": 60,
+  "hFusKJ": 30,
+  "densityLiquid": 1.5,
+  "densitySolid": 1.5,
+  "molecularWeight": 162.14,
+  "expandsOnFreezing": false,
+  "color": 16052712,
+  "heatCapacitySolid": 160
+}

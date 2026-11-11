@@ -1,0 +1,17 @@
+{
+  "reactants": {
+    "empiric:sodium_chloride": 2,
+    "empiric:sulfuric_acid": 1
+  },
+  "products": {
+    "empiric:sodium_sulfate": 1,
+    "empiric:hydrochloric_acid": 2
+  },
+  "enthalpy": 65,
+  "rate": 0.15,
+  "requirements": {
+    "empiric:heat": {
+      "min": 150
+    }
+  }
+}

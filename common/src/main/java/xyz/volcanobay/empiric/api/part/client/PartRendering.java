@@ -2,6 +2,8 @@ package xyz.volcanobay.empiric.api.part.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.core.BlockPos;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import xyz.volcanobay.empiric.api.model.EmpiricModel;
 import xyz.volcanobay.empiric.api.model.RenderOrder;
@@ -25,7 +27,20 @@ public final class PartRendering {
     public static final int LAYER_BACK = 0;
     public static final int LAYER_FRONT = 3;
 
+    private static BlockPos current;
+
     private PartRendering() {
+    }
+
+    /**
+     * @return The block whose pieces are being drawn, in whose pixels a {@link PieceRenderer} gets its piece; null outside a placed block's draw
+     */
+    public static @Nullable BlockPos currentBlock() {
+        return current;
+    }
+
+    public static void setCurrentBlock(@Nullable BlockPos pos) {
+        current = pos;
     }
 
     /**

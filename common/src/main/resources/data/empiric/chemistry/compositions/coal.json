@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:coal",
+  "chemicals": {
+    "empiric:coal": 2
+  },
+  "state": "solid"
+}

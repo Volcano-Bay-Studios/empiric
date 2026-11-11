@@ -1,0 +1,22 @@
+{
+  "reactants": {
+    "empiric:glucose": 1
+  },
+  "products": {
+    "empiric:ethanol": 2,
+    "empiric:carbon_dioxide": 2
+  },
+  "enthalpy": -70,
+  "rate": 0.01,
+  "requirements": {
+    "empiric:heat": {
+      "min": 18,
+      "max": 38
+    },
+    "empiric:absent": {
+      "chemicals": {
+        "empiric:oxygen": 0.002
+      }
+    }
+  }
+}

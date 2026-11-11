@@ -1,0 +1,24 @@
+{
+  "reactants": {
+    "empiric:cellulose": 5
+  },
+  "products": {
+    "empiric:carbon": 4,
+    "empiric:acetic_acid": 1,
+    "empiric:methanol": 1,
+    "empiric:water": 5,
+    "empiric:carbon_dioxide": 1
+  },
+  "enthalpy": 40,
+  "rate": 0.05,
+  "requirements": {
+    "empiric:heat": {
+      "min": 250
+    },
+    "empiric:absent": {
+      "chemicals": {
+        "empiric:oxygen": 0.05
+      }
+    }
+  }
+}

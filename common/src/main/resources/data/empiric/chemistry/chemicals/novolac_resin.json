@@ -1,0 +1,16 @@
+{
+  "name": "empiric:novolac_resin",
+  "boilTemp": 500,
+  "freezeTemp": 60,
+  "hVapKJ": 0,
+  "hFusKJ": 6,
+  "densityLiquid": 1.2,
+  "densitySolid": 1.25,
+  "molecularWeight": 120,
+  "expandsOnFreezing": false,
+  "color": 12945980,
+  "heatCapacityLiquid": 200,
+  "heatCapacitySolid": 150,
+  "solidForm": "paste",
+  "opacityLiquid": 0.9
+}

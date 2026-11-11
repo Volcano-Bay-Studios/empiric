@@ -1,0 +1,14 @@
+{
+  "name": "empiric:hardened_casein",
+  "boilTemp": 400,
+  "freezeTemp": 200,
+  "hVapKJ": 0,
+  "hFusKJ": 0,
+  "densityLiquid": 1.3,
+  "densitySolid": 1.3,
+  "molecularWeight": 100,
+  "expandsOnFreezing": false,
+  "color": 15326389,
+  "heatCapacitySolid": 140,
+  "solidForm": "hard"
+}

@@ -1,0 +1,28 @@
+{
+  "reactants": {
+    "empiric:starch": 1,
+    "empiric:water": 1
+  },
+  "products": {
+    "empiric:starch_gel": 1
+  },
+  "product_states": {
+    "empiric:starch_gel": "solid"
+  },
+  "enthalpy": -5,
+  "rate": 0.1,
+  "requirements": {
+    "empiric:heat": {
+      "min": 60,
+      "max": 95
+    },
+    "empiric:mixing": {
+      "min": 0.3
+    },
+    "empiric:catalyst": {
+      "chemicals": {
+        "empiric:acetic_acid": 0.001
+      }
+    }
+  }
+}

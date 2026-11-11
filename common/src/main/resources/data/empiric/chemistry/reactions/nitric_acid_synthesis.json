@@ -1,0 +1,17 @@
+{
+  "reactants": {
+    "empiric:potassium_nitrate": 2,
+    "empiric:sulfuric_acid": 1
+  },
+  "products": {
+    "empiric:potassium_sulfate": 1,
+    "empiric:nitric_acid": 2
+  },
+  "enthalpy": 60,
+  "rate": 0.15,
+  "requirements": {
+    "empiric:heat": {
+      "min": 100
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "empiric:cellulose",
+  "boilTemp": 450,
+  "freezeTemp": 300,
+  "hVapKJ": 0,
+  "hFusKJ": 0,
+  "densityLiquid": 1.5,
+  "densitySolid": 1.5,
+  "molecularWeight": 162.14,
+  "expandsOnFreezing": false,
+  "color": 10254922,
+  "heatCapacitySolid": 170,
+  "solidForm": "hard"
+}

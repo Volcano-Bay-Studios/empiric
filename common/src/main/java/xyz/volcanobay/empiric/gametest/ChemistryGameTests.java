@@ -3,13 +3,17 @@ package xyz.volcanobay.empiric.gametest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.gametest.framework.TestFunction;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import xyz.volcanobay.empiric.api.atmosphere.Volume;
 import xyz.volcanobay.empiric.api.atmosphere.volume.AtmosphereVolume;
 import xyz.volcanobay.empiric.api.atmosphere.volume.ItemVolume;
 import xyz.volcanobay.empiric.api.atmosphere.volume.PlanetAtmosphereVolume;
 import xyz.volcanobay.empiric.api.chemistry.Chemical;
+import xyz.volcanobay.empiric.api.chemistry.ChemicalComposition;
 import xyz.volcanobay.empiric.api.chemistry.ChemicalReaction;
 import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
+import xyz.volcanobay.empiric.api.chemistry.requirement.AbsentReactionRequirement;
 import xyz.volcanobay.empiric.api.chemistry.sim.PhaseChange;
 import xyz.volcanobay.empiric.api.chemistry.sim.Reactions;
 import xyz.volcanobay.empiric.api.chemistry.sim.Solutions;
@@ -46,7 +50,15 @@ final class ChemistryGameTests {
                 test.apply("reaction_needs_its_heat", ChemistryGameTests::reactionNeedsHeat),
                 test.apply("reaction_water_metal", ChemistryGameTests::waterMetal),
                 test.apply("reaction_catalyst", ChemistryGameTests::catalyst),
-                test.apply("reaction_pressure", ChemistryGameTests::pressure));
+                test.apply("reaction_pressure", ChemistryGameTests::pressure),
+                test.apply("reaction_needs_mixing", ChemistryGameTests::needsMixing),
+                test.apply("reaction_product_state", ChemistryGameTests::productState),
+                test.apply("reaction_absent_requirement", ChemistryGameTests::absentRequirement),
+                test.apply("reaction_reactant_state", ChemistryGameTests::reactantState),
+                test.apply("item_compositions", ChemistryGameTests::compositions),
+                test.apply("reaction_data_consistent", ChemistryGameTests::dataConsistent),
+                test.apply("sulfuric_acid_chain", ChemistryGameTests::sulfuricAcid),
+                test.apply("bakelite_chain", ChemistryGameTests::bakelite));
     }
 
     private static Chemical water(GameTestHelper helper) {
@@ -341,6 +353,145 @@ final class ChemistryGameTests {
         close(helper, still.getChemicalAmount(salt, Volume.State.LIQUID), 0.6, 0.006, "100 mL should hold 0.6 mol at 6 mol/L");
         close(helper, still.getChemicalAmount(salt, Volume.State.SOLID), 0.4, 0.006, "the rest should stay solid");
         helper.assertTrue(Solutions.isDissolved(still, salt) && !Solutions.isDissolved(still, water), "dissolved wrongly reported");
+        helper.succeed();
+    }
+
+    private static ItemVolume curdMix(GameTestHelper helper, double kelvin) {
+        ItemVolume volume = vessel(helper, 100, kelvin);
+        volume.addChemical(chemical(helper, "milk_protein"), 0.05, Volume.State.LIQUID);
+        volume.addChemical(chemical(helper, "acetic_acid"), 0.05, Volume.State.LIQUID);
+        return volume;
+    }
+
+    private static void needsMixing(GameTestHelper helper) {
+        Chemical casein = chemical(helper, "casein");
+        ItemVolume still = curdMix(helper, 333.15);
+        ItemVolume stirred = curdMix(helper, 333.15);
+        for (int i = 0; i < 60; i++) {
+            Reactions.step(still, 0, 0.5);
+            Reactions.step(stirred, 1, 0.5);
+        }
+        close(helper, moles(still, casein), 0, 1.0E-9, "the milk curdled without being stirred");
+        helper.assertTrue(moles(stirred, casein) > 0.04, "the stirred milk didn't curdle, got " + moles(stirred, casein));
+        ItemVolume cold = curdMix(helper, 293.15);
+        for (int i = 0; i < 60; i++) {
+            Reactions.step(cold, 1, 0.5);
+        }
+        close(helper, moles(cold, casein), 0, 1.0E-9, "cold milk curdled");
+        helper.succeed();
+    }
+
+    private static void productState(GameTestHelper helper) {
+        Chemical casein = chemical(helper, "casein");
+        ItemVolume volume = curdMix(helper, 333.15);
+        for (int i = 0; i < 60; i++) {
+            Reactions.step(volume, 1, 0.5);
+        }
+        helper.assertTrue(volume.getChemicalAmount(casein, Volume.State.SOLID) > 0.04, "the casein didn't form as a solid");
+        close(helper, volume.getChemicalAmount(casein, Volume.State.LIQUID), 0, 1.0E-9, "some of the casein formed as a liquid");
+        helper.succeed();
+    }
+
+    private static void absentRequirement(GameTestHelper helper) {
+        ChemicalReaction reaction = new ChemicalReaction();
+        AbsentReactionRequirement absent = new AbsentReactionRequirement();
+        absent.getChemicals().put("empiric:oxygen", 0.01f);
+        ItemVolume sealed = new ItemVolume(0.25);
+        sealed.setTemperature(293.15);
+        helper.assertTrue(absent.met(sealed, 0), "an empty volume failed an absence requirement");
+        sealed.addChemical(oxygen(helper), 0.1, Volume.State.GAS);
+        helper.assertTrue(!absent.met(sealed, 0), "a volume with oxygen met an absence requirement for it");
+        helper.assertTrue(reaction.getRequirements().conditions().isEmpty(), "a reaction without requirements lists conditions");
+        helper.succeed();
+    }
+
+    private static void reactantState(GameTestHelper helper) {
+        ChemicalReaction curdling = ChemicalRegistry.getReaction(ResourceLocation.parse("empiric:milk_curdling"));
+        helper.assertTrue(curdling != null, "the curdling reaction didn't load");
+        helper.assertTrue(curdling.getProductState("empiric:casein") == Volume.State.SOLID, "the casein product state wasn't read");
+        helper.assertTrue(curdling.getReactantState("empiric:milk_protein") == null, "a reactant without a state got one");
+        helper.assertTrue(curdling.getRequirements().getMixing() != null && curdling.getRequirements().count() == 2, "the curdling requirements weren't read");
+        helper.succeed();
+    }
+
+    private static void compositions(GameTestHelper helper) {
+        ChemicalComposition milk = ChemicalRegistry.compositionOf(new ItemStack(Items.MILK_BUCKET));
+        helper.assertTrue(milk != null, "milk has no composition");
+        helper.assertTrue(milk.getChemicals().containsKey("empiric:milk_protein"), "milk has no protein");
+        helper.assertTrue(milk.getState() == Volume.State.LIQUID, "milk isn't added as a liquid");
+        helper.assertTrue(ChemicalRegistry.compositionOf(new ItemStack(Items.STICK)) == null, "a stick has a composition");
+        helper.succeed();
+    }
+
+    private static void dataConsistent(GameTestHelper helper) {
+        for (var entry : ChemicalRegistry.REACTIONS.entries()) {
+            ChemicalReaction reaction = entry.value();
+            for (String id : reaction.getReactants().keySet()) {
+                helper.assertTrue(ChemicalRegistry.getChemical(id) != null, entry.id() + " has an unknown reactant " + id);
+            }
+            for (String id : reaction.getProducts().keySet()) {
+                helper.assertTrue(ChemicalRegistry.getChemical(id) != null, entry.id() + " has an unknown product " + id);
+                reaction.getProductState(id);
+            }
+            for (String id : reaction.getReactants().keySet()) {
+                reaction.getReactantState(id);
+            }
+            if (reaction.getRequirements().getCatalyst() != null) {
+                for (String id : reaction.getRequirements().getCatalyst().getChemicals().keySet()) {
+                    helper.assertTrue(ChemicalRegistry.getChemical(id) != null, entry.id() + " has an unknown catalyst " + id);
+                }
+            }
+            if (reaction.getRequirements().getAbsent() != null) {
+                for (String id : reaction.getRequirements().getAbsent().getChemicals().keySet()) {
+                    helper.assertTrue(ChemicalRegistry.getChemical(id) != null, entry.id() + " has an unknown absent chemical " + id);
+                }
+            }
+        }
+        for (var entry : ChemicalRegistry.COMPOSITIONS.entries()) {
+            for (String id : entry.value().getChemicals().keySet()) {
+                helper.assertTrue(ChemicalRegistry.getChemical(id) != null, entry.id() + " has an unknown chemical " + id);
+            }
+            entry.value().getState();
+        }
+        helper.succeed();
+    }
+
+    private static void sulfuricAcid(GameTestHelper helper) {
+        ItemVolume bare = vessel(helper, 100, 773.15);
+        ItemVolume catalysed = vessel(helper, 100, 773.15);
+        for (ItemVolume volume : List.of(bare, catalysed)) {
+            volume.addChemical(chemical(helper, "sulfur_dioxide"), 0.05, Volume.State.GAS);
+            volume.addChemical(oxygen(helper), 0.03, Volume.State.GAS);
+        }
+        catalysed.addChemical(chemical(helper, "vanadium_pentoxide"), 0.01, Volume.State.SOLID);
+        for (int i = 0; i < 240; i++) {
+            Reactions.step(bare, 0, 0.5);
+            Reactions.step(catalysed, 0, 0.5);
+        }
+        Chemical acid = chemical(helper, "sulfuric_acid");
+        helper.assertTrue(moles(bare, acid) < 1.0E-9, "sulfuric acid formed without the catalyst");
+        helper.assertTrue(moles(catalysed, acid) > 0.01, "the catalysed sulfur dioxide and water made no sulfuric acid, got " + moles(catalysed, acid));
+        helper.succeed();
+    }
+
+    private static void bakelite(GameTestHelper helper) {
+        ItemVolume volume = vessel(helper, 100, 363.15);
+        volume.addChemical(chemical(helper, "phenol"), 0.1, Volume.State.LIQUID);
+        volume.addChemical(chemical(helper, "formaldehyde"), 0.1, Volume.State.LIQUID);
+        volume.addChemical(chemical(helper, "hydrochloric_acid"), 0.01, Volume.State.LIQUID);
+        for (int i = 0; i < 120; i++) {
+            Reactions.step(volume, 0, 0.5);
+        }
+        helper.assertTrue(moles(volume, chemical(helper, "novolac_resin")) < 1.0E-9, "the resin formed without stirring");
+        for (int i = 0; i < 160; i++) {
+            Reactions.step(volume, 1, 0.5);
+        }
+        helper.assertTrue(moles(volume, chemical(helper, "novolac_resin")) > 0.05, "the stirred phenol and formaldehyde made no resin");
+        volume.setTemperature(433.15);
+        for (int i = 0; i < 240; i++) {
+            Reactions.step(volume, 1, 0.5);
+        }
+        helper.assertTrue(volume.getChemicalAmount(chemical(helper, "bakelite"), Volume.State.SOLID) > 0.05, "the resin didn't cure into solid bakelite");
         helper.succeed();
     }
 }

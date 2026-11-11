@@ -1,10 +1,13 @@
 package xyz.volcanobay.empiric.api.chemistry;
 
+import org.jetbrains.annotations.Nullable;
+import xyz.volcanobay.empiric.api.atmosphere.Volume;
 import xyz.volcanobay.empiric.api.chemistry.requirement.ReactionRequirements;
 import xyz.volcanobay.empiric.core.data.Data;
 import xyz.volcanobay.empiric.core.data.SelfSpec;
 
 import java.util.HashMap;
+import java.util.Locale;
 
 @SelfSpec
 public class ChemicalReaction {
@@ -17,6 +20,10 @@ public class ChemicalReaction {
     private HashMap<String, Float> products = new HashMap<>();
     @Data
     private ReactionRequirements requirements = new ReactionRequirements();
+    @Data(id = "reactant_states", optional = true)
+    private HashMap<String, String> reactantStates = new HashMap<>();
+    @Data(id = "product_states", optional = true)
+    private HashMap<String, String> productStates = new HashMap<>();
     @Data(optional = true)
     private Double rate;
     @Data(optional = true)
@@ -31,6 +38,25 @@ public class ChemicalReaction {
 
     public HashMap<String, Float> getProducts() {
         return products;
+    }
+
+    /**
+     * @return The only state a reactant counts in, or null when any state does
+     */
+    public @Nullable Volume.State getReactantState(String chemical) {
+        return state(reactantStates, chemical);
+    }
+
+    /**
+     * @return The state a product forms in, or null when it takes the phase it has at the volume's conditions
+     */
+    public @Nullable Volume.State getProductState(String chemical) {
+        return state(productStates, chemical);
+    }
+
+    private static @Nullable Volume.State state(HashMap<String, String> states, String chemical) {
+        String name = states.get(chemical);
+        return name == null ? null : Volume.State.valueOf(name.toUpperCase(Locale.ROOT));
     }
 
     public ReactionRequirements getRequirements() {

@@ -1,0 +1,14 @@
+{
+  "name": "empiric:starch_gel",
+  "boilTemp": 400,
+  "freezeTemp": 200,
+  "hVapKJ": 0,
+  "hFusKJ": 0,
+  "densityLiquid": 1.2,
+  "densitySolid": 1.2,
+  "molecularWeight": 162.14,
+  "expandsOnFreezing": false,
+  "color": 15525331,
+  "heatCapacitySolid": 160,
+  "solidForm": "paste"
+}

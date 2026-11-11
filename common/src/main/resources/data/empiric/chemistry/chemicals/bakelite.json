@@ -1,0 +1,14 @@
+{
+  "name": "empiric:bakelite",
+  "boilTemp": 900,
+  "freezeTemp": 700,
+  "hVapKJ": 0,
+  "hFusKJ": 0,
+  "densityLiquid": 1.3,
+  "densitySolid": 1.3,
+  "molecularWeight": 120,
+  "expandsOnFreezing": false,
+  "color": 4860436,
+  "heatCapacitySolid": 140,
+  "solidForm": "hard"
+}

@@ -1,0 +1,23 @@
+{
+  "reactants": {
+    "empiric:milk_protein": 1,
+    "empiric:acetic_acid": 1
+  },
+  "products": {
+    "empiric:casein": 1
+  },
+  "product_states": {
+    "empiric:casein": "solid"
+  },
+  "enthalpy": -5,
+  "rate": 0.3,
+  "requirements": {
+    "empiric:heat": {
+      "min": 40,
+      "max": 90
+    },
+    "empiric:mixing": {
+      "min": 0.3
+    }
+  }
+}

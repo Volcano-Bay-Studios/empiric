@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:potato",
+  "chemicals": {
+    "empiric:starch": 0.4,
+    "empiric:water": 1
+  }
+}

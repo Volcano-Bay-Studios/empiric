@@ -1,0 +1,13 @@
+{
+  "name": "empiric:casein",
+  "boilTemp": 400,
+  "freezeTemp": 200,
+  "hVapKJ": 0,
+  "hFusKJ": 0,
+  "densityLiquid": 1.25,
+  "densitySolid": 1.25,
+  "molecularWeight": 100,
+  "expandsOnFreezing": false,
+  "color": 15854291,
+  "solidForm": "hard"
+}

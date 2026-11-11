@@ -1,0 +1,16 @@
+{
+  "name": "empiric:potassium_sulfate",
+  "boilTemp": 1689,
+  "freezeTemp": 1069,
+  "hVapKJ": 100,
+  "hFusKJ": 36.5,
+  "densityLiquid": 2.2,
+  "densitySolid": 2.66,
+  "molecularWeight": 174.26,
+  "expandsOnFreezing": false,
+  "color": 16185078,
+  "heatCapacityLiquid": 200,
+  "heatCapacitySolid": 131,
+  "solubility": 0.7,
+  "solidForm": "crystal"
+}

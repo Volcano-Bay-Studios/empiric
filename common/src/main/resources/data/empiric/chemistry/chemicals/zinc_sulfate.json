@@ -11,5 +11,6 @@
   "color": 15921906,
   "heatCapacityLiquid": 130,
   "heatCapacitySolid": 117,
-  "solubility": 3.6
+  "solubility": 3.6,
+  "solidForm": "crystal"
 }

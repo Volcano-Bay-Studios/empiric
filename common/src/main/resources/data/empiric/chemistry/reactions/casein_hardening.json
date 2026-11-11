@@ -1,0 +1,23 @@
+{
+  "reactants": {
+    "empiric:casein": 1,
+    "empiric:formaldehyde": 0.2
+  },
+  "products": {
+    "empiric:hardened_casein": 1
+  },
+  "reactant_states": {
+    "empiric:casein": "solid"
+  },
+  "product_states": {
+    "empiric:hardened_casein": "solid"
+  },
+  "enthalpy": -5,
+  "rate": 0.02,
+  "requirements": {
+    "empiric:heat": {
+      "min": 15,
+      "max": 60
+    }
+  }
+}

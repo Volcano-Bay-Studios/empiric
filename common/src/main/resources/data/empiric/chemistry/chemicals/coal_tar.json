@@ -1,0 +1,14 @@
+{
+  "name": "empiric:coal_tar",
+  "boilTemp": 350,
+  "freezeTemp": -10,
+  "hVapKJ": 50,
+  "hFusKJ": 0,
+  "densityLiquid": 1.2,
+  "densitySolid": 1.2,
+  "molecularWeight": 120,
+  "expandsOnFreezing": false,
+  "color": 1709072,
+  "heatCapacityLiquid": 200,
+  "opacityLiquid": 1.0
+}

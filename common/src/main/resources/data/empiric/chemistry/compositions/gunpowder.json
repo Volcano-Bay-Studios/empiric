@@ -1,0 +1,9 @@
+{
+  "item": "minecraft:gunpowder",
+  "chemicals": {
+    "empiric:potassium_nitrate": 0.2,
+    "empiric:carbon": 0.15,
+    "empiric:sulfur": 0.05
+  },
+  "state": "solid"
+}

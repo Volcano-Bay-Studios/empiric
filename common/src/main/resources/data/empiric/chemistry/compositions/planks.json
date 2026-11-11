@@ -1,0 +1,7 @@
+{
+  "item": "#minecraft:planks",
+  "chemicals": {
+    "empiric:cellulose": 1.5
+  },
+  "state": "solid"
+}

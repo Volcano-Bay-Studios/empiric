@@ -1,0 +1,22 @@
+{
+  "reactants": {
+    "empiric:coal": 10
+  },
+  "products": {
+    "empiric:carbon": 8,
+    "empiric:coal_tar": 1,
+    "empiric:methane": 1
+  },
+  "enthalpy": 60,
+  "rate": 0.05,
+  "requirements": {
+    "empiric:heat": {
+      "min": 350
+    },
+    "empiric:absent": {
+      "chemicals": {
+        "empiric:oxygen": 0.05
+      }
+    }
+  }
+}

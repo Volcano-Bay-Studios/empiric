@@ -1,0 +1,8 @@
+{
+  "item": "minecraft:milk_bucket",
+  "chemicals": {
+    "empiric:water": 50,
+    "empiric:milk_protein": 3
+  },
+  "state": "liquid"
+}

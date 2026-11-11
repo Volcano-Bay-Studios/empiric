@@ -1,0 +1,18 @@
+{
+  "reactants": {
+    "empiric:ethanol": 1,
+    "empiric:oxygen": 1
+  },
+  "products": {
+    "empiric:acetic_acid": 1,
+    "empiric:water": 1
+  },
+  "enthalpy": -490,
+  "rate": 0.01,
+  "requirements": {
+    "empiric:heat": {
+      "min": 18,
+      "max": 38
+    }
+  }
+}
