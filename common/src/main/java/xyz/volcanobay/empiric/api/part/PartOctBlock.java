@@ -76,7 +76,7 @@ public class PartOctBlock extends OctBlock {
             if (!include.test(piece)) {
                 continue;
             }
-            for (AABB box : piece.boxes()) {
+            for (AABB box : piece.shapeBoxes()) {
                 if (!box.intersects(cell)) {
                     continue;
                 }

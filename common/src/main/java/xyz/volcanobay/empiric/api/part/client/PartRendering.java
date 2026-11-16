@@ -28,6 +28,7 @@ public final class PartRendering {
     public static final int LAYER_FRONT = 3;
 
     private static BlockPos current;
+    private static int ghost = 0xFFFFFFFF;
 
     private PartRendering() {
     }
@@ -52,8 +53,8 @@ public final class PartRendering {
         if (model == null) {
             return;
         }
+        tint = tinted(tint);
         pose.pushPose();
-        shrink(pose, type);
         if (type.has(PartTraits.OPAQUE)) {
             toModel(pose, type);
             model.render(pose, light, overlay, tint);
@@ -64,6 +65,27 @@ public final class PartRendering {
             model.render(pose, light, overlay, tint, new RenderOrder(centre, LAYER_FRONT, RenderOrder.Cull.FRONT_FACES_ONLY));
         }
         pose.popPose();
+    }
+
+    /**
+     * Sets the ARGB every colour a {@link PieceRenderer} draws is multiplied by while a ghost is drawn; white for normal drawing.
+     */
+    public static void setGhost(int argb) {
+        ghost = argb;
+    }
+
+    /**
+     * @return The colour with the current ghost tint applied, for renderers that draw more than the model
+     */
+    public static int tinted(int argb) {
+        if (ghost == 0xFFFFFFFF) {
+            return argb;
+        }
+        int alpha = (argb >>> 24) * (ghost >>> 24) / 255;
+        int red = ((argb >> 16) & 0xFF) * ((ghost >> 16) & 0xFF) / 255;
+        int green = ((argb >> 8) & 0xFF) * ((ghost >> 8) & 0xFF) / 255;
+        int blue = (argb & 0xFF) * (ghost & 0xFF) / 255;
+        return alpha << 24 | red << 16 | green << 8 | blue;
     }
 
     public static void shrink(PoseStack pose, PartType type) {
@@ -97,10 +119,17 @@ public final class PartRendering {
      * @param x In block pixels
      */
     public static void toPiece(PoseStack pose, PartType type, int x, int y, int z, int rotation) {
-        float width = Piece.width(type, rotation);
-        float depth = Piece.depth(type, rotation);
+        toPiece(pose, type, x, y, z, rotation, 0);
+    }
+
+    /**
+     * @param turn Degrees past the quarter turns; the corner is the one of the box holding the turned part
+     */
+    public static void toPiece(PoseStack pose, PartType type, int x, int y, int z, int rotation, float turn) {
+        float width = Piece.width(type, rotation, turn);
+        float depth = Piece.depth(type, rotation, turn);
         pose.translate((x + width / 2) / 16f, y / 16f, (z + depth / 2) / 16f);
-        pose.mulPose(Axis.YP.rotationDegrees(-90 * rotation));
+        pose.mulPose(Axis.YP.rotationDegrees(-90 * rotation - turn));
         pose.translate(-type.width() / 32f, 0, -type.depth() / 32f);
     }
 }

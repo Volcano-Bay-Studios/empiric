@@ -44,6 +44,8 @@ import java.util.function.Function;
 public final class ModelRenderer {
 
     private static final ResourceLocation SHADER = Empiric.id("model");
+    // Launch with -Dempiric.modelDebug=1 to see normals or 2 to see face shading.
+    private static final float DEBUG_VIEW = Integer.getInteger("empiric.modelDebug", 0);
     private static final Map<EmpiricModel, LoadedModel> MODELS = new HashMap<>();
     private static final List<ModelMesh> PENDING = new ArrayList<>();
     private static final List<TranslucentEntry> TRANSLUCENT = new ArrayList<>();
@@ -63,12 +65,13 @@ public final class ModelRenderer {
     }
 
     /**
-     * Queues the model with its translucent meshes placed by the order; see {@link RenderOrder}.
+     * Queues the model with its translucent meshes placed by the order. See {@link RenderOrder}.
      */
     public static void queue(EmpiricModel model, @Nullable String part, Matrix4fc pose, Matrix3fc normal, int light, int overlay, int tint, RenderOrder order) {
         double depth = -1;
         for (ModelMesh mesh : resolve(model).meshes(part)) {
-            if (mesh.kind() == ModelRenderKind.TRANSLUCENT) {
+            // A tint that isn't opaque only shows if the mesh is blended, so those meshes are drawn with the translucent ones.
+            if (mesh.kind() == ModelRenderKind.TRANSLUCENT || (tint >>> 24) < 255) {
                 if (depth < 0) {
                     depth = depth(pose, order.sortPoint());
                 }
@@ -194,7 +197,7 @@ public final class ModelRenderer {
                     begin(shader, view, projection);
                     begun = true;
                 }
-                setup(shader, entry.mesh);
+                setup(shader, entry.mesh, true);
                 cull(entry.mesh, entry.cull);
                 entry.mesh.drawBatch(entries, i, run);
                 drawCalls++;
@@ -295,7 +298,11 @@ public final class ModelRenderer {
     }
 
     private static void setup(ShaderProgram shader, ModelMesh mesh) {
-        ModelRenderKind kind = mesh.kind();
+        setup(shader, mesh, false);
+    }
+
+    private static void setup(ShaderProgram shader, ModelMesh mesh, boolean translucent) {
+        ModelRenderKind kind = translucent ? ModelRenderKind.TRANSLUCENT : mesh.kind();
         if (mesh.doubleSided()) {
             RenderSystem.disableCull();
         } else {
@@ -306,6 +313,7 @@ public final class ModelRenderer {
             case CUTOUT -> 0.1f;
             case TRANSLUCENT -> 0.001f;
         });
+        shader.getUniformSafe("DebugView").setFloat(DEBUG_VIEW);
         shader.getUniformSafe("Opaque").setFloat(kind == ModelRenderKind.SOLID ? 1.0f : 0.0f);
         if (kind == ModelRenderKind.TRANSLUCENT) {
             RenderSystem.enableBlend();

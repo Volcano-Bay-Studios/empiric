@@ -102,6 +102,32 @@ public final class OrientedBox {
     }
 
     /**
+     * @return Boxes in block pixels that fill this one a pixel column at a time, so a turned box has a stepped
+     * shape instead of the box that holds it
+     */
+    public List<AABB> voxels() {
+        if (aligned) {
+            return List.of(box);
+        }
+        AABB bounds = bounds();
+        double middle = (bounds.minY + bounds.maxY) / 2;
+        List<AABB> boxes = new ArrayList<>();
+        for (int z = (int) Math.floor(bounds.minZ); z < Math.ceil(bounds.maxZ); z++) {
+            int start = Integer.MIN_VALUE;
+            for (int x = (int) Math.floor(bounds.minX); x <= Math.ceil(bounds.maxX); x++) {
+                boolean inside = x < Math.ceil(bounds.maxX) && contains(new Vec3(x + 0.5, middle, z + 0.5), 0);
+                if (inside && start == Integer.MIN_VALUE) {
+                    start = x;
+                } else if (!inside && start != Integer.MIN_VALUE) {
+                    boxes.add(new AABB(start, bounds.minY, z, x, bounds.maxY, z + 1));
+                    start = Integer.MIN_VALUE;
+                }
+            }
+        }
+        return boxes.isEmpty() ? List.of(bounds) : boxes;
+    }
+
+    /**
      * @param point In block pixels
      */
     public boolean contains(Vec3 point, double epsilon) {

@@ -13,6 +13,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import xyz.volcanobay.empiric.registry.EmpiricDataComponents;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayDeque;
@@ -50,5 +52,21 @@ public class ItemInHandRendererMixin {
         if (!empiric$pushed.isEmpty() && empiric$pushed.pop()) {
             poseStack.popPose();
         }
+    }
+
+    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;matches(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;)Z"))
+    private boolean empiric$sameIgnoringModules(ItemStack held, ItemStack now) {
+        if (ItemStack.matches(held, now)) {
+            return true;
+        }
+        if (held.isEmpty() || now.isEmpty() || !ItemStack.isSameItem(held, now) || held.getCount() != now.getCount()
+                || !held.has(EmpiricDataComponents.MODULES.get()) && !now.has(EmpiricDataComponents.MODULES.get())) {
+            return false;
+        }
+        ItemStack first = held.copy();
+        ItemStack second = now.copy();
+        first.remove(EmpiricDataComponents.MODULES.get());
+        second.remove(EmpiricDataComponents.MODULES.get());
+        return ItemStack.matches(first, second);
     }
 }

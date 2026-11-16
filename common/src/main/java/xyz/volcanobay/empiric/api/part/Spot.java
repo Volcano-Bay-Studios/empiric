@@ -6,11 +6,16 @@ import net.minecraft.core.BlockPos;
  * Where a part's minimum corner goes, in the host's pixels; it may be outside 0 to 15 until normalized.
  *
  * @param rotation Quarter turns, 0 to 3
+ * @param turn     Degrees past the quarter turns; the pixels are the corner of the box holding the turned part
  */
-public record Spot(BlockPos host, int x, int y, int z, int rotation) {
+public record Spot(BlockPos host, int x, int y, int z, int rotation, float turn) {
+
+    public Spot(BlockPos host, int x, int y, int z, int rotation) {
+        this(host, x, y, z, rotation, 0);
+    }
 
     public Spot(BlockPos host, int x, int y, int z) {
-        this(host, x, y, z, 0);
+        this(host, x, y, z, 0, 0);
     }
 
     /**
@@ -18,6 +23,6 @@ public record Spot(BlockPos host, int x, int y, int z, int rotation) {
      */
     public Spot normalized() {
         return new Spot(host.offset(Math.floorDiv(x, 16), Math.floorDiv(y, 16), Math.floorDiv(z, 16)),
-                Math.floorMod(x, 16), Math.floorMod(y, 16), Math.floorMod(z, 16), rotation);
+                Math.floorMod(x, 16), Math.floorMod(y, 16), Math.floorMod(z, 16), rotation, turn);
     }
 }

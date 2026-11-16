@@ -105,7 +105,7 @@ public record Selection(Piece piece, @Nullable HitLayer layer, int index, AABB b
                 }
             }
             List<OrientedBox> body = piece.hitBoxes();
-            List<OrientedBox> outline = piece.type.has(PartTraits.HITBOXES) ? body : List.of(OrientedBox.aligned(piece.box()));
+            List<OrientedBox> outline = piece.type.has(PartTraits.HITBOXES) || piece.turn != 0 ? body : List.of(OrientedBox.aligned(piece.box()));
             Selection selection = new Selection(piece, null, -1, piece.box(), outline);
             for (OrientedBox box : body) {
                 bodies.add(new Candidate(selection, box, 0));

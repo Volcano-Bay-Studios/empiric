@@ -145,6 +145,13 @@ final class UiGameTests {
                 test.apply("ui_blueprint", UiGameTests::blueprint),
                 test.apply("ui_node_graph", UiGameTests::nodeGraph),
                 test.apply("ui_layout_editor", UiEditorGameTests::editor),
+                test.apply("ui_text_styled", UiTextGameTests::styledText),
+                test.apply("ui_text_layout", UiTextGameTests::layout),
+                test.apply("ui_text_alignment", UiTextGameTests::alignment),
+                test.apply("ui_text_selection", UiTextGameTests::selection),
+                test.apply("ui_text_editor", UiTextGameTests::editor),
+                test.apply("ui_text_markdown", UiTextGameTests::markdown),
+                test.apply("ui_text_pinning", UiTextGameTests::pinning),
                 isolated.apply("ui_commands", UiGameTests::commands));
     }
 

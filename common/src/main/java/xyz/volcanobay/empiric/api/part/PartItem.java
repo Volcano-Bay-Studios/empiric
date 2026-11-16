@@ -33,10 +33,24 @@ public class PartItem extends Item {
     }
 
     /**
-     * @return Whether to draw where it would go while the player aims with it; the hit is the block aimed at
+     * @return Whether to draw where it would go while the player aims with it. The hit is the block aimed at
      */
     public boolean showsPlacement(Level level, Player player, BlockHitResult hit) {
         return !type().has(PartTraits.HANDHELD);
+    }
+
+    /**
+     * @return Where the player's aim counts as hitting when placing.
+     */
+    public BlockHitResult placementHit(Level level, Player player, BlockHitResult hit) {
+        return hit;
+    }
+
+    /**
+     * @return Degrees to turn the part past the quarter turn of the way the player faces.
+     */
+    public float placementTurn(Player player, ItemStack stack) {
+        return 0;
     }
 
     /**
@@ -49,8 +63,11 @@ public class PartItem extends Item {
         ItemStack stack = context.getItemInHand();
         PartType part = type();
         BlockHitResult hit = new BlockHitResult(context.getClickLocation(), context.getClickedFace(), context.getClickedPos(), context.isInside());
+        if (player != null) {
+            hit = placementHit(level, player, hit);
+        }
         Direction facing = player != null ? player.getDirection() : Direction.NORTH;
-        Placement.Result result = Placement.find(level, part, hit, facing);
+        Placement.Result result = Placement.find(level, part, hit, facing, player != null ? placementTurn(player, stack) : 0);
         if (!result.ok()) {
             String key = result.failure() == null ? null : result.failure().key();
             if (player != null && !level.isClientSide && key != null) {

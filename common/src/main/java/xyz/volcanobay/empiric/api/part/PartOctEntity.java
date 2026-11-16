@@ -111,6 +111,9 @@ public class PartOctEntity extends OctBlockEntity {
             entry.putByte("y", (byte) piece.y);
             entry.putByte("z", (byte) piece.z);
             entry.putByte("rotation", (byte) piece.rotation);
+            if (piece.turn != 0) {
+                entry.putFloat("turn", piece.turn);
+            }
             entry.putInt("status", piece.runtime.status);
             if (!piece.stack.isEmpty()) {
                 entry.put("stack", piece.stack.save(registries));
@@ -160,6 +163,7 @@ public class PartOctEntity extends OctBlockEntity {
         if (stack.isEmpty()) {
             stack = type.newStack();
         }
-        return new Piece(entry.getUUID("id"), type, entry.getByte("x"), entry.getByte("y"), entry.getByte("z"), entry.getByte("rotation"), stack);
+        return new Piece(entry.getUUID("id"), type, entry.getByte("x"), entry.getByte("y"), entry.getByte("z"), entry.getByte("rotation"),
+                entry.contains("turn") ? entry.getFloat("turn") : 0, stack);
     }
 }

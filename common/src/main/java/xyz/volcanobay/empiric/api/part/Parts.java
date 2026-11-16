@@ -128,15 +128,22 @@ public final class Parts {
      * @return Whether there is room at the spot, ignoring support; the spot may reach into neighbouring blocks
      */
     public static boolean canFit(Level level, BlockPos host, PartType type, int x, int y, int z, int rotation, @Nullable UUID ignore) {
-        Spot spot = new Spot(host, x, y, z, rotation).normalized();
+        return canFit(level, host, type, x, y, z, rotation, 0, ignore);
+    }
+
+    /**
+     * @param turn Degrees past the quarter turns; the pixels are the corner of the box holding the turned part
+     */
+    public static boolean canFit(Level level, BlockPos host, PartType type, int x, int y, int z, int rotation, float turn, @Nullable UUID ignore) {
+        Spot spot = new Spot(host, x, y, z, rotation, turn).normalized();
         BlockPos home = spot.host();
-        int width = Piece.width(type, rotation);
-        int depth = Piece.depth(type, rotation);
+        int width = Piece.width(type, rotation, turn);
+        int depth = Piece.depth(type, rotation, turn);
         AABB box = new AABB(spot.x(), spot.y(), spot.z(), spot.x() + width, spot.y() + type.height(), spot.z() + depth);
         if (!roomFor(level, home, box)) {
             return false;
         }
-        return !Workspace.of(OctLevel.get(level), home).blocked(new Piece(PROBE, type, spot.x(), spot.y(), spot.z(), rotation, ItemStack.EMPTY), ignore);
+        return !Workspace.of(OctLevel.get(level), home).blocked(new Piece(PROBE, type, spot.x(), spot.y(), spot.z(), rotation, turn, ItemStack.EMPTY), ignore);
     }
 
     public static boolean isFreeHost(Level level, BlockPos host) {
@@ -151,10 +158,10 @@ public final class Parts {
     public static @Nullable Piece place(Level level, Spot spot, PartType type, ItemStack stack) {
         Spot normal = spot.normalized();
         BlockPos host = normal.host();
-        if (!canFit(level, host, type, normal.x(), normal.y(), normal.z(), normal.rotation(), null)) {
+        if (!canFit(level, host, type, normal.x(), normal.y(), normal.z(), normal.rotation(), normal.turn(), null)) {
             return null;
         }
-        Piece piece = new Piece(UUID.randomUUID(), type, normal.x(), normal.y(), normal.z(), normal.rotation(), stack);
+        Piece piece = new Piece(UUID.randomUUID(), type, normal.x(), normal.y(), normal.z(), normal.rotation(), normal.turn(), stack);
         for (BlockPos block : blocksOf(host, piece.box())) {
             BlockState state = level.getBlockState(block);
             if (!state.isAir() && !state.is(EmpiricBlocks.OCT_BLOCK.get())) {
@@ -228,10 +235,10 @@ public final class Parts {
         Workspace workspace = Workspace.of(oct, host);
         PartOctEntity owner = workspace.owner(piece);
         Piece stored = workspace.stored(piece);
-        if (owner == null || stored == null || !canFit(level, host, piece.type, piece.x, y, piece.z, piece.rotation, piece.id)) {
+        if (owner == null || stored == null || !canFit(level, host, piece.type, piece.x, y, piece.z, piece.rotation, piece.turn, piece.id)) {
             return false;
         }
-        Spot normal = new Spot(host, piece.x, y, piece.z, piece.rotation).normalized();
+        Spot normal = new Spot(host, piece.x, y, piece.z, piece.rotation, piece.turn).normalized();
         owner.remove(piece.id);
         Piece moved = piece.at(normal.x(), normal.y(), normal.z());
         if (!adopt(level, normal.host(), moved)) {

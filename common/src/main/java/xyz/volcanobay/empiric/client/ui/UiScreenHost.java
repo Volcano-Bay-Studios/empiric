@@ -5,6 +5,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import xyz.volcanobay.empiric.api.ui.UiScreenType;
 import xyz.volcanobay.empiric.core.module.Module;
+import xyz.volcanobay.empiric.core.ui.Keys;
 import xyz.volcanobay.empiric.core.ui.UiRoot;
 import xyz.volcanobay.empiric.core.ui.Widget;
 
@@ -18,6 +19,7 @@ public class UiScreenHost extends Screen {
     private final Widget content;
     private final ClientUiHost.Characters characters = new ClientUiHost.Characters();
     private boolean tracked;
+    private boolean controlHeld;
     private UiRoot root;
     private ClientUiHost host;
 
@@ -90,11 +92,13 @@ public class UiScreenHost extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        root.modifiers(hasShiftDown() ? Keys.SHIFT : 0);
         return root.scroll(mouseX, mouseY, scrollY);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        controlHeld = Keys.control(modifiers);
         if (root.key(keyCode, modifiers)) {
             return true;
         }
@@ -107,6 +111,9 @@ public class UiScreenHost extends Screen {
 
     @Override
     public boolean charTyped(char character, int modifiers) {
+        if (controlHeld) {
+            return true;
+        }
         int codepoint = characters.accept(character);
         return codepoint < 0 || root.character(codepoint, modifiers);
     }

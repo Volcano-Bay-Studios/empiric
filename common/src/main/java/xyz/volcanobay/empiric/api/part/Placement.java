@@ -62,11 +62,18 @@ public final class Placement {
     }
 
     public static Result find(Level level, PartType type, BlockHitResult hit, Direction facing) {
-        Result result = search(level, type, hit, facing);
+        return find(level, type, hit, facing, 0);
+    }
+
+    /**
+     * @param turn Degrees to turn the part past the quarter turn of the way the player faces, if it can be rotated
+     */
+    public static Result find(Level level, PartType type, BlockHitResult hit, Direction facing, float turn) {
+        Result result = search(level, type, hit, facing, turn);
         return new Result(result.spot() == null ? null : result.spot().normalized(), result.failure(), result.wanted());
     }
 
-    private static Result search(Level level, PartType type, BlockHitResult hit, Direction facing) {
+    private static Result search(Level level, PartType type, BlockHitResult hit, Direction facing, float turnWanted) {
         if (type.has(PartTraits.HANDHELD)) {
             return Result.failed(PlacementFailure.NONE, null);
         }
@@ -78,13 +85,14 @@ public final class Placement {
         Vec3 point = hit.getLocation().add(Vec3.atLowerCornerOf(face.getNormal()).scale(1.0E-3));
         BlockPos host = BlockPos.containing(point);
         int rotation = type.has(PartTraits.ROTATABLE) ? Piece.rotationFacing(facing) : 0;
-        int width = Piece.width(type, rotation);
-        int depth = Piece.depth(type, rotation);
+        float turn = type.has(PartTraits.ROTATABLE) ? Piece.normalizeTurn(turnWanted) : 0;
+        int width = Piece.width(type, rotation, turn);
+        int depth = Piece.depth(type, rotation, turn);
         Vec3 aim = point.subtract(Vec3.atLowerCornerOf(host)).scale(16);
         int x = (int) Math.round(aim.x - width / 2.0);
         int z = (int) Math.round(aim.z - depth / 2.0);
         int startY = Math.max(0, Math.min(16, (int) Math.round(aim.y)));
-        Spot wanted = new Spot(host, x, startY, z, rotation);
+        Spot wanted = new Spot(host, x, startY, z, rotation, turn);
         if (!level.getBlockState(host).is(EmpiricBlocks.OCT_BLOCK.get()) && !Parts.isFreeHost(level, host)) {
             return Result.failed(PlacementFailure.PARTIAL_SURFACE, wanted);
         }
@@ -94,7 +102,7 @@ public final class Placement {
                 return ruled.wanted() == null && !ruled.ok() ? Result.failed(ruled.failure(), wanted) : ruled;
             }
         }
-        Result aimed = evaluate(level, host, type, x, z, rotation, startY, null);
+        Result aimed = evaluate(level, host, type, x, z, rotation, turn, startY, null);
         if (aimed.ok()) {
             return aimed;
         }
@@ -106,7 +114,7 @@ public final class Placement {
                 if ((dx == 0 && dz == 0) || distance >= bestDistance) {
                     continue;
                 }
-                Result candidate = evaluate(level, host, type, x + dx, z + dz, rotation, startY, null);
+                Result candidate = evaluate(level, host, type, x + dx, z + dz, rotation, turn, startY, null);
                 if (candidate.ok()) {
                     best = candidate;
                     bestDistance = distance;
@@ -116,18 +124,18 @@ public final class Placement {
         return best != null ? best : Result.failed(aimed.failure(), aimed.wanted() != null ? aimed.wanted() : wanted);
     }
 
-    private static Result evaluate(Level level, BlockPos host, PartType type, int x, int z, int rotation, int startY, @Nullable UUID ignore) {
-        int width = Piece.width(type, rotation);
-        int depth = Piece.depth(type, rotation);
+    private static Result evaluate(Level level, BlockPos host, PartType type, int x, int z, int rotation, float turn, int startY, @Nullable UUID ignore) {
+        int width = Piece.width(type, rotation, turn);
+        int depth = Piece.depth(type, rotation, turn);
         Stand stand = support(level, host, x, z, width, depth, startY, ignore);
-        Spot spot = new Spot(host, x, Math.max(0, stand.top()), z, rotation);
+        Spot spot = new Spot(host, x, Math.max(0, stand.top()), z, rotation, turn);
         if (stand.top() < 0) {
-            return Result.failed(PlacementFailure.NO_SURFACE, new Spot(host, x, startY, z, rotation));
+            return Result.failed(PlacementFailure.NO_SURFACE, new Spot(host, x, startY, z, rotation, turn));
         }
         if (!stand.stable()) {
             return Result.failed(PlacementFailure.UNSTABLE, spot);
         }
-        if (!Parts.canFit(level, host, type, x, stand.top(), z, rotation, ignore)) {
+        if (!Parts.canFit(level, host, type, x, stand.top(), z, rotation, turn, ignore)) {
             return Result.failed(PlacementFailure.BLOCKED, spot);
         }
         return Result.ok(spot);

@@ -3,7 +3,6 @@ package xyz.volcanobay.empiric.api.part.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
@@ -26,7 +25,7 @@ import xyz.volcanobay.empiric.api.oct.OctLevel;
 import java.util.UUID;
 
 /**
- * Draws a faded ghost where the held part would go.
+ * Draws a faded copy of the held part, lit and drawn by its own renderer, where it would go.
  */
 public final class PlacementPreview {
 
@@ -66,14 +65,20 @@ public final class PlacementPreview {
             return;
         }
         PartType type = item.type();
-        Placement.Result result = Placement.find(minecraft.level, type, hit, player.getDirection());
+        hit = item.placementHit(minecraft.level, player, hit);
+        Placement.Result result = Placement.find(minecraft.level, type, hit, player.getDirection(), item.placementTurn(player, player.getMainHandItem()));
         Spot spot = result.ok() ? result.spot() : result.wanted();
         if (spot == null || result.failure() == PlacementFailure.NONE || type.model() == null) {
             return;
         }
-        PoseStack pose = at(minecraft.level, camera, new Piece(GHOST, type, spot.x(), spot.y(), spot.z(), spot.rotation(), ItemStack.EMPTY), spot.host());
-        PartRendering.toModel(pose, type);
-        type.model().render(pose, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, result.ok() ? FADED : REFUSED);
+        Piece piece = new Piece(GHOST, type, spot.x(), spot.y(), spot.z(), spot.rotation(), spot.turn(), player.getMainHandItem().copyWithCount(1));
+        PoseStack pose = at(minecraft.level, camera, piece, spot.host());
+        PartRendering.setGhost(result.ok() ? FADED : REFUSED);
+        try {
+            PartRenderers.of(type).render(piece, pose, LevelRenderer.getLightColor(minecraft.level, spot.host()), OverlayTexture.NO_OVERLAY, false);
+        } finally {
+            PartRendering.setGhost(0xFFFFFFFF);
+        }
     }
 
     private static boolean renderPending(Level level, Vec3 camera) {
@@ -86,7 +91,7 @@ public final class PlacementPreview {
             return false;
         }
         Spot spot = placed.spot;
-        Piece piece = new Piece(GHOST, placed.type, spot.x(), spot.y(), spot.z(), spot.rotation(), placed.stack);
+        Piece piece = new Piece(GHOST, placed.type, spot.x(), spot.y(), spot.z(), spot.rotation(), spot.turn(), placed.stack);
         PoseStack pose = at(level, camera, piece, spot.host());
         PartRenderers.of(placed.type).render(piece, pose, LevelRenderer.getLightColor(level, spot.host()), OverlayTexture.NO_OVERLAY, false);
         return true;
@@ -99,7 +104,7 @@ public final class PlacementPreview {
             Vec3 shift = Workspace.of(OctLevel.get(level), host).drawOffset(piece);
             pose.translate(shift.x / 16, shift.y / 16, shift.z / 16);
         }
-        PartRendering.toPiece(pose, piece.type, piece.x, piece.y, piece.z, piece.rotation);
+        PartRendering.toPiece(pose, piece.type, piece.x, piece.y, piece.z, piece.rotation, piece.turn);
         return pose;
     }
 

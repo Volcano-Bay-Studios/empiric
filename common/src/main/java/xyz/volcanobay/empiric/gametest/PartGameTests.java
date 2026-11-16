@@ -259,7 +259,7 @@ final class PartGameTests {
     private static void saveAndLoad(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         BlockPos host = host(helper);
-        Piece placed = Parts.place(level, new Spot(host, 6, 0, 6, 1), CRATE, ItemStack.EMPTY);
+        Piece placed = Parts.place(level, new Spot(host, 6, 0, 6, 1, 30), CRATE, ItemStack.EMPTY);
         helper.assertTrue(placed != null, "crate wasn't placed");
         placed.runtime.status = FLAG;
         FullOctBlockEntity loaded = reload(level, host, tag -> {
@@ -267,6 +267,10 @@ final class PartGameTests {
         helper.assertTrue(loaded.getOctEntity(0) instanceof PartOctEntity entity && entity.pieces().size() == 1, "the piece wasn't restored");
         Piece piece = ((PartOctEntity) loaded.getOctEntity(0)).pieces().get(0);
         helper.assertTrue(piece.type == CRATE && piece.x == 6 && piece.z == 6 && piece.rotation == 1, "the piece moved while saving");
+        helper.assertTrue(piece.turn == 30 && piece.width() == 6 && piece.depth() == 6, "the turn wasn't saved, or the turned footprint is wrong: " + piece.turn + " " + piece.width());
+        helper.assertTrue(piece.hitBoxes().size() == 1 && !piece.hitBoxes().get(0).isAligned(), "a turned piece should be aimed at by a turned box");
+        helper.assertTrue(!xyz.volcanobay.empiric.api.part.Hitbox.of(new net.minecraft.world.phys.AABB(0, 0, 0, 4, 1, 4)).in(piece).isAligned(), "a plain hitbox on a turned piece should still turn with it");
+        helper.assertTrue(piece.shapeBoxes().size() > 1 && piece.shapeBoxes().stream().noneMatch(box -> box.equals(piece.box())), "a turned piece's shape should be stepped, not the box holding it");
         helper.assertTrue(piece.runtime.has(FLAG), "the status flag wasn't saved");
         helper.succeed();
     }

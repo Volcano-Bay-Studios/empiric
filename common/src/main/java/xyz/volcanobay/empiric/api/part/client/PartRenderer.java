@@ -27,7 +27,7 @@ public class PartRenderer implements OctBlockRenderer<PartOctEntity> {
                     Vec3 shift = Workspace.of(OctLevel.get(entity.level()), entity.pos()).drawOffset(piece);
                     pose.translate(shift.x / 16, shift.y / 16, shift.z / 16);
                 }
-                PartRendering.toPiece(pose, piece.type, piece.x, piece.y, piece.z, piece.rotation);
+                PartRendering.toPiece(pose, piece.type, piece.x, piece.y, piece.z, piece.rotation, piece.turn);
                 PartRenderers.of(piece.type).render(piece, pose, light, overlay, true);
                 pose.popPose();
             }

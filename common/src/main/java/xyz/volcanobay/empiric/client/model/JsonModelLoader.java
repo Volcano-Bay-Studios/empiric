@@ -36,10 +36,9 @@ import java.util.function.Function;
  * Reads a JSON block model into geometry with vanilla's own parsing and quad baking, so parents, texture references,
  * element rotation and UVs behave as they do for blocks.
  * <p>
- * Part names and the render kind come from the JSON itself. The render kind defaults to cutout. A group's name wins over
- * its elements' names, and the outermost group wins if they nest.
+ * Part names and the render kind come from the JSON itself. The render kind defaults to cutout.
  * <p>
- * Tint indices are ignored, since there's no block or biome to colour from. Use an instance's tint instead.
+ * Tint indices are ignored.
  */
 final class JsonModelLoader {
 

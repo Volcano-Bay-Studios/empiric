@@ -22,8 +22,12 @@ uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
 
 out vec4 vertexColor;
+out vec4 backColor;
 out vec4 overlayColor;
 out vec2 texCoord0;
+out vec3 debugNormal;
+out float debugShade;
+out float debugBackShade;
 
 // Matches vanilla's block shading for axis aligned faces, and blends smoothly for the rest.
 float diffuse(vec3 normal) {
@@ -36,10 +40,17 @@ void main() {
     mat3 normalMatrix = mat3(NormalColumn0, NormalColumn1, NormalColumn2);
     gl_Position = ProjMat * ModelViewMat * pose * vec4(Position, 1.0);
 
-    float shade = Color.r > 0.5 ? diffuse(normalize(normalMatrix * Normal)) : 1.0;
+    vec3 worldNormal = normalize(normalMatrix * Normal);
+    bool shaded = Color.r > 0.5;
+    float shade = shaded ? diffuse(worldNormal) : 1.0;
+    float backShade = shaded ? diffuse(-worldNormal) : 1.0;
+    debugNormal = worldNormal;
+    debugShade = shade;
+    debugBackShade = backShade;
     ivec2 light = ivec2(LightOverlay.x & 0xFFFF, (LightOverlay.x >> 16) & 0xFFFF);
     vec4 lightColor = texture(Sampler2, clamp(vec2(light) / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)));
     vertexColor = vec4(lightColor.rgb * shade, 1.0) * Tint;
+    backColor = vec4(lightColor.rgb * backShade, 1.0) * Tint;
 
     ivec2 overlay = ivec2(LightOverlay.y & 0xFFFF, (LightOverlay.y >> 16) & 0xFFFF);
     overlayColor = texelFetch(Sampler1, overlay, 0);

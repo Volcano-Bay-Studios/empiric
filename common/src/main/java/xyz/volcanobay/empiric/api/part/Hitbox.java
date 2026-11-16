@@ -51,7 +51,7 @@ public record Hitbox(AABB box, Matrix4fc transform) {
      * @return The box in the piece's block pixels
      */
     public OrientedBox in(Piece piece) {
-        if (isAligned()) {
+        if (isAligned() && piece.turn == 0) {
             return OrientedBox.aligned(piece.toBlock(box));
         }
         return new OrientedBox(box, piece.toBlockMatrix().mul(transform));
