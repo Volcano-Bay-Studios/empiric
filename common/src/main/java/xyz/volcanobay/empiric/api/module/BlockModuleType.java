@@ -6,6 +6,7 @@ import net.minecraft.world.level.Level;
 import xyz.volcanobay.empiric.api.attachment.BlockAttachment;
 import xyz.volcanobay.empiric.api.attachment.EmpiricAttachments;
 import xyz.volcanobay.empiric.core.module.Module;
+import xyz.volcanobay.empiric.core.module.ModuleId;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 import xyz.volcanobay.empiric.system.BlockModuleSystem;
 
@@ -13,12 +14,16 @@ import java.util.function.Supplier;
 
 public class BlockModuleType<M extends Module<BlockAttachment>> extends ModuleType<M, BlockAttachment> {
 
-    protected BlockModuleType(Builder<M, BlockAttachment, ?> builder) {
+    protected BlockModuleType(ModuleType.Builder<M, BlockAttachment, ?> builder) {
         super(builder);
     }
 
-    public static <M extends Module<BlockAttachment>> Builder<M, BlockAttachment, BlockModuleType<M>> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
-        return ModuleType.builder(id::toString, moduleClass, EmpiricAttachments.BLOCK, factory, BlockModuleType::new);
+    public static <M extends Module<BlockAttachment>> Builder<M> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(id::toString, moduleClass, factory);
+    }
+
+    public static <M extends Module<BlockAttachment>> Builder<M> builder(Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(null, moduleClass, factory);
     }
 
     public M get(Level level, BlockPos pos) {
@@ -40,5 +45,12 @@ public class BlockModuleType<M extends Module<BlockAttachment>> extends ModuleTy
             BlockModuleSystem.prune(attachment);
         }
         return detached;
+    }
+
+    public static final class Builder<M extends Module<BlockAttachment>> extends ModuleType.Builder<M, BlockAttachment, BlockModuleType<M>> {
+
+        private Builder(ModuleId id, Class<M> moduleClass, Supplier<M> factory) {
+            super(id, moduleClass, EmpiricAttachments.BLOCK, factory, BlockModuleType::new);
+        }
     }
 }

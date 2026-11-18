@@ -8,8 +8,10 @@ import xyz.volcanobay.empiric.api.part.Workspace;
 import xyz.volcanobay.empiric.api.part.DrawOffset;
 import xyz.volcanobay.empiric.api.part.PartOctEntity;
 import xyz.volcanobay.empiric.api.part.Piece;
+import xyz.volcanobay.empiric.api.registry.OctRendererFor;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 
+@OctRendererFor(PartOctEntity.class)
 public class PartRenderer implements OctBlockRenderer<PartOctEntity> {
 
     @Override

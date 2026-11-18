@@ -1,5 +1,6 @@
 package xyz.volcanobay.empiric.system;
 
+import com.google.common.annotations.VisibleForTesting;
 import xyz.volcanobay.empiric.api.module.ChunkModuleType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -16,8 +17,10 @@ import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.api.attachment.ChunkAttachment;
 import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
+import xyz.volcanobay.empiric.api.temperature.TemperatureSection;
 import xyz.volcanobay.empiric.core.module.ModuleEvent;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
+import xyz.volcanobay.empiric.core.registry.Register;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
@@ -27,7 +30,8 @@ import java.util.function.ToIntFunction;
 
 public final class TemperatureSystem {
 
-    public static final ChunkModuleType<TemperatureModule> TEMPERATURE = ChunkModuleType.builder(Empiric.id("temperature"), TemperatureModule.class, TemperatureModule::new).build();
+    @Register("temperature")
+    public static final ChunkModuleType<TemperatureModule> TEMPERATURE = ChunkModuleType.builder(TemperatureModule.class, TemperatureModule::new).build();
 
     /**
      * Fired with the section index when a section's temperatures change: on the server when it sends them, and on the client when it receives them.
@@ -38,14 +42,38 @@ public final class TemperatureSystem {
 
     private static final Vector3ic[] FACES = {new Vector3i(0, 1, 0), new Vector3i(0, -1, 0), new Vector3i(0, 0, 1), new Vector3i(0, 0, -1), new Vector3i(1, 0, 0), new Vector3i(-1, 0, 0)};
     private static final RandomSource RANDOM = RandomSource.create();
+    private static boolean counting;
+    private static long crossExchanges;
     private static ToIntFunction<Level> ambient = level -> AtmosphereSystem.levelAtmosphere(level).ambient();
     private static ToDoubleFunction<Level> dimensionCooling = level -> level.dimension() == Level.END ? 0.002 : 0.05;
 
     private TemperatureSystem() {
     }
 
+    @VisibleForTesting
+    public static void startCountingCrossExchanges() {
+        crossExchanges = 0;
+        counting = true;
+    }
+
+    @VisibleForTesting
+    public static long stopCountingCrossExchanges() {
+        counting = false;
+        return crossExchanges;
+    }
+
+    public static ToDoubleFunction<Level> getCooling() {
+        return dimensionCooling;
+    }
+
+    @VisibleForTesting
+    public static void reseed(long seed) {
+        RANDOM.setSeed(seed);
+    }
+
+    /** @deprecated registration is automatic, so this does nothing. */
+    @Deprecated
     public static void register(ModuleSystem modules) {
-        modules.register(TEMPERATURE);
     }
 
     public static void subscribe(String modId) {
@@ -95,6 +123,20 @@ public final class TemperatureSystem {
             module = TEMPERATURE.attach(attachment);
         }
         return module;
+    }
+
+    /**
+     * A view of one section of a chunk's temperatures, for reading or writing many cells at once.
+     *
+     * @param create attach the chunk's temperature module when it has none, under the same conditions as {@link #set}
+     * @return the view, or null when the chunk isn't loaded, the section is out of the level, or the chunk has no module and {@code create} is false or can't attach one
+     */
+    public static TemperatureSection section(Level level, int chunkX, int sectionIndex, int chunkZ, boolean create) {
+        if (sectionIndex < 0 || sectionIndex >= level.getSectionsCount()) {
+            return null;
+        }
+        TemperatureModule module = module(level, chunkX, chunkZ, create);
+        return module == null ? null : new TemperatureSection(module, sectionIndex);
     }
 
     private static int section(Level level, long octY) {
@@ -184,17 +226,48 @@ public final class TemperatureSystem {
     }
 
     public static void blockChanged(Level level, BlockPos pos) {
-        TemperatureModule module = module(level, SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), false);
+        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+        TemperatureModule module = module(level, chunkX, chunkZ, false);
         if (module != null) {
             module.refresh(pos);
+        }
+        int localX = pos.getX() & 15;
+        int localZ = pos.getZ() & 15;
+        if (localX == 0) {
+            invalidateBorder(level, chunkX - 1, chunkZ, pos, 4);
+        } else if (localX == 15) {
+            invalidateBorder(level, chunkX + 1, chunkZ, pos, 5);
+        }
+        if (localZ == 0) {
+            invalidateBorder(level, chunkX, chunkZ - 1, pos, 2);
+        } else if (localZ == 15) {
+            invalidateBorder(level, chunkX, chunkZ + 1, pos, 3);
+        }
+    }
+
+    private static void invalidateBorder(Level level, int chunkX, int chunkZ, BlockPos pos, int face) {
+        TemperatureModule module = module(level, chunkX, chunkZ, false);
+        if (module != null) {
+            module.invalidateBorder(level.getSectionIndex(pos.getY()), face);
         }
     }
 
     public static void propagate(TemperatureModule module) {
         Level level = module.level();
         double chance = dimensionCooling.applyAsDouble(level);
-        long baseX = module.chunk().getPos().x * 32L;
-        long baseZ = module.chunk().getPos().z * 32L;
+        int chunkX = module.chunk().getPos().x;
+        int chunkZ = module.chunk().getPos().z;
+        long baseX = chunkX * 32L;
+        long baseZ = chunkZ * 32L;
+        int ambient = ambient(level);
+        int low = Math.max(TemperatureModule.MIN - ambient, Short.MIN_VALUE);
+        int high = Math.min(TemperatureModule.MAX - ambient, Short.MAX_VALUE);
+        int sectionCount = level.getSectionsCount();
+        Neighbour[] slots = new Neighbour[6];
+        for (int f = 0; f < 6; f++) {
+            slots[f] = new Neighbour();
+        }
         for (int section : module.sections.keySet().toIntArray()) {
             short[] values = module.sections.get(section);
             if (values == null) {
@@ -203,6 +276,9 @@ public final class TemperatureSystem {
             byte[] conductivity = module.conductivity(section);
             long[] active = module.active(section);
             long baseY = (long) (level.getMinSection() + section) * 32L;
+            for (Neighbour slot : slots) {
+                slot.reset();
+            }
             boolean any = false;
             boolean changed = false;
             for (int word = 0; word < active.length; word++) {
@@ -250,16 +326,45 @@ public final class TemperatureSystem {
                             }
                             continue;
                         }
-                        long x = baseX + nx;
-                        long y = baseY + ny;
-                        long z = baseZ + nz;
-                        int other = conductivity(level, x, y, z);
+                        Neighbour slot = slots[f];
+                        if (!slot.resolved) {
+                            slot.resolve(level, module, f, section, sectionCount, chunkX, chunkZ);
+                        }
+                        if (slot.blocked) {
+                            continue;
+                        }
+                        if (slot.module == null) {
+                            int plane = f >= 4 ? ny * 32 + nz : nx * 32 + ny;
+                            int other = slot.border[plane];
+                            if (other > 0) {
+                                long x = baseX + nx;
+                                long y = baseY + ny;
+                                long z = baseZ + nz;
+                                int second = delta(level, x, y, z);
+                                int kept = share(values[i], second, Math.min(own, other) / 100f);
+                                setDelta(level, x, y, z, values[i] + second - kept);
+                                values[i] = (short) kept;
+                                changed = true;
+                                if (TEMPERATURE.get(ChunkAttachment.of(slot.chunk)) != null) {
+                                    slot.resolved = false;
+                                }
+                                if (counting) {
+                                    crossExchanges++;
+                                }
+                            }
+                            continue;
+                        }
+                        int neighbour = TemperatureModule.index(nx & 31, ny & 31, nz & 31);
+                        int other = slot.conductivity[neighbour];
                         if (other > 0) {
-                            int second = delta(level, x, y, z);
+                            int second = slot.values == null ? 0 : slot.values[neighbour];
                             int kept = share(values[i], second, Math.min(own, other) / 100f);
-                            setDelta(level, x, y, z, values[i] + second - kept);
+                            slot.write(neighbour, values[i] + second - kept, low, high);
                             values[i] = (short) kept;
                             changed = true;
+                            if (counting) {
+                                crossExchanges++;
+                            }
                         }
                     }
                 }
@@ -272,6 +377,82 @@ public final class TemperatureSystem {
         }
         if (module.isEmpty()) {
             TEMPERATURE.detach(module.attachment());
+        }
+    }
+
+    private static final class Neighbour {
+
+        boolean resolved;
+        boolean blocked;
+        TemperatureModule module;
+        int section;
+        short[] values;
+        byte[] conductivity;
+        long[] active;
+        LevelChunk chunk;
+        byte[] border;
+
+        void reset() {
+            resolved = false;
+            blocked = false;
+            module = null;
+            values = null;
+            conductivity = null;
+            active = null;
+            chunk = null;
+            border = null;
+        }
+
+        void resolve(Level level, TemperatureModule own, int face, int ownSection, int sectionCount, int chunkX, int chunkZ) {
+            reset();
+            resolved = true;
+            section = ownSection;
+            if (face < 2) {
+                section += face == 0 ? 1 : -1;
+                if (section < 0 || section >= sectionCount) {
+                    blocked = true;
+                    return;
+                }
+                module = own;
+            } else {
+                int dx = face == 4 ? 1 : face == 5 ? -1 : 0;
+                int dz = face == 2 ? 1 : face == 3 ? -1 : 0;
+                LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX + dx, chunkZ + dz);
+                if (chunk == null) {
+                    blocked = true;
+                    return;
+                }
+                module = TEMPERATURE.get(ChunkAttachment.of(chunk));
+                if (module == null) {
+                    this.chunk = chunk;
+                    border = own.border(ownSection, face, chunk);
+                    return;
+                }
+            }
+            values = module.sections.get(section);
+            conductivity = module.conductivity(section);
+        }
+
+        void write(int index, int value, int low, int high) {
+            short clamped = (short) Mth.clamp(value, low, high);
+            short[] cells = values;
+            if (cells == null) {
+                if (clamped == 0) {
+                    return;
+                }
+                cells = module.values(section, true);
+                values = cells;
+            }
+            if (cells[index] != clamped) {
+                cells[index] = clamped;
+                module.touch(section);
+                if (clamped != 0) {
+                    if (active == null) {
+                        active = module.active(section);
+                    }
+                    active[index >> 6] |= 1L << index;
+                }
+            }
         }
     }
 

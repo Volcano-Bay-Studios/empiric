@@ -5,6 +5,7 @@ import net.minecraft.world.entity.Entity;
 import xyz.volcanobay.empiric.api.attachment.EmpiricAttachments;
 import xyz.volcanobay.empiric.api.attachment.EntityAttachment;
 import xyz.volcanobay.empiric.core.module.Module;
+import xyz.volcanobay.empiric.core.module.ModuleId;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 import xyz.volcanobay.empiric.system.WorldModuleSystem;
 
@@ -12,12 +13,16 @@ import java.util.function.Supplier;
 
 public class EntityModuleType<M extends Module<EntityAttachment>> extends ModuleType<M, EntityAttachment> {
 
-    protected EntityModuleType(Builder<M, EntityAttachment, ?> builder) {
+    protected EntityModuleType(ModuleType.Builder<M, EntityAttachment, ?> builder) {
         super(builder);
     }
 
-    public static <M extends Module<EntityAttachment>> Builder<M, EntityAttachment, EntityModuleType<M>> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
-        return ModuleType.builder(id::toString, moduleClass, EmpiricAttachments.ENTITY, factory, EntityModuleType::new);
+    public static <M extends Module<EntityAttachment>> Builder<M> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(id::toString, moduleClass, factory);
+    }
+
+    public static <M extends Module<EntityAttachment>> Builder<M> builder(Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(null, moduleClass, factory);
     }
 
     public M get(Entity entity) {
@@ -45,5 +50,12 @@ public class EntityModuleType<M extends Module<EntityAttachment>> extends Module
         detach(target);
         WorldModuleSystem.copy(source, target, type -> type == this);
         return get(target);
+    }
+
+    public static final class Builder<M extends Module<EntityAttachment>> extends ModuleType.Builder<M, EntityAttachment, EntityModuleType<M>> {
+
+        private Builder(ModuleId id, Class<M> moduleClass, Supplier<M> factory) {
+            super(id, moduleClass, EmpiricAttachments.ENTITY, factory, EntityModuleType::new);
+        }
     }
 }

@@ -814,7 +814,7 @@ public final class LayoutEditor extends SingleWindowInspector {
         boolean picking = ImGui.beginCombo("##fields", "", ImGuiComboFlags.NoPreview | ImGuiComboFlags.PopupAlignLeft);
         tip("Pick a synced field of the preview module");
         if (picking) {
-            for (FieldLayout field : source.type().spec().layout().fields()) {
+            for (FieldLayout field : source.spec().layout().fields()) {
                 if (field.sync() && ImGui.selectable(field.id() + " (" + field.type().getSimpleName() + ")", field.id().equals(current))) {
                     changed = DataNode.of(field.id());
                     buffers.remove(name);

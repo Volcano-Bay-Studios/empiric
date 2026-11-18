@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import xyz.volcanobay.empiric.core.entry.DataEntry;
 import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.core.entry.DataEntryType;
+import xyz.volcanobay.empiric.core.registry.Register;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -17,10 +18,14 @@ import java.util.function.Predicate;
 
 public final class ChemicalRegistry {
 
+    @Register
     public static final DataEntryType<Chemical> CHEMICALS = new DataEntryType<>("empiric:chemistry/chemicals", Chemical.class, Chemical::new);
+    @Register
     public static final DataEntryType<ChemicalReaction> REACTIONS = new DataEntryType<>("empiric:chemistry/reactions", ChemicalReaction.class, ChemicalReaction::new);
 
+    @Register
     public static final DataEntryType<ChemicalComposition> COMPOSITIONS = new DataEntryType<>("empiric:chemistry/compositions", ChemicalComposition.class, ChemicalComposition::new);
+    @Register
     public static final DataEntryType<ChemicalSolidForm> SOLID_FORMS = new DataEntryType<>("empiric:chemistry/solid_forms", ChemicalSolidForm.class, ChemicalSolidForm::new);
 
     private static final SuggestionProvider<?> CHEMICALS_SUGGESTION_PROVIDER = (unused, builder) -> SharedSuggestionProvider.suggest(CHEMICALS.entries().stream().map(DataEntry::id), builder);
@@ -28,11 +33,9 @@ public final class ChemicalRegistry {
     private ChemicalRegistry() {
     }
 
+    /** @deprecated registration is automatic, so this does nothing. */
+    @Deprecated
     public static void registerData(DataEntrySystem data) {
-        data.register(CHEMICALS);
-        data.register(REACTIONS);
-        data.register(COMPOSITIONS);
-        data.register(SOLID_FORMS);
     }
 
     @SuppressWarnings("unchecked")

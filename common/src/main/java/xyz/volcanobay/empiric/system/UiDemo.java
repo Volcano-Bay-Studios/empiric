@@ -4,7 +4,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import xyz.volcanobay.empiric.api.ui.widget.ItemView;
 import xyz.volcanobay.empiric.api.ui.widget.ModelView;
-import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.ui.widget.PlayerInventoryGrid;
 import xyz.volcanobay.empiric.api.ui.widget.SlotGrid;
 import xyz.volcanobay.empiric.api.attachment.BlockAttachment;
@@ -25,6 +24,7 @@ import xyz.volcanobay.empiric.api.ui.UiScreens;
 import xyz.volcanobay.empiric.core.data.Data;
 import xyz.volcanobay.empiric.core.module.Module;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
+import xyz.volcanobay.empiric.core.registry.Register;
 import xyz.volcanobay.empiric.core.ui.Widget;
 import xyz.volcanobay.empiric.core.ui.graph.NodeGraph;
 import net.minecraft.server.level.ServerPlayer;
@@ -66,23 +66,30 @@ import java.util.List;
  */
 public final class UiDemo {
 
-    public static ServerModuleType<State> TYPE;
-    public static UiScreenType<State> SCREEN;
-    public static UiScreenType<State> LAYOUT_SCREEN;
-    public static UiScreenType<State> INSCRIBER_SCREEN;
-    public static UiScreenType<State> FILTER_SCREEN;
-    public static BlockModuleType<Gauge> GAUGE;
+    @Register("ui_demo")
+    public static final ServerModuleType<State> TYPE = ServerModuleType.builder(State.class, State::new).build();
+
+    @Register(value = "demo", after = "empiric:ui_demo")
+    public static final UiScreenType<State> SCREEN = UiScreens.define(TYPE, state -> new DemoScreen()).presence(true);
+
+    @Register(value = "demo_layout", after = "empiric:ui_demo")
+    public static final UiScreenType<State> LAYOUT_SCREEN = UiScreens.defineLayout(TYPE, "empiric:demo_panel").presence(true);
+
+    @Register(value = "demo_inscriber", after = "empiric:ui_demo")
+    public static final UiScreenType<State> INSCRIBER_SCREEN = UiScreens.define(TYPE, state -> new UiProofScreens.InscriberScreen()).presence(true);
+
+    @Register(value = "demo_filter", after = "empiric:ui_demo")
+    public static final UiScreenType<State> FILTER_SCREEN = UiScreens.define(TYPE, state -> new UiProofScreens.FilterScreen()).presence(true);
+
+    @Register("ui_gauge")
+    public static final BlockModuleType<Gauge> GAUGE = BlockModuleType.builder(Gauge.class, Gauge::new).build();
 
     private UiDemo() {
     }
 
+    /** @deprecated registration is automatic, so this does nothing. */
+    @Deprecated
     public static void register(ModuleSystem modules) {
-        TYPE = modules.register(ServerModuleType.builder(Empiric.id("ui_demo"), State.class, State::new).build());
-        SCREEN = UiScreens.register(Empiric.id("demo"), TYPE, state -> new DemoScreen()).presence(true);
-        LAYOUT_SCREEN = UiScreens.registerLayout(Empiric.id("demo_layout"), TYPE, "empiric:demo_panel").presence(true);
-        INSCRIBER_SCREEN = UiScreens.register(Empiric.id("demo_inscriber"), TYPE, state -> new UiProofScreens.InscriberScreen()).presence(true);
-        FILTER_SCREEN = UiScreens.register(Empiric.id("demo_filter"), TYPE, state -> new UiProofScreens.FilterScreen()).presence(true);
-        GAUGE = modules.register(BlockModuleType.builder(Empiric.id("ui_gauge"), Gauge.class, Gauge::new).build());
     }
 
     /**

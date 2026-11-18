@@ -73,7 +73,16 @@ public final class ModuleCommands {
                 + "\nbehaviours " + type.behaviors()
                 + "\nsubscribers " + (subscribers.isEmpty() ? "none" : String.join(", ", subscribers))
                 + (DebugSubscriptionSystem.suppressed(type).isEmpty() ? "" : "\ndisabled by command for " + String.join(", ", DebugSubscriptionSystem.suppressed(type)))
-                + "\nserver " + modules.count(Side.SERVER, type) + ", client " + modules.count(Side.CLIENT, type);
+                + "\nserver " + modules.count(Side.SERVER, type) + ", client " + modules.count(Side.CLIENT, type)
+                + "\n" + diffs(type);
+    }
+
+    private static String diffs(ModuleType<?, ?> type) {
+        if (type.diffs() == 0) {
+            return "no change checks yet" + (type.diffEvery() > 1 ? ", every " + type.diffEvery() + " flushes" : "");
+        }
+        return String.format("change checks %d, %.2f µs each, %.1f ms total%s", type.diffs(), type.diffNanos() / 1000.0 / type.diffs(),
+                type.diffNanos() / 1_000_000.0, type.diffEvery() > 1 ? ", every " + type.diffEvery() + " flushes" : "");
     }
 
     private static MutableComponent line(ModuleType<?, ?> type) {
@@ -105,6 +114,7 @@ public final class ModuleCommands {
         ModuleType<?, ?> type = type(context);
         EmpiricCommands.send(context, line(type));
         EmpiricCommands.send(context, EmpiricCommands.label(" attaches to " + type.attachmentType().id() + ", behaviours " + type.behaviors()));
+        EmpiricCommands.send(context, EmpiricCommands.label(" " + diffs(type)));
         return type.isEnabled() ? 1 : 0;
     }
 

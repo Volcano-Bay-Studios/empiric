@@ -64,6 +64,7 @@ import xyz.volcanobay.empiric.core.data.DataContext;
 import xyz.volcanobay.empiric.core.data.Encoding;
 import xyz.volcanobay.empiric.core.data.FieldDelta;
 import xyz.volcanobay.empiric.core.data.Spec;
+import xyz.volcanobay.empiric.core.module.DirtyConsumer;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.data.EmpiricBuffers;
@@ -100,6 +101,7 @@ import xyz.volcanobay.empiric.system.SpatialNetworkSystem;
 
 import java.lang.invoke.MethodHandles;
 import java.util.BitSet;
+import xyz.volcanobay.empiric.api.network.SpatialNetworkMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -115,7 +117,15 @@ public class EmpiricGameTests {
         tests.addAll(UiGameTests.tests(EmpiricGameTests::test, EmpiricGameTests::isolated));
         tests.addAll(ModelGameTests.tests(EmpiricGameTests::test));
         tests.addAll(ChemistryGameTests.tests(EmpiricGameTests::test));
+        tests.addAll(TargetedDataGameTests.tests(EmpiricGameTests::test));
+        tests.addAll(LenientDataGameTests.tests(EmpiricGameTests::test));
         tests.addAll(PartGameTests.tests(EmpiricGameTests::test));
+        tests.addAll(RegistryGameTests.tests(EmpiricGameTests::test));
+        tests.addAll(SystemGameTests.tests(EmpiricGameTests::test));
+        tests.addAll(TemperatureGameTests.tests(EmpiricGameTests::test));
+        if (System.getenv("EMPIRIC_BENCH") != null) {
+            tests.addAll(TemperatureBenchmark.tests(EmpiricGameTests::isolated));
+        }
         if (ModCompat.SABLE) {
             tests.addAll(SableGameTests.tests(EmpiricGameTests::test));
         }
@@ -130,6 +140,7 @@ public class EmpiricGameTests {
                 test("self_spec_client_edit", EmpiricGameTests::selfSpecClientEdit),
                 test("self_spec_skips_unloadable_fields", EmpiricGameTests::selfSpecSkipsUnloadableFields),
                 test("entity_module", EmpiricGameTests::entityModule),
+                test("entity_module_unloaded_chunk", EmpiricGameTests::entityModuleUnloadedChunk),
                 test("entity_save_load", EmpiricGameTests::entitySaveLoad),
                 test("item_stack_module", EmpiricGameTests::itemStackModule),
                 test("chunk_module", EmpiricGameTests::chunkModule),
@@ -176,6 +187,7 @@ public class EmpiricGameTests {
                 test("client_mutable_fields", EmpiricGameTests::clientMutableFields),
                 test("tracked_fields", EmpiricGameTests::trackedFields),
                 test("delta_fields", EmpiricGameTests::deltaFields),
+                test("auto_dirty", EmpiricGameTests::autoDirty),
                 test("tracked_entries", EmpiricGameTests::trackedEntries),
                 isolated("throttled_fields", EmpiricGameTests::throttledFields),
                 test("polymorphic_spec", EmpiricGameTests::polymorphicSpec),
@@ -594,11 +606,11 @@ public class EmpiricGameTests {
     }
 
     /**
-     * Fills x 1 to 5, y 1 to 3, z 1 to 3 with stone except for the given air cells.
+     * Fills x 0 to 4, y 1 to 3, z 1 to 3 with stone except for the given air cells.
      */
     private static void stoneShell(GameTestHelper helper, BlockPos... air) {
         List<BlockPos> open = List.of(air);
-        for (int x = 1; x <= 5; x++) {
+        for (int x = 0; x <= 4; x++) {
             for (int y = 1; y <= 3; y++) {
                 for (int z = 1; z <= 3; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
@@ -612,18 +624,18 @@ public class EmpiricGameTests {
 
     private static void roomMergeKeepsAir(GameTestHelper helper) {
         var map = AtmosphereSystem.ATMOSPHERE.get(helper.getLevel());
-        stoneShell(helper, new BlockPos(2, 2, 2), new BlockPos(4, 2, 2));
-        AtmosphereNetwork left = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0));
-        AtmosphereNetwork right = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(4, 2, 2)), 0));
-        helper.assertTrue(left != null && right != null && left != right && !left.isWorldAtmosphere() && !right.isWorldAtmosphere(), "the two cells didn't form separate rooms");
+        stoneShell(helper, new BlockPos(1, 2, 2), new BlockPos(3, 2, 2));
+        AtmosphereNetwork left = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(1, 2, 2)), 0));
+        AtmosphereNetwork right = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(3, 2, 2)), 0));
+        helper.assertTrue(left != null && right != null && left != right && !left.isWorldAtmosphere() && !right.isWorldAtmosphere(), "the two cells didn't form separate rooms: " + (left == null ? "null" : left.isWorldAtmosphere() + "/" + left.members().size()) + " " + (right == null ? "null" : right.isWorldAtmosphere() + "/" + right.members().size()) + " same=" + (left == right));
         Chemical oxygen = ChemicalRegistry.getChemical("empiric:oxygen");
         left.getVolume().addChemical(oxygen, 5, Volume.State.GAS);
         left.getVolume().setTemperature(400);
         double expected = left.getVolume().getChemicalAmount(oxygen, Volume.State.GAS) + right.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
         double low = right.getVolume().getTemperature();
-        helper.setBlock(new BlockPos(3, 2, 2), Blocks.AIR);
-        AtmosphereNetwork merged = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0));
-        helper.assertTrue(merged != null && merged == map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(4, 2, 2)), 0)), "breaking the divider didn't merge the rooms");
+        helper.setBlock(new BlockPos(2, 2, 2), Blocks.AIR);
+        AtmosphereNetwork merged = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(1, 2, 2)), 0));
+        helper.assertTrue(merged != null && merged == map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(3, 2, 2)), 0)), "breaking the divider didn't merge the rooms");
         double amount = merged.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
         helper.assertTrue(Math.abs(amount - expected) < 1.0E-6, "the merged room holds " + amount + " oxygen instead of " + expected);
         double temperature = merged.getVolume().getTemperature();
@@ -633,16 +645,16 @@ public class EmpiricGameTests {
 
     private static void roomSplitSharesAir(GameTestHelper helper) {
         var map = AtmosphereSystem.ATMOSPHERE.get(helper.getLevel());
-        stoneShell(helper, new BlockPos(2, 2, 2), new BlockPos(3, 2, 2), new BlockPos(4, 2, 2));
-        AtmosphereNetwork room = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0));
-        helper.assertTrue(room != null && !room.isWorldAtmosphere() && room.members().size() == 24, "the three cells didn't form one room");
+        stoneShell(helper, new BlockPos(1, 2, 2), new BlockPos(2, 2, 2), new BlockPos(3, 2, 2));
+        AtmosphereNetwork room = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(1, 2, 2)), 0));
+        helper.assertTrue(room != null && !room.isWorldAtmosphere() && room.members().size() == 24, "the three cells didn't form one room: " + (room == null ? "no network" : (room.isWorldAtmosphere() ? "world atmosphere" : room.members().size() + " members")));
         Chemical oxygen = ChemicalRegistry.getChemical("empiric:oxygen");
         room.getVolume().addChemical(oxygen, 6, Volume.State.GAS);
         room.getVolume().setTemperature(350);
         double total = room.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
-        helper.setBlock(new BlockPos(3, 2, 2), Blocks.STONE);
-        AtmosphereNetwork left = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(2, 2, 2)), 0));
-        AtmosphereNetwork right = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(4, 2, 2)), 0));
+        helper.setBlock(new BlockPos(2, 2, 2), Blocks.STONE);
+        AtmosphereNetwork left = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(1, 2, 2)), 0));
+        AtmosphereNetwork right = map.getNetwork(new OctPos(helper.absolutePos(new BlockPos(3, 2, 2)), 0));
         helper.assertTrue(left != null && right != null && left != right, "filling the middle cell didn't split the room");
         double leftAmount = left.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
         double rightAmount = right.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
@@ -913,16 +925,21 @@ public class EmpiricGameTests {
         Chemical oxygen = ChemicalRegistry.getChemical("empiric:oxygen");
         network.getVolume().addChemical(oxygen, 7, Volume.State.GAS);
         double expected = network.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
-        var saved = map.save();
+        List<SpatialNetworkMap.Saved> saved = map.save();
         map.unload();
         helper.assertTrue(map.attachments().isEmpty(), "unloading should drop the network modules");
-        for (var entry : saved) {
+        for (SpatialNetworkMap.Saved entry : saved) {
             map.load(entry);
         }
         AtmosphereNetwork restored = map.getNetwork(inside);
         helper.assertTrue(restored != null && restored != network, "the network wasn't restored as a new module");
         double amount = restored.getVolume().getChemicalAmount(oxygen, Volume.State.GAS);
         helper.assertTrue(Math.abs(amount - expected) < 1.0E-6, "the restored network has " + amount + " oxygen instead of " + expected + " (id " + restored.id() + ", " + restored.getVolume().getVolumeLiters() + " L)");
+        for (SpatialNetworkMap.Saved entry : saved) {
+            map.load(entry);
+        }
+        int resaved = map.save().size();
+        helper.assertTrue(resaved == saved.size(), "loading the same save twice grew it from " + saved.size() + " to " + resaved + " entries");
         helper.succeed();
     }
 
@@ -1012,6 +1029,7 @@ public class EmpiricGameTests {
                 pulse.fast = flush;
                 pulse.markDirty();
             }
+            EmpiricCore.modules().tick(Side.SERVER);
             EmpiricCore.modules().flushDirty(Side.SERVER, module -> module == pulse, (module, dirty) -> {
                 if (module == pulse) {
                     if (dirty.get(pulse.spec().syncIndex("slow"))) {
@@ -1073,6 +1091,45 @@ public class EmpiricGameTests {
         helper.assertTrue(delta.changed().equals(Set.of(3)) && delta.removed().equals(Set.of(4)), "the latest mark of a key should win, got " + delta);
         EmpiricTestModules.SIGNALS.detach(first);
         EmpiricTestModules.SIGNALS.detach(second);
+        helper.succeed();
+    }
+
+    /**
+     * Synced fields and delta entries are found changed without any markDirty call.
+     */
+    private static void autoDirty(GameTestHelper helper) {
+        ChunkAttachment attachment = ChunkAttachment.of(helper.getLevel().getChunkAt(helper.absolutePos(new BlockPos(1, 1, 1))));
+        EmpiricTestModules.Radar radar = EmpiricTestModules.RADAR.attach(attachment);
+        EmpiricTestModules.Signals signals = EmpiricTestModules.SIGNALS.attach(attachment);
+        signals.signals.put(1, 10);
+        signals.signals.put(2, 20);
+        BitSet sent = new BitSet();
+        List<FieldDelta> deltas = new ArrayList<>();
+        DirtyConsumer collect = (module, dirty) -> {
+            sent.or(module == radar ? dirty : new BitSet());
+            if (module == signals) {
+                FieldDelta delta = signals.delta(signals.spec().syncIndex("signals"));
+                deltas.add(delta == null ? new FieldDelta(true, Set.of(), Set.of()) : delta);
+            }
+        };
+        EmpiricCore.modules().flushDirty(Side.SERVER, module -> module == radar || module == signals, (module, dirty) -> {
+        });
+        radar.plain = 7;
+        signals.signals.put(3, 30);
+        signals.signals.put(1, 11);
+        signals.signals.remove(2);
+        EmpiricCore.modules().flushDirty(Side.SERVER, module -> module == radar || module == signals, collect);
+        int plain = radar.spec().syncIndex("plain");
+        helper.assertTrue(sent.get(plain) && sent.cardinality() == 1, "only the written field should be sent, got " + sent);
+        helper.assertTrue(deltas.size() == 1, "the signals should be sent once, got " + deltas);
+        FieldDelta delta = deltas.get(0);
+        helper.assertTrue(delta.changed().equals(Set.of(1, 3)) && delta.removed().equals(Set.of(2)), "the changed entries should be found, got " + delta);
+        sent.clear();
+        deltas.clear();
+        EmpiricCore.modules().flushDirty(Side.SERVER, module -> module == radar || module == signals, collect);
+        helper.assertTrue(sent.isEmpty() && deltas.isEmpty(), "nothing changed, yet " + sent + " " + deltas + " was sent");
+        EmpiricTestModules.RADAR.detach(attachment);
+        EmpiricTestModules.SIGNALS.detach(attachment);
         helper.succeed();
     }
 
@@ -1491,6 +1548,19 @@ public class EmpiricGameTests {
             helper.assertTrue(!tag.isAttached(), "tag is still attached");
             helper.succeed();
         });
+    }
+
+    private static void entityModuleUnloadedChunk(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Pig pig = EntityType.PIG.create(level);
+        BlockPos far = helper.absolutePos(new BlockPos(2, 1, 2)).offset(320, 0, 0);
+        pig.setPos(far.getX() + 0.5, far.getY(), far.getZ() + 0.5);
+        helper.assertTrue(!level.isPositionEntityTicking(far), "the far position is already loaded");
+        level.addFreshEntity(pig);
+        EmpiricTestModules.Tag tag = EmpiricTestModules.TAG.get(pig);
+        pig.discard();
+        helper.assertTrue(tag != null, "a pig added in an unloaded chunk didn't get its modules straight away");
+        helper.succeed();
     }
 
     private static void entitySaveLoad(GameTestHelper helper) {

@@ -2,6 +2,7 @@ package xyz.volcanobay.empiric.api.ui;
 
 import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.core.entry.DataEntryType;
+import xyz.volcanobay.empiric.core.registry.Register;
 import xyz.volcanobay.empiric.core.ui.UiTheme;
 
 /**
@@ -9,13 +10,15 @@ import xyz.volcanobay.empiric.core.ui.UiTheme;
  */
 public final class UiThemes {
 
+    @Register
     public static final DataEntryType<UiTheme> THEMES = new DataEntryType<>("empiric:ui/themes", UiTheme.class, UiTheme::new);
 
     private UiThemes() {
     }
 
+    /** @deprecated registration is automatic, so this does nothing. */
+    @Deprecated
     public static void registerData(DataEntrySystem data) {
-        data.register(THEMES);
     }
 
     public static UiTheme get(String id) {

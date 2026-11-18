@@ -50,6 +50,7 @@ import xyz.volcanobay.empiric.core.data.DataBuffer;
 import xyz.volcanobay.empiric.core.data.DataContext;
 import xyz.volcanobay.empiric.core.data.DataException;
 import xyz.volcanobay.empiric.core.data.Spec;
+import xyz.volcanobay.empiric.core.registry.Register;
 import xyz.volcanobay.empiric.core.data.SpecFactory;
 import xyz.volcanobay.empiric.core.data.SpecRegistry;
 import xyz.volcanobay.empiric.core.data.Types;
@@ -67,31 +68,38 @@ import java.util.function.UnaryOperator;
 
 public final class MinecraftSpecs {
 
+    @Register
     public static final Spec<ResourceLocation> RESOURCE_LOCATION = SimpleSpec.keyed((buffer, value) -> buffer.putString(value.toString()), buffer -> ResourceLocation.parse(buffer.takeString()), ResourceLocation::toString, ResourceLocation::parse);
-    public static final Spec<BlockPos> BLOCK_POS = SimpleSpec.of((buffer, value) -> {
+    @Register
+    public static final Spec<BlockPos> BLOCK_POS = new LenientVectorSpec<>(SimpleSpec.of((buffer, value) -> {
         buffer.putSignedVarInt(value.getX());
         buffer.putSignedVarInt(value.getY());
         buffer.putSignedVarInt(value.getZ());
-    }, buffer -> new BlockPos(buffer.takeSignedVarInt(), buffer.takeSignedVarInt(), buffer.takeSignedVarInt()));
-    public static final Spec<Vec3i> VEC3I = SimpleSpec.of((buffer, value) -> {
+    }, buffer -> new BlockPos(buffer.takeSignedVarInt(), buffer.takeSignedVarInt(), buffer.takeSignedVarInt())), true, "x", "y", "z");
+    @Register
+    public static final Spec<Vec3i> VEC3I = new LenientVectorSpec<>(SimpleSpec.of((buffer, value) -> {
         buffer.putSignedVarInt(value.getX());
         buffer.putSignedVarInt(value.getY());
         buffer.putSignedVarInt(value.getZ());
-    }, buffer -> new Vec3i(buffer.takeSignedVarInt(), buffer.takeSignedVarInt(), buffer.takeSignedVarInt()));
-    public static final Spec<ChunkPos> CHUNK_POS = SimpleSpec.of((buffer, value) -> {
+    }, buffer -> new Vec3i(buffer.takeSignedVarInt(), buffer.takeSignedVarInt(), buffer.takeSignedVarInt())), true, "x", "y", "z");
+    @Register
+    public static final Spec<ChunkPos> CHUNK_POS = new LenientVectorSpec<>(SimpleSpec.of((buffer, value) -> {
         buffer.putSignedVarInt(value.x);
         buffer.putSignedVarInt(value.z);
-    }, buffer -> new ChunkPos(buffer.takeSignedVarInt(), buffer.takeSignedVarInt()));
-    public static final Spec<SectionPos> SECTION_POS = SimpleSpec.of((buffer, value) -> {
+    }, buffer -> new ChunkPos(buffer.takeSignedVarInt(), buffer.takeSignedVarInt())), false, "x", "z");
+    @Register
+    public static final Spec<SectionPos> SECTION_POS = new LenientVectorSpec<>(SimpleSpec.of((buffer, value) -> {
         buffer.putSignedVarInt(value.x());
         buffer.putSignedVarInt(value.y());
         buffer.putSignedVarInt(value.z());
-    }, buffer -> SectionPos.of(buffer.takeSignedVarInt(), buffer.takeSignedVarInt(), buffer.takeSignedVarInt()));
-    public static final Spec<Vec3> VEC3 = SimpleSpec.of((buffer, value) -> {
+    }, buffer -> SectionPos.of(buffer.takeSignedVarInt(), buffer.takeSignedVarInt(), buffer.takeSignedVarInt())), true, "x", "y", "z");
+    @Register
+    public static final Spec<Vec3> VEC3 = new LenientVectorSpec<>(SimpleSpec.of((buffer, value) -> {
         buffer.putDouble(value.x);
         buffer.putDouble(value.y);
         buffer.putDouble(value.z);
-    }, buffer -> new Vec3(buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble()));
+    }, buffer -> new Vec3(buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble())), false, "x", "y", "z");
+    @Register
     public static final Spec<AABB> AABB_SPEC = SimpleSpec.of((buffer, value) -> {
         buffer.putDouble(value.minX);
         buffer.putDouble(value.minY);
@@ -101,57 +109,68 @@ public final class MinecraftSpecs {
         buffer.putDouble(value.maxZ);
     }, buffer -> new AABB(buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble()));
 
-    public static final Spec<Vector3d> VECTOR3D = MutableSpec.of((buffer, value) -> {
+    @Register
+    public static final Spec<Vector3d> VECTOR3D = new LenientVectorSpec<>(MutableSpec.of((buffer, value) -> {
         buffer.putDouble(value.x);
         buffer.putDouble(value.y);
         buffer.putDouble(value.z);
-    }, (buffer, value) -> value.set(buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble()), Vector3d::new, Vector3d::set);
-    public static final Spec<Vector3f> VECTOR3F = MutableSpec.of((buffer, value) -> {
+    }, (buffer, value) -> value.set(buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble()), Vector3d::new, Vector3d::set), false, "x", "y", "z");
+    @Register
+    public static final Spec<Vector3f> VECTOR3F = new LenientVectorSpec<>(MutableSpec.of((buffer, value) -> {
         buffer.putFloat(value.x);
         buffer.putFloat(value.y);
         buffer.putFloat(value.z);
-    }, (buffer, value) -> value.set(buffer.takeFloat(), buffer.takeFloat(), buffer.takeFloat()), Vector3f::new, Vector3f::set);
-    public static final Spec<Vector3i> VECTOR3I = MutableSpec.of((buffer, value) -> {
+    }, (buffer, value) -> value.set(buffer.takeFloat(), buffer.takeFloat(), buffer.takeFloat()), Vector3f::new, Vector3f::set), false, "x", "y", "z");
+    @Register
+    public static final Spec<Vector3i> VECTOR3I = new LenientVectorSpec<>(MutableSpec.of((buffer, value) -> {
         buffer.putSignedVarInt(value.x);
         buffer.putSignedVarInt(value.y);
         buffer.putSignedVarInt(value.z);
-    }, (buffer, value) -> value.set(buffer.takeSignedVarInt(), buffer.takeSignedVarInt(), buffer.takeSignedVarInt()), Vector3i::new, Vector3i::set);
-    public static final Spec<Vector2d> VECTOR2D = MutableSpec.of((buffer, value) -> {
+    }, (buffer, value) -> value.set(buffer.takeSignedVarInt(), buffer.takeSignedVarInt(), buffer.takeSignedVarInt()), Vector3i::new, Vector3i::set), true, "x", "y", "z");
+    @Register
+    public static final Spec<Vector2d> VECTOR2D = new LenientVectorSpec<>(MutableSpec.of((buffer, value) -> {
         buffer.putDouble(value.x);
         buffer.putDouble(value.y);
-    }, (buffer, value) -> value.set(buffer.takeDouble(), buffer.takeDouble()), Vector2d::new, Vector2d::set);
-    public static final Spec<Vector2f> VECTOR2F = MutableSpec.of((buffer, value) -> {
+    }, (buffer, value) -> value.set(buffer.takeDouble(), buffer.takeDouble()), Vector2d::new, Vector2d::set), false, "x", "y");
+    @Register
+    public static final Spec<Vector2f> VECTOR2F = new LenientVectorSpec<>(MutableSpec.of((buffer, value) -> {
         buffer.putFloat(value.x);
         buffer.putFloat(value.y);
-    }, (buffer, value) -> value.set(buffer.takeFloat(), buffer.takeFloat()), Vector2f::new, Vector2f::set);
-    public static final Spec<Vector2i> VECTOR2I = MutableSpec.of((buffer, value) -> {
+    }, (buffer, value) -> value.set(buffer.takeFloat(), buffer.takeFloat()), Vector2f::new, Vector2f::set), false, "x", "y");
+    @Register
+    public static final Spec<Vector2i> VECTOR2I = new LenientVectorSpec<>(MutableSpec.of((buffer, value) -> {
         buffer.putSignedVarInt(value.x);
         buffer.putSignedVarInt(value.y);
-    }, (buffer, value) -> value.set(buffer.takeSignedVarInt(), buffer.takeSignedVarInt()), Vector2i::new, Vector2i::set);
-    public static final Spec<Vector4d> VECTOR4D = MutableSpec.of((buffer, value) -> {
+    }, (buffer, value) -> value.set(buffer.takeSignedVarInt(), buffer.takeSignedVarInt()), Vector2i::new, Vector2i::set), true, "x", "y");
+    @Register
+    public static final Spec<Vector4d> VECTOR4D = new LenientVectorSpec<>(MutableSpec.of((buffer, value) -> {
         buffer.putDouble(value.x);
         buffer.putDouble(value.y);
         buffer.putDouble(value.z);
         buffer.putDouble(value.w);
-    }, (buffer, value) -> value.set(buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble()), Vector4d::new, Vector4d::set);
-    public static final Spec<Vector4f> VECTOR4F = MutableSpec.of((buffer, value) -> {
+    }, (buffer, value) -> value.set(buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble()), Vector4d::new, Vector4d::set), false, "x", "y", "z", "w");
+    @Register
+    public static final Spec<Vector4f> VECTOR4F = new LenientVectorSpec<>(MutableSpec.of((buffer, value) -> {
         buffer.putFloat(value.x);
         buffer.putFloat(value.y);
         buffer.putFloat(value.z);
         buffer.putFloat(value.w);
-    }, (buffer, value) -> value.set(buffer.takeFloat(), buffer.takeFloat(), buffer.takeFloat(), buffer.takeFloat()), Vector4f::new, Vector4f::set);
+    }, (buffer, value) -> value.set(buffer.takeFloat(), buffer.takeFloat(), buffer.takeFloat(), buffer.takeFloat()), Vector4f::new, Vector4f::set), false, "x", "y", "z", "w");
+    @Register
     public static final Spec<Quaternionf> QUATERNIONF = MutableSpec.of((buffer, value) -> {
         buffer.putFloat(value.x);
         buffer.putFloat(value.y);
         buffer.putFloat(value.z);
         buffer.putFloat(value.w);
     }, (buffer, value) -> value.set(buffer.takeFloat(), buffer.takeFloat(), buffer.takeFloat(), buffer.takeFloat()), Quaternionf::new, Quaternionf::set);
+    @Register
     public static final Spec<Quaterniond> QUATERNIOND = MutableSpec.of((buffer, value) -> {
         buffer.putDouble(value.x);
         buffer.putDouble(value.y);
         buffer.putDouble(value.z);
         buffer.putDouble(value.w);
     }, (buffer, value) -> value.set(buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble(), buffer.takeDouble()), Quaterniond::new, Quaterniond::set);
+    @Register
     public static final Spec<Matrix4f> MATRIX4F = MutableSpec.of((buffer, value) -> {
         float[] values = value.get(new float[16]);
         for (float entry : values) {
@@ -165,14 +184,20 @@ public final class MinecraftSpecs {
         value.set(values);
     }, Matrix4f::new, Matrix4f::set);
 
+    @Register
     public static final Spec<Tag> TAG = new TagSpec<>(false);
+    @Register
     public static final Spec<CompoundTag> COMPOUND_TAG = new TagSpec<>(true);
+    @Register
     public static final Spec<BlockState> BLOCK_STATE = new BlockStateSpec();
+    @Register
     public static final Spec<ItemStack> ITEM_STACK = codec(ItemStack.OPTIONAL_CODEC, ItemStack.OPTIONAL_STREAM_CODEC, ItemStack::copy, ItemStack::matches);
+    @Register
     public static final Spec<Component> COMPONENT = codec(ComponentSerialization.CODEC, ComponentSerialization.STREAM_CODEC, null, null);
 
     private static final Map<Class<?>, Registry<?>> REGISTRIES = new IdentityHashMap<>();
 
+    @Register
     public static final SpecFactory HOLDERS = (type, raw, resolution, registry) -> {
         if (raw != Holder.class) {
             return null;
@@ -184,6 +209,7 @@ public final class MinecraftSpecs {
         return holder(entries);
     };
 
+    @Register
     public static final SpecFactory RESOURCE_KEYS = (type, raw, resolution, registry) -> raw == ResourceKey.class ? new ResourceKeySpec<>() : null;
 
     private MinecraftSpecs() {
@@ -213,6 +239,13 @@ public final class MinecraftSpecs {
         registry.register(BlockState.class, BLOCK_STATE);
         registry.register(ItemStack.class, ITEM_STACK);
         registry.register(Component.class, COMPONENT);
+        registry.register(HOLDERS);
+        registry.register(RESOURCE_KEYS);
+        IdSpecs.register(registry);
+        registerRegistries(registry);
+    }
+
+    public static void registerRegistries(SpecRegistry registry) {
         registerEntries(registry, Block.class, BuiltInRegistries.BLOCK);
         registerEntries(registry, Item.class, BuiltInRegistries.ITEM);
         registerEntries(registry, Fluid.class, BuiltInRegistries.FLUID);
@@ -221,8 +254,6 @@ public final class MinecraftSpecs {
         registerEntries(registry, MobEffect.class, BuiltInRegistries.MOB_EFFECT);
         registerEntries(registry, SoundEvent.class, BuiltInRegistries.SOUND_EVENT);
         registerEntries(registry, ParticleType.class, BuiltInRegistries.PARTICLE_TYPE);
-        registry.register(HOLDERS);
-        registry.register(RESOURCE_KEYS);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -305,6 +336,18 @@ public final class MinecraftSpecs {
                 return readStream(buffer, codec);
             }
         };
+    }
+
+    /**
+     * A spec for any type that has a {@link Codec}. Structured data is read and written as JSON, and everything else as
+     * NBT. It needs no stream codec, and values are compared with {@code equals} and not copied.
+     */
+    public static <T> Spec<T> codec(Codec<T> codec) {
+        return new CodecSpec<>(codec, null, null, null);
+    }
+
+    public static <T> void register(SpecRegistry registry, Class<T> type, Codec<T> codec) {
+        registry.register(type, codec(codec));
     }
 
     public static <T> Spec<T> codec(Codec<T> codec, StreamCodec<? super RegistryFriendlyByteBuf, T> stream, UnaryOperator<T> copier, BiPredicate<T, T> same) {
@@ -430,7 +473,7 @@ public final class MinecraftSpecs {
                 buffer.putNode(JsonNodes.toNode(codec.encodeStart(ops, value).getOrThrow(DataException::new)));
                 return;
             }
-            if (context.keyed()) {
+            if (context.keyed() || stream == null) {
                 RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, EmpiricBuffers.registries());
                 TAG.write(buffer, codec.encodeStart(ops, value).getOrThrow(DataException::new), context);
             } else {
@@ -444,7 +487,7 @@ public final class MinecraftSpecs {
                 RegistryOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, EmpiricBuffers.registries());
                 return codec.parse(ops, JsonNodes.toJson(buffer.takeNode())).getOrThrow(DataException::new);
             }
-            if (context.keyed()) {
+            if (context.keyed() || stream == null) {
                 RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, EmpiricBuffers.registries());
                 return codec.parse(ops, TAG.read(buffer, context)).getOrThrow(DataException::new);
             }

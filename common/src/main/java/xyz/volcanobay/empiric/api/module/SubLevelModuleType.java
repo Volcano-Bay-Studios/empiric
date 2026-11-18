@@ -4,6 +4,7 @@ import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.resources.ResourceLocation;
 import xyz.volcanobay.empiric.api.attachment.SubLevelAttachment;
 import xyz.volcanobay.empiric.core.module.Module;
+import xyz.volcanobay.empiric.core.module.ModuleId;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 
 import java.util.function.Supplier;
@@ -13,12 +14,16 @@ import java.util.function.Supplier;
  */
 public class SubLevelModuleType<M extends Module<SubLevelAttachment>> extends ModuleType<M, SubLevelAttachment> {
 
-    protected SubLevelModuleType(Builder<M, SubLevelAttachment, ?> builder) {
+    protected SubLevelModuleType(ModuleType.Builder<M, SubLevelAttachment, ?> builder) {
         super(builder);
     }
 
-    public static <M extends Module<SubLevelAttachment>> Builder<M, SubLevelAttachment, SubLevelModuleType<M>> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
-        return ModuleType.builder(id::toString, moduleClass, SubLevelAttachment.TYPE, factory, SubLevelModuleType::new);
+    public static <M extends Module<SubLevelAttachment>> Builder<M> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(id::toString, moduleClass, factory);
+    }
+
+    public static <M extends Module<SubLevelAttachment>> Builder<M> builder(Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(null, moduleClass, factory);
     }
 
     public M get(SubLevel subLevel) {
@@ -31,5 +36,12 @@ public class SubLevelModuleType<M extends Module<SubLevelAttachment>> extends Mo
 
     public boolean detach(SubLevel subLevel) {
         return detach(SubLevelAttachment.of(subLevel));
+    }
+
+    public static final class Builder<M extends Module<SubLevelAttachment>> extends ModuleType.Builder<M, SubLevelAttachment, SubLevelModuleType<M>> {
+
+        private Builder(ModuleId id, Class<M> moduleClass, Supplier<M> factory) {
+            super(id, moduleClass, SubLevelAttachment.TYPE, factory, SubLevelModuleType::new);
+        }
     }
 }

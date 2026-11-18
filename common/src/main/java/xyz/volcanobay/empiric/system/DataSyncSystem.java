@@ -72,5 +72,6 @@ public final class DataSyncSystem {
         Map<String, DataNode> files = new LinkedHashMap<>();
         packet.entries().forEach((id, json) -> files.put(id, JsonNodes.toNode(JsonParser.parseString(json))));
         type.load(files).forEach((id, error) -> Empiric.LOGGER.error("Couldn't load synced {} entry {}: {}", type.id(), id, error.getMessage()));
+        type.problems().forEach((id, lines) -> lines.forEach(line -> Empiric.LOGGER.warn("Problem in synced {} entry {}, {}", type.id(), id, line)));
     }
 }

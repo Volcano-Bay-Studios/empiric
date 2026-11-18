@@ -3,6 +3,7 @@ package xyz.volcanobay.empiric.gametest;
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestFunction;
 import net.minecraft.server.level.ServerLevel;
@@ -56,6 +57,7 @@ import xyz.volcanobay.empiric.core.ui.annotation.OnClick;
 import xyz.volcanobay.empiric.core.ui.annotation.Padding;
 import xyz.volcanobay.empiric.core.ui.annotation.Ref;
 import xyz.volcanobay.empiric.core.ui.annotation.Size;
+import xyz.volcanobay.empiric.api.module.SelfModule;
 import xyz.volcanobay.empiric.core.ui.bind.Property;
 import xyz.volcanobay.empiric.core.ui.bind.UiBinder;
 import xyz.volcanobay.empiric.core.ui.bind.UiException;
@@ -135,6 +137,7 @@ final class UiGameTests {
         return List.of(
                 test.apply("ui_layout", UiGameTests::layout),
                 test.apply("ui_binding", UiGameTests::binding),
+                test.apply("ui_self_spec_bind", UiGameTests::selfSpecBinding),
                 test.apply("ui_input", UiGameTests::input),
                 test.apply("ui_open_close", UiGameTests::openClose),
                 test.apply("ui_theme", UiGameTests::theme),
@@ -262,6 +265,22 @@ final class UiGameTests {
         viewRoot.dispose();
         root.dispose();
         CONSOLE.detach(console.attachment());
+        helper.succeed();
+    }
+
+    private static void selfSpecBinding(GameTestHelper helper) {
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+        EmpiricTestBlocks.TestEditEntity entity = new EmpiricTestBlocks.TestEditEntity(pos, Blocks.CHEST.defaultBlockState());
+        entity.setLevel(helper.getLevel());
+        SelfModule module = SelfModule.TYPE.get(entity);
+        helper.assertTrue(module != null, "the edit entity has no self module");
+        entity.level = 7;
+        Property<Integer> level = UiBinder.property(module, "level", Integer.class, "test");
+        helper.assertTrue(level.get() == 7, "a @SelfSpec binding read " + level.get() + " instead of the block entity's 7");
+        helper.assertTrue(level.writable(), "a clientMutable @SelfSpec field bound read-only");
+        level.set(3);
+        helper.assertTrue(entity.level == 3, "writing the binding left the block entity at " + entity.level);
+        helper.assertTrue(module.isDirty("level"), "writing the binding didn't mark the field dirty");
         helper.succeed();
     }
 

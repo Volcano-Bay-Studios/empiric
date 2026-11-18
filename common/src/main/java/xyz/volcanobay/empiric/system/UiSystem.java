@@ -27,6 +27,7 @@ import xyz.volcanobay.empiric.core.module.Side;
 import xyz.volcanobay.empiric.core.ui.HeadlessHost;
 import xyz.volcanobay.empiric.core.ui.UiRoot;
 import xyz.volcanobay.empiric.core.ui.Widget;
+import xyz.volcanobay.empiric.core.ui.bind.UiException;
 import xyz.volcanobay.empiric.data.EmpiricBuffers;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncS2CPacket;
 import xyz.volcanobay.empiric.networking.packet.UiCloseC2SPacket;
@@ -89,6 +90,9 @@ public final class UiSystem {
     }
 
     public static <M extends Module<?>> boolean open(ServerPlayer player, UiScreenType<M> screen, M module) {
+        if (screen.id() == null) {
+            throw new UiException("This screen was never registered, so it has no id. Annotate its field with @Register.");
+        }
         if (module == null || module.type() != screen.moduleType() || !module.isAttached() || module.side() != Side.SERVER) {
             return false;
         }

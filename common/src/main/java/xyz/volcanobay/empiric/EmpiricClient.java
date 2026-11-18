@@ -4,11 +4,9 @@ import net.minecraft.client.Minecraft;
 import xyz.volcanobay.empiric.api.behavior.ClientTickBehavior;
 import xyz.volcanobay.empiric.api.behavior.EmpiricBehaviors;
 import xyz.volcanobay.empiric.api.behavior.RenderBehavior;
-import xyz.volcanobay.empiric.api.oct.OctBlockRendererRegistry;
-import xyz.volcanobay.empiric.api.part.PartOctEntity;
 import xyz.volcanobay.empiric.api.part.Placement;
-import xyz.volcanobay.empiric.api.part.client.PartRenderer;
 import xyz.volcanobay.empiric.api.part.client.PlacementPreview;
+import xyz.volcanobay.empiric.client.ClientRegistrations;
 import xyz.volcanobay.empiric.client.model.ModelRenderer;
 import xyz.volcanobay.empiric.client.overlay.OverlayRenderer;
 import xyz.volcanobay.empiric.client.ui.PresenceCursors;
@@ -17,9 +15,8 @@ import xyz.volcanobay.empiric.client.ui.surface.SurfaceRenderer;
 import xyz.volcanobay.empiric.client.ui.tooltip.TooltipSystem;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
-import xyz.volcanobay.empiric.api.part.client.PartTooltips;
-import xyz.volcanobay.empiric.api.ui.tooltip.TooltipSources;
 import xyz.volcanobay.empiric.core.module.Side;
+import xyz.volcanobay.empiric.core.system.SystemPhase;
 import xyz.volcanobay.empiric.platform.Platform;
 import xyz.volcanobay.empiric.system.ModuleSyncSystem;
 
@@ -27,9 +24,15 @@ public class EmpiricClient {
 
     public static void init() {
         Platform.initClient();
-        OctBlockRendererRegistry.register(PartOctEntity.class, PartRenderer::new);
         Placement.clientPlaced = PlacementPreview::placed;
-        TooltipSources.register(PartTooltips.INSTANCE);
+    }
+
+    /**
+     * Registers the classes named by the client only registration annotations. The platform calls it once the common
+     * registration has run.
+     */
+    public static void bindRegistrations() {
+        ClientRegistrations.bind();
     }
 
     /**
@@ -57,13 +60,16 @@ public class EmpiricClient {
             return;
         }
         ModuleSystem modules = EmpiricCore.modules();
+        modules.tick(Side.CLIENT);
         modules.processPending(Side.CLIENT);
         OverlayRenderer.clientTick();
         SurfaceRenderer.clientTick();
         TooltipSystem.clientTick();
         UiKeyboard.tick();
         PresenceCursors.tick();
+        EmpiricCore.engine().systems().run(Side.CLIENT, SystemPhase.DEFAULT, 1.0 / 20);
         modules.forEach(Side.CLIENT, EmpiricBehaviors.CLIENT_TICK, ClientTickBehavior::clientTick);
+        EmpiricCore.engine().systems().run(Side.CLIENT, SystemPhase.LATE, 1.0 / 20);
         ModuleSyncSystem.flushClient();
     }
 }

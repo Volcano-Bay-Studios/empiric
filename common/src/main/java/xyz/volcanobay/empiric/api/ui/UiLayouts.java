@@ -12,12 +12,13 @@ import xyz.volcanobay.empiric.core.data.tree.DataNode;
 import xyz.volcanobay.empiric.core.entry.DataEntry;
 import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.core.entry.DataEntryType;
+import xyz.volcanobay.empiric.core.registry.Register;
+import xyz.volcanobay.empiric.core.registry.RegisterCallback;
 import xyz.volcanobay.empiric.core.ui.blueprint.BlueprintNode;
 import xyz.volcanobay.empiric.core.ui.blueprint.Blueprints;
 import xyz.volcanobay.empiric.core.ui.blueprint.PropertyDef;
 import xyz.volcanobay.empiric.core.ui.blueprint.Props;
 import xyz.volcanobay.empiric.core.ui.blueprint.WidgetType;
-import xyz.volcanobay.empiric.core.ui.blueprint.WidgetTypes;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,20 +34,24 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class UiLayouts {
 
     public static final String ROOT = "root";
+    @Register
     public static final DataEntryType<UiLayout> LAYOUTS = new DataEntryType<>("empiric:ui/layouts", UiLayout.class, UiLayout::new, ROOT);
 
     private static final Map<String, BlueprintNode> LOADED = new ConcurrentHashMap<>();
     private static final Map<String, BlueprintNode> OVERRIDES = new ConcurrentHashMap<>();
-    private static boolean registered;
 
     private UiLayouts() {
     }
 
+    /** @deprecated registration is automatic, so this does nothing. */
+    @Deprecated
     public static void registerData(DataEntrySystem data) {
-        data.register(LAYOUTS);
+    }
+
+    @RegisterCallback
+    static void bind() {
         LAYOUTS.onReload(UiLayouts::reload);
         Blueprints.provider(UiLayouts::get);
-        registerWidgets();
     }
 
     private static void reload() {
@@ -97,26 +102,27 @@ public final class UiLayouts {
         return file;
     }
 
-    private static synchronized void registerWidgets() {
-        if (registered) {
-            return;
-        }
-        registered = true;
-        WidgetTypes.register(WidgetType.of("slot_grid", props -> new SlotGrid(props.integer("columns", 9), props.integer("start", 0), props.integer("count", 9)))
-                .category("Items")
-                .property(PropertyDef.integer("columns", 9, "Slots per row"), PropertyDef.integer("start", 0, "First index in the bound list"),
-                        PropertyDef.integer("count", 9, "How many slots")));
-        WidgetTypes.register(WidgetType.of("player_inventory", props -> new PlayerInventoryGrid()).category("Items"));
-        WidgetTypes.register(WidgetType.of("item", props -> new ItemView(stack(props)).scale(props.integer("scale", 1)))
-                .category("Items")
-                .property(PropertyDef.string("item", "minecraft:air", "Item id, when not bound"), PropertyDef.integer("scale", 1, "Size multiplier")));
-        WidgetTypes.register(WidgetType.of("model", props -> new ModelView(stack(props))
-                        .spin((float) props.number("spin", 0))
-                        .angle((float) props.number("yaw", 30), (float) props.number("pitch", 20)))
-                .category("Items")
-                .property(PropertyDef.string("item", "minecraft:air", "Item id, when not bound"), PropertyDef.number("spin", 0, "Degrees per tick"),
-                        PropertyDef.number("yaw", 30, "Starting yaw"), PropertyDef.number("pitch", 20, "Pitch")));
-    }
+    @Register
+    private static final WidgetType<SlotGrid> SLOT_GRID = WidgetType.of("slot_grid", props -> new SlotGrid(props.integer("columns", 9), props.integer("start", 0), props.integer("count", 9)))
+            .category("Items")
+            .property(PropertyDef.integer("columns", 9, "Slots per row"), PropertyDef.integer("start", 0, "First index in the bound list"),
+                    PropertyDef.integer("count", 9, "How many slots"));
+
+    @Register
+    private static final WidgetType<PlayerInventoryGrid> PLAYER_INVENTORY = WidgetType.of("player_inventory", props -> new PlayerInventoryGrid()).category("Items");
+
+    @Register
+    private static final WidgetType<ItemView> ITEM = WidgetType.of("item", props -> new ItemView(stack(props)).scale(props.integer("scale", 1)))
+            .category("Items")
+            .property(PropertyDef.string("item", "minecraft:air", "Item id, when not bound"), PropertyDef.integer("scale", 1, "Size multiplier"));
+
+    @Register
+    private static final WidgetType<ModelView> MODEL = WidgetType.of("model", props -> new ModelView(stack(props))
+                    .spin((float) props.number("spin", 0))
+                    .angle((float) props.number("yaw", 30), (float) props.number("pitch", 20)))
+            .category("Items")
+            .property(PropertyDef.string("item", "minecraft:air", "Item id, when not bound"), PropertyDef.number("spin", 0, "Degrees per tick"),
+                    PropertyDef.number("yaw", 30, "Starting yaw"), PropertyDef.number("pitch", 20, "Pitch"));
 
     private static ItemStack stack(Props props) {
         ResourceLocation id = ResourceLocation.tryParse(props.string("item", "minecraft:air"));

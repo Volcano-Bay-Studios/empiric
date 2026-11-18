@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "xyz.volcanobay.empiric.mixin",
+  "plugin": "xyz.volcanobay.empiric.mixin.GuardMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BlockEntityGuardMixin",
+    "LevelGuardMixin",
+    "ServerChunkCacheGuardMixin",
+    "ServerLevelGuardMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -37,6 +37,7 @@ import xyz.volcanobay.empiric.core.data.SpecRegistry;
 import xyz.volcanobay.empiric.core.module.Module;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.module.ModuleType;
+import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.core.plugin.EmpiricPlugin;
 import xyz.volcanobay.empiric.api.network.NetworkModule;
 import xyz.volcanobay.empiric.api.network.SpatialNetworkType;
@@ -93,6 +94,13 @@ public final class EmpiricTestModules implements EmpiricPlugin {
         specs.polymorphic(ShapeSample.Shape.class)
                 .register("empiric_test:circle", ShapeSample.Circle.class)
                 .register("empiric_test:square", ShapeSample.Square.class);
+    }
+
+    @Override
+    public void registerData(DataEntrySystem data) {
+        data.register(TargetedDataGameTests.DATA);
+        data.register(TargetedDataGameTests.BLOCKS_ONLY);
+        data.register(LenientDataGameTests.TUNING);
     }
 
     @Override

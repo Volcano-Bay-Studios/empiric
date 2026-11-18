@@ -53,12 +53,15 @@ public final class PartTraits {
     private PartTraits() {
     }
 
-    public static synchronized <T> TraitKey<T> register(ResourceLocation id, Class<T> type) {
-        if (KEYS.containsKey(id)) {
-            throw new IllegalArgumentException("Part trait " + id + " is already registered");
+    public static <T> TraitKey<T> register(ResourceLocation id, Class<T> type) {
+        return register(new TraitKey<>(id, type));
+    }
+
+    public static synchronized <T> TraitKey<T> register(TraitKey<T> key) {
+        if (KEYS.containsKey(key.id())) {
+            throw new IllegalArgumentException("Part trait " + key.id() + " is already registered");
         }
-        TraitKey<T> key = new TraitKey<>(id, type);
-        KEYS.put(id, key);
+        KEYS.put(key.id(), key);
         return key;
     }
 

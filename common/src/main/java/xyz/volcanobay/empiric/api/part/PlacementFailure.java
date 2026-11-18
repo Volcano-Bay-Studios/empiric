@@ -35,6 +35,13 @@ public final class PlacementFailure {
         return register(id, true);
     }
 
+    /**
+     * Registers a failure that shows no message, like {@link #NONE}.
+     */
+    public static PlacementFailure registerSilent(ResourceLocation id) {
+        return register(id, false);
+    }
+
     private static synchronized PlacementFailure register(ResourceLocation id, boolean shown) {
         if (FAILURES.containsKey(id)) {
             throw new IllegalArgumentException("Placement failure " + id + " is already registered");

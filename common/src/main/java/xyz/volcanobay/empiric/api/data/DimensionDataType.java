@@ -1,35 +1,30 @@
 package xyz.volcanobay.empiric.api.data;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import xyz.volcanobay.empiric.Empiric;
-import xyz.volcanobay.empiric.core.data.tree.DataNode;
-import xyz.volcanobay.empiric.core.entry.DataEntry;
 import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.core.entry.DataEntryType;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * Data entries that apply to dimensions. Each entry lists the dimension ids it covers under {@code "dimensions"}; when several entries claim a dimension the
- * one with the highest {@code "priority"} wins.
+ * Data entries that apply to dimensions. Each entry lists the dimension ids it covers under {@code "dimensions"}. When
+ * several entries claim a dimension the one with the highest {@code "priority"} wins.
+ *
+ * @deprecated a thin wrapper over a {@link GameDataType} with the dimensions target. It adds the overworld fallback.
  */
+@Deprecated
 public class DimensionDataType<T> {
 
     public static final String DIMENSIONS = "dimensions";
     public static final String PRIORITY = "priority";
 
-    private final DataEntryType<T> entries;
-    private volatile Map<ResourceLocation, T> byDimension = Map.of();
+    private final GameDataType<T> entries;
 
     public DimensionDataType(ResourceLocation id, Class<T> type, Supplier<T> defaults) {
-        this.entries = new DataEntryType<>(id.toString(), type, defaults, DIMENSIONS, PRIORITY);
-        this.entries.onReload(this::rebuild);
+        this.entries = GameDataType.builder(id, type, defaults).dimensions().build();
     }
 
     public DimensionDataType<T> register(DataEntrySystem data) {
@@ -53,9 +48,9 @@ public class DimensionDataType<T> {
     }
 
     public T get(ResourceLocation dimension) {
-        T value = byDimension.get(dimension);
+        T value = find(dimension);
         if (value == null) {
-            value = byDimension.get(Level.OVERWORLD.location());
+            value = find(Level.OVERWORLD.location());
         }
         return value == null ? entries.defaultValue() : value;
     }
@@ -64,27 +59,6 @@ public class DimensionDataType<T> {
      * The entry that lists this dimension, or null.
      */
     public T find(ResourceLocation dimension) {
-        return byDimension.get(dimension);
-    }
-
-    private void rebuild() {
-        List<DataEntry<T>> sorted = new ArrayList<>(entries.entries());
-        sorted.sort(Comparator.comparingInt(entry -> priority(entry.extras())));
-        Map<ResourceLocation, T> built = new HashMap<>();
-        for (DataEntry<T> entry : sorted) {
-            DataNode dimensions = entry.extras().get(DIMENSIONS);
-            if (dimensions == null) {
-                Empiric.LOGGER.warn("{} entry {} doesn't list any dimensions", entries.id(), entry.id());
-                continue;
-            }
-            for (DataNode dimension : dimensions.elementsOrSelf()) {
-                built.put(ResourceLocation.parse(dimension.asString()), entry.value());
-            }
-        }
-        byDimension = Map.copyOf(built);
-    }
-
-    private static int priority(DataNode extras) {
-        return extras.get(PRIORITY) == null ? 0 : extras.get(PRIORITY).asNumber().intValue();
+        return entries.find(DataTargets.DIMENSIONS, ResourceKey.create(Registries.DIMENSION, dimension));
     }
 }

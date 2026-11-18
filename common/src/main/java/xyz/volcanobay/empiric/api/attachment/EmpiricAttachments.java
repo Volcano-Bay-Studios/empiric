@@ -4,35 +4,46 @@ import xyz.volcanobay.empiric.api.network.NetworkAttachment;
 import xyz.volcanobay.empiric.core.attachment.ModuleAttachmentType;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
+import xyz.volcanobay.empiric.core.registry.Register;
 
 public final class EmpiricAttachments {
 
+    @Register
     public static final LevelAttachment.Type LEVEL = new LevelAttachment.Type();
-    public static final BlockAttachment.Type BLOCK = new BlockAttachment.Type();
-    public static final NetworkAttachment.Type NETWORK = new NetworkAttachment.Type();
-    public static final OctAttachment.Type OCT = new OctAttachment.Type();
+
+    @Register
     public static final ChunkAttachment.Type CHUNK = new ChunkAttachment.Type();
+
+    @Register
+    public static final BlockAttachment.Type BLOCK = new BlockAttachment.Type();
+
+    @Register
+    public static final OctAttachment.Type OCT = new OctAttachment.Type();
+
+    @Register
+    public static final NetworkAttachment.Type NETWORK = new NetworkAttachment.Type();
+
+    @Register
     public static final EntityAttachment.Type ENTITY = new EntityAttachment.Type();
+
+    @Register
     public static final BlockEntityAttachment.Type BLOCK_ENTITY = new BlockEntityAttachment.Type();
+
+    @Register
     public static final ItemStackAttachment.Type ITEM_STACK = new ItemStackAttachment.Type();
+
+    @Register
     public static final ServerAttachment.Type SERVER = new ServerAttachment.Type();
 
     private EmpiricAttachments() {
     }
 
-    public static ModuleAttachmentType module() {
-        return EmpiricCore.modules().moduleAttachments();
+    /** @deprecated registration is automatic, so this does nothing. */
+    @Deprecated
+    public static void register(ModuleSystem modules) {
     }
 
-    public static void register(ModuleSystem modules) {
-        modules.registerAttachment(LEVEL);
-        modules.registerAttachment(CHUNK);
-        modules.registerAttachment(BLOCK);
-        modules.registerAttachment(OCT);
-        modules.registerAttachment(NETWORK);
-        modules.registerAttachment(ENTITY);
-        modules.registerAttachment(BLOCK_ENTITY);
-        modules.registerAttachment(ITEM_STACK);
-        modules.registerAttachment(SERVER);
+    public static ModuleAttachmentType module() {
+        return EmpiricCore.modules().moduleAttachments();
     }
 }

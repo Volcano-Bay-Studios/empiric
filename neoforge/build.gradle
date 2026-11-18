@@ -64,6 +64,7 @@ dependencies {
     }
     jarJar(api(additionalRuntimeClasspath("xyz.volcanobay:empiric-core:${project.empiric_core_version}")) {
         exclude group: "it.unimi.dsi"
+        exclude group: "org.ow2.asm"
     })
 }
 

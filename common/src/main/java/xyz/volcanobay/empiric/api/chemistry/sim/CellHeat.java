@@ -1,6 +1,7 @@
 package xyz.volcanobay.empiric.api.chemistry.sim;
 
 import net.minecraft.world.level.Level;
+import xyz.volcanobay.empiric.api.temperature.TemperatureSection;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 
 /**
@@ -25,6 +26,20 @@ public final class CellHeat {
         int applied = (int) wanted;
         if (applied != 0) {
             TemperatureSystem.set(level, x, y, z, TemperatureSystem.get(level, x, y, z) + applied);
+        }
+        return wanted - applied;
+    }
+
+    /**
+     * Adds heat to a cell of a temperature section, which is quicker than the oct coordinate version when many cells share a section.
+     *
+     * @see #apply(Level, long, long, long, double, double, double)
+     */
+    public static double apply(TemperatureSection section, int index, double joules, double capacity, double carry) {
+        double wanted = joules / capacity * 10 + carry;
+        int applied = (int) wanted;
+        if (applied != 0) {
+            section.set(index, section.temperature(index) + applied);
         }
         return wanted - applied;
     }

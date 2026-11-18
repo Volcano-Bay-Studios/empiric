@@ -18,13 +18,21 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import xyz.volcanobay.empiric.api.registry.NoItem;
+import xyz.volcanobay.empiric.core.registry.Ref;
+import xyz.volcanobay.empiric.core.registry.Register;
 import xyz.volcanobay.empiric.registry.EmpiricBlocks;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Octant Block Complements are placed as oct "multiblocks"
  */
+@Register("oct_block_complement")
+@NoItem
 public class OctBlockComplement extends OctBlock {
+
+    public static final Ref<OctBlockComplement> REF = Ref.create();
+
     public OctBlockComplement(Properties ignored) {
         super(Properties.of().noOcclusion());
     }

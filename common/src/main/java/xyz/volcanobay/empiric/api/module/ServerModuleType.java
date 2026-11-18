@@ -6,6 +6,7 @@ import net.minecraft.world.level.Level;
 import xyz.volcanobay.empiric.api.attachment.EmpiricAttachments;
 import xyz.volcanobay.empiric.api.attachment.ServerAttachment;
 import xyz.volcanobay.empiric.core.module.Module;
+import xyz.volcanobay.empiric.core.module.ModuleId;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 import xyz.volcanobay.empiric.core.module.Side;
 
@@ -13,12 +14,16 @@ import java.util.function.Supplier;
 
 public class ServerModuleType<M extends Module<ServerAttachment>> extends ModuleType<M, ServerAttachment> {
 
-    protected ServerModuleType(Builder<M, ServerAttachment, ?> builder) {
+    protected ServerModuleType(ModuleType.Builder<M, ServerAttachment, ?> builder) {
         super(builder);
     }
 
-    public static <M extends Module<ServerAttachment>> Builder<M, ServerAttachment, ServerModuleType<M>> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
-        return ModuleType.builder(id::toString, moduleClass, EmpiricAttachments.SERVER, factory, ServerModuleType::new);
+    public static <M extends Module<ServerAttachment>> Builder<M> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(id::toString, moduleClass, factory);
+    }
+
+    public static <M extends Module<ServerAttachment>> Builder<M> builder(Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(null, moduleClass, factory);
     }
 
     public M get(MinecraftServer server) {
@@ -35,5 +40,12 @@ public class ServerModuleType<M extends Module<ServerAttachment>> extends Module
 
     public boolean detach(MinecraftServer server) {
         return detach(ServerAttachment.of(Side.SERVER));
+    }
+
+    public static final class Builder<M extends Module<ServerAttachment>> extends ModuleType.Builder<M, ServerAttachment, ServerModuleType<M>> {
+
+        private Builder(ModuleId id, Class<M> moduleClass, Supplier<M> factory) {
+            super(id, moduleClass, EmpiricAttachments.SERVER, factory, ServerModuleType::new);
+        }
     }
 }

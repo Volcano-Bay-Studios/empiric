@@ -4,11 +4,18 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientBlockEntityEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import xyz.volcanobay.empiric.client.ClientRendererProviders;
+import xyz.volcanobay.empiric.registry.EmpiricRegistration;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -29,8 +36,13 @@ public class EmpiricFabricClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         EmpiricClient.init();
+        EmpiricClient.bindRegistrations();
+        for (EmpiricRegistration.PendingRenderer renderer : EmpiricRegistration.renderers()) {
+            registerRenderer(renderer);
+        }
         MenuScreens.register(EmpiricMenus.UI.get(), UiMenuScreen::new);
 
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> EmpiricRegistration.requireResolved());
         ClientTickEvents.END_CLIENT_TICK.register(client -> EmpiricClient.clientTick());
         ClientBlockEntityEvents.BLOCK_ENTITY_LOAD.register((blockEntity, level) -> {
             if (blockEntity instanceof FullOctBlockEntity octBlockEntity) {
@@ -61,5 +73,14 @@ public class EmpiricFabricClient implements ClientModInitializer {
         ClientChunkEvents.CHUNK_UNLOAD.register((level, chunk) -> WorldModuleSystem.chunkUnloaded(chunk));
         ClientEntityEvents.ENTITY_LOAD.register((entity, level) -> WorldModuleSystem.entityLoaded(entity));
         ClientEntityEvents.ENTITY_UNLOAD.register((entity, level) -> WorldModuleSystem.entityUnloaded(entity));
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void registerRenderer(EmpiricRegistration.PendingRenderer renderer) {
+        if (renderer.entity()) {
+            EntityRendererRegistry.register((EntityType) renderer.type().get(), ClientRendererProviders.entity(renderer.rendererClass()));
+        } else {
+            BlockEntityRenderers.register((BlockEntityType) renderer.type().get(), ClientRendererProviders.blockEntity(renderer.rendererClass()));
+        }
     }
 }

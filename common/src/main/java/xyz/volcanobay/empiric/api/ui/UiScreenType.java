@@ -16,7 +16,7 @@ import java.util.function.Function;
  */
 public final class UiScreenType<M extends Module<?>> {
 
-    private final ResourceLocation id;
+    private ResourceLocation id;
     private final ModuleType<M, ?> moduleType;
     private final Function<M, ? extends Widget> factory;
     private boolean presence;
@@ -27,6 +27,13 @@ public final class UiScreenType<M extends Module<?>> {
         this.factory = factory;
     }
 
+    void assignId(ResourceLocation id) {
+        this.id = id;
+    }
+
+    /**
+     * The id this screen is registered under, or null while it is only defined.
+     */
     public ResourceLocation id() {
         return id;
     }

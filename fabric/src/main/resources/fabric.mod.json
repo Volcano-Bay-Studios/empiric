@@ -24,6 +24,7 @@
   "mixins": [
     "empiric.mixins.json",
     "empiric-common.mixins.json",
+    "empiric-guards.mixins.json",
     "empiric-sable.mixins.json"
   ],
   "depends": {

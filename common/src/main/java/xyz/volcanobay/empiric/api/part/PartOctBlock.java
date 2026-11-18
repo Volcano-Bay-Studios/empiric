@@ -24,17 +24,33 @@ import xyz.volcanobay.empiric.api.oct.OctBlock;
 import xyz.volcanobay.empiric.api.oct.OctBlockEntity;
 import xyz.volcanobay.empiric.api.oct.OctGetter;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
+import xyz.volcanobay.empiric.api.registry.BlockProps;
+import xyz.volcanobay.empiric.api.registry.NoItem;
 import xyz.volcanobay.empiric.client.ClientLookup;
+import xyz.volcanobay.empiric.core.registry.Ref;
+import xyz.volcanobay.empiric.core.registry.Register;
 
 import java.util.function.Predicate;
 
 /**
  * The octants pieces fill. Its sounds and strength are those of the pieces whose {@link PartType#cell} it is.
  */
+@Register("part")
+@NoItem
 public class PartOctBlock extends OctBlock {
+
+    public static final Ref<PartOctBlock> REF = Ref.create();
 
     public PartOctBlock(Properties properties) {
         super(properties);
+    }
+
+    @BlockProps
+    static Properties props() {
+        return Properties.of()
+                .noOcclusion()
+                .strength(0.3f)
+                .noLootTable();
     }
 
     @Override

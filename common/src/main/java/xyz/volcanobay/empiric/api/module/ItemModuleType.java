@@ -5,6 +5,7 @@ import net.minecraft.world.item.ItemStack;
 import xyz.volcanobay.empiric.api.attachment.EmpiricAttachments;
 import xyz.volcanobay.empiric.api.attachment.ItemStackAttachment;
 import xyz.volcanobay.empiric.core.module.Module;
+import xyz.volcanobay.empiric.core.module.ModuleId;
 import xyz.volcanobay.empiric.core.module.ModuleType;
 import xyz.volcanobay.empiric.system.ItemModuleSystem;
 
@@ -13,12 +14,16 @@ import java.util.function.Supplier;
 
 public class ItemModuleType<M extends Module<ItemStackAttachment>> extends ModuleType<M, ItemStackAttachment> {
 
-    protected ItemModuleType(Builder<M, ItemStackAttachment, ?> builder) {
+    protected ItemModuleType(ModuleType.Builder<M, ItemStackAttachment, ?> builder) {
         super(builder);
     }
 
-    public static <M extends Module<ItemStackAttachment>> Builder<M, ItemStackAttachment, ItemModuleType<M>> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
-        return ModuleType.builder(id::toString, moduleClass, EmpiricAttachments.ITEM_STACK, factory, ItemModuleType::new);
+    public static <M extends Module<ItemStackAttachment>> Builder<M> builder(ResourceLocation id, Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(id::toString, moduleClass, factory);
+    }
+
+    public static <M extends Module<ItemStackAttachment>> Builder<M> builder(Class<M> moduleClass, Supplier<M> factory) {
+        return new Builder<>(null, moduleClass, factory);
     }
 
     public M get(ItemStack stack) {
@@ -31,5 +36,12 @@ public class ItemModuleType<M extends Module<ItemStackAttachment>> extends Modul
 
     public boolean remove(ItemStack stack) {
         return ItemModuleSystem.remove(stack, this);
+    }
+
+    public static final class Builder<M extends Module<ItemStackAttachment>> extends ModuleType.Builder<M, ItemStackAttachment, ItemModuleType<M>> {
+
+        private Builder(ModuleId id, Class<M> moduleClass, Supplier<M> factory) {
+            super(id, moduleClass, EmpiricAttachments.ITEM_STACK, factory, ItemModuleType::new);
+        }
     }
 }

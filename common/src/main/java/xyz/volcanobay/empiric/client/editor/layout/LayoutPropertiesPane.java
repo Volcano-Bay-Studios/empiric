@@ -375,7 +375,7 @@ final class LayoutPropertiesPane extends ScrollPanel {
                 return;
             }
             List<ContextEntry> entries = new ArrayList<>();
-            for (FieldLayout field : module.type().spec().layout().fields()) {
+            for (FieldLayout field : module.spec().layout().fields()) {
                 if (field.sync()) {
                     String id = field.id();
                     entries.add(ContextEntry.of(id + " (" + field.type().getSimpleName() + ")",

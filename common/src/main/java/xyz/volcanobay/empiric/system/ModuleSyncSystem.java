@@ -146,7 +146,7 @@ public final class ModuleSyncSystem {
     }
 
     public static void flush() {
-        EmpiricCore.modules().flushDirty(Side.SERVER, (module, dirty) -> {
+        EmpiricCore.modules().flushDirty(Side.SERVER, module -> !isCoreEntity(module), (module, dirty) -> {
             markUnsaved(module);
             if (module instanceof NetworkBehavior network) {
                 if (TrackingSystem.isTracked(module) && TrackingSystem.flush(module, dirty)) {
@@ -163,7 +163,7 @@ public final class ModuleSyncSystem {
     }
 
     public static void flushClient() {
-        EmpiricCore.modules().flushDirty(Side.CLIENT, (module, dirty) -> {
+        EmpiricCore.modules().flushDirty(Side.CLIENT, module -> !isCoreEntity(module), (module, dirty) -> {
             if (module instanceof NetworkBehavior) {
                 PacketTarget.server().send(ModuleSyncC2SPacket.of(module, dirty));
             }
@@ -238,5 +238,9 @@ public final class ModuleSyncSystem {
                 syncTo(player, attachment);
             }
         }
+    }
+
+    private static boolean isCoreEntity(Module<?> module) {
+        return module.attachment() instanceof xyz.volcanobay.empiric.core.world.Entity;
     }
 }

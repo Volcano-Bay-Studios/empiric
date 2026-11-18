@@ -91,6 +91,11 @@ final class SableGameTests {
     }
 
     private static void subLevelSplit(GameTestHelper helper) {
+        // Waits for Sable to finish clearing plots that other tests freed this tick, since the new sub-level may reuse one.
+        helper.runAfterDelay(5, () -> splitSubLevel(helper));
+    }
+
+    private static void splitSubLevel(GameTestHelper helper) {
         ServerSubLevelContainer container = SubLevelContainer.getContainer(helper.getLevel());
         helper.assertTrue(container != null, "level has no sub-level container");
         ServerSubLevel subLevel = spawn(container, helper.absoluteVec(new Vec3(1.5, 4.5, 1.5)));

@@ -45,8 +45,16 @@ import xyz.volcanobay.empiric.api.oct.OctGetter;
 import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.networking.packet.OctBreakS2CPacket;
 import xyz.volcanobay.empiric.registry.EmpiricBlockEntities;
+import xyz.volcanobay.empiric.api.registry.NoItem;
+import xyz.volcanobay.empiric.core.registry.Ref;
+import xyz.volcanobay.empiric.core.registry.Register;
 
+@Register("oct_block")
+@NoItem
 public class FullOctBlock extends Block implements EntityBlock, LiquidBlockContainer {
+
+    public static final Ref<FullOctBlock> REF = Ref.create();
+
     public FullOctBlock(Properties ignored) {
         super(Properties.of().noOcclusion().dynamicShape());
     }

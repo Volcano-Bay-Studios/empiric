@@ -12,17 +12,17 @@ import xyz.volcanobay.empiric.api.part.PartOctBlock;
 import xyz.volcanobay.empiric.api.part.PartTooltip;
 import xyz.volcanobay.empiric.api.part.Piece;
 import xyz.volcanobay.empiric.api.part.Selection;
+import xyz.volcanobay.empiric.api.registry.ClientTooltipSource;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipBehavior;
 import xyz.volcanobay.empiric.api.ui.tooltip.TooltipSource;
 
 /**
  * The floating tooltip of the aimed-at piece, from its type's {@link PartTooltip} hooks.
  */
+@ClientTooltipSource
 public final class PartTooltips implements TooltipSource {
 
-    public static final PartTooltips INSTANCE = new PartTooltips();
-
-    private PartTooltips() {
+    public PartTooltips() {
     }
 
     @Override

@@ -61,6 +61,7 @@ public final class DataEntryLoader implements PreparableReloadListener {
         prepared.forEach((type, files) -> {
             Map<String, Exception> errors = type.load(files);
             errors.forEach((id, error) -> Empiric.LOGGER.error("Couldn't load {} entry {}: {}", type.id(), id, error.getMessage()));
+            type.problems().forEach((id, lines) -> lines.forEach(line -> Empiric.LOGGER.warn("Problem in {} entry {}, {}", type.id(), id, line)));
             Empiric.LOGGER.info("Loaded {} {} entries", type.entries().size(), type.id());
         });
         DataSyncSystem.broadcast();

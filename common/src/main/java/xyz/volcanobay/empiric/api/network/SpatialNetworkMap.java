@@ -312,18 +312,29 @@ public class SpatialNetworkMap<N extends NetworkModule> extends ManagedSpatialNe
         }
     }
 
+    /**
+     * Queues saved network data until its chunk is loaded. Data for an anchor that is already queued replaces it, so
+     * loading the same save twice doesn't duplicate it.
+     */
     public void load(Saved saved) {
         SpatialPos anchor = saved.anchor();
-        pending.computeIfAbsent(chunkKey(anchor.x(), anchor.z()), key -> new ArrayList<>()).add(saved);
+        queue(saved);
         if (loaded(anchor.x(), anchor.z())) {
             chunkLoaded(new ChunkPos((int) Math.floorDiv(anchor.x(), 32L), (int) Math.floorDiv(anchor.z(), 32L)));
         }
     }
 
+    private void queue(Saved saved) {
+        SpatialPos anchor = saved.anchor();
+        List<Saved> queued = pending.computeIfAbsent(chunkKey(anchor.x(), anchor.z()), key -> new ArrayList<>());
+        queued.removeIf(entry -> entry.anchor().equals(anchor));
+        queued.add(saved);
+    }
+
     private void restore(Saved saved) {
         SpatialPos anchor = saved.anchor();
         if (!type.isEnabled()) {
-            pending.computeIfAbsent(chunkKey(anchor.x(), anchor.z()), key -> new ArrayList<>()).add(saved);
+            queue(saved);
             return;
         }
         int id = getOrDiscover(anchor.x(), anchor.y(), anchor.z());

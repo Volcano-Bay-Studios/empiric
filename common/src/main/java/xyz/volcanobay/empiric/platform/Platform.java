@@ -8,6 +8,9 @@ import xyz.volcanobay.empiric.platform.veil.VeilClientHooks;
 import xyz.volcanobay.empiric.platform.veil.VeilPacketRegistrar;
 import xyz.volcanobay.empiric.platform.veil.VeilRegistrar;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * The loader services Empiric uses. Registries, packets, client render hooks and the environment. Everything here uses
  * Veil for now, and this class and {@code platform.veil} are the only places that know it. Moving off Veil
@@ -18,8 +21,15 @@ public final class Platform {
     private Platform() {
     }
 
+    private static final Map<String, Registrar<?>> REGISTRARS = new HashMap<>();
+
     public static <T> Registrar<T> registrar(ResourceKey<? extends Registry<T>> registry) {
-        return new VeilRegistrar<>(registry, Empiric.MODID);
+        return registrar(registry, Empiric.MODID);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static synchronized <T> Registrar<T> registrar(ResourceKey<? extends Registry<T>> registry, String namespace) {
+        return (Registrar<T>) REGISTRARS.computeIfAbsent(registry.location() + "@" + namespace, name -> new VeilRegistrar<>(registry, namespace));
     }
 
     public static PacketRegistrar packets(String version) {

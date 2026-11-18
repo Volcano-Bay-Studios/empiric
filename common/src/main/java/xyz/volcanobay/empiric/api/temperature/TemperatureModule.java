@@ -1,5 +1,6 @@
 package xyz.volcanobay.empiric.api.temperature;
 
+import java.lang.ref.WeakReference;
 import xyz.volcanobay.empiric.api.network.PacketTarget;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -37,6 +38,7 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
     public final Int2ObjectOpenHashMap<short[]> sections = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectOpenHashMap<byte[]> conductivity = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectOpenHashMap<long[]> active = new Int2ObjectOpenHashMap<>();
+    private final Int2ObjectOpenHashMap<Border> borders = new Int2ObjectOpenHashMap<>();
     private final IntOpenHashSet changed = new IntOpenHashSet();
     private int syncTimer;
 
@@ -88,6 +90,15 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
         }
     }
 
+    public short[] values(int section, boolean create) {
+        short[] values = sections.get(section);
+        if (values == null && create) {
+            values = new short[CELLS];
+            sections.put(section, values);
+        }
+        return values;
+    }
+
     public long[] active(int section) {
         long[] mask = active.get(section);
         if (mask == null) {
@@ -107,6 +118,13 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
 
     public void mark(int section, int index) {
         active(section)[index >> 6] |= 1L << index;
+    }
+
+    /**
+     * Whether the section changed since the server last sent it to players.
+     */
+    public boolean isChanged(int section) {
+        return changed.contains(section);
     }
 
     public void touch(int section) {
@@ -190,19 +208,84 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
 
     private void fillBlock(byte[] values, BlockPos pos, int x, int y, int z) {
         BlockState state = chunk().getBlockState(pos);
-        FullOctBlockEntity octs = null;
-        if (state.getBlock() instanceof FullOctBlock) {
-            BlockEntity blockEntity = chunk().getBlockEntity(pos);
-            if (blockEntity instanceof FullOctBlockEntity octBlockEntity) {
-                octs = octBlockEntity;
-            }
-        }
+        FullOctBlockEntity octs = octs(chunk(), pos, state);
         for (int octant = 0; octant < 8; octant++) {
-            BlockState octState = octs != null ? octs.getOctState(octant) : state;
             int ox = x * 2 + (octant & 1);
             int oy = y * 2 + ((octant >> 1) & 1);
             int oz = z * 2 + ((octant >> 2) & 1);
-            values[index(ox, oy, oz)] = TemperatureSystem.conductivityOf(octState);
+            values[index(ox, oy, oz)] = octConductivity(state, octs, octant);
+        }
+    }
+
+    private static FullOctBlockEntity octs(LevelChunk chunk, BlockPos pos, BlockState state) {
+        if (state.getBlock() instanceof FullOctBlock) {
+            BlockEntity blockEntity = chunk.getBlockEntity(pos);
+            if (blockEntity instanceof FullOctBlockEntity octBlockEntity) {
+                return octBlockEntity;
+            }
+        }
+        return null;
+    }
+
+    private static byte octConductivity(BlockState state, FullOctBlockEntity octs, int octant) {
+        return TemperatureSystem.conductivityOf(octs != null ? octs.getOctState(octant) : state);
+    }
+
+    /**
+     * The conductivity of the neighbouring chunk's cells that touch this chunk's section on a horizontal face (2 is +Z, 3 is -Z, 4 is +X, 5 is -X).
+     * X faces are indexed by {@code y * 32 + z} and Z faces by {@code x * 32 + y}, with the coordinates local to this section.
+     */
+    public byte[] border(int section, int face, LevelChunk neighbour) {
+        int key = section * 4 + face - 2;
+        Border border = borders.get(key);
+        if (border == null || border.chunk.get() != neighbour) {
+            border = new Border(neighbour, buildBorder(section, face, neighbour));
+            borders.put(key, border);
+        }
+        return border.values;
+    }
+
+    public void invalidateBorder(int section, int face) {
+        borders.remove(section * 4 + face - 2);
+    }
+
+    private byte[] buildBorder(int section, int face, LevelChunk neighbour) {
+        byte[] values = new byte[SIZE * SIZE];
+        int minY = (level().getMinSection() + section) * 16;
+        boolean alongX = face >= 4;
+        int fixed = alongX ? (face == 4 ? neighbour.getPos().getMinBlockX() : neighbour.getPos().getMaxBlockX()) : (face == 2 ? neighbour.getPos().getMinBlockZ() : neighbour.getPos().getMaxBlockZ());
+        int touching = face == 4 || face == 2 ? 0 : 1;
+        int base = alongX ? neighbour.getPos().getMinBlockZ() : neighbour.getPos().getMinBlockX();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int along = 0; along < 16; along++) {
+            for (int y = 0; y < 16; y++) {
+                if (alongX) {
+                    pos.set(fixed, minY + y, base + along);
+                } else {
+                    pos.set(base + along, minY + y, fixed);
+                }
+                BlockState state = neighbour.getBlockState(pos);
+                FullOctBlockEntity octs = octs(neighbour, pos, state);
+                for (int other = 0; other < 2; other++) {
+                    for (int oy = 0; oy < 2; oy++) {
+                        int octant = alongX ? touching | (oy << 1) | (other << 2) : other | (oy << 1) | (touching << 2);
+                        int cell = alongX ? (y * 2 + oy) * SIZE + along * 2 + other : (along * 2 + other) * SIZE + y * 2 + oy;
+                        values[cell] = octConductivity(state, octs, octant);
+                    }
+                }
+            }
+        }
+        return values;
+    }
+
+    private static final class Border {
+
+        final WeakReference<LevelChunk> chunk;
+        final byte[] values;
+
+        Border(LevelChunk chunk, byte[] values) {
+            this.chunk = new WeakReference<>(chunk);
+            this.values = values;
         }
     }
 
@@ -262,5 +345,6 @@ public class TemperatureModule extends Module<ChunkAttachment> implements Server
     protected void onUnload() {
         conductivity.clear();
         active.clear();
+        borders.clear();
     }
 }

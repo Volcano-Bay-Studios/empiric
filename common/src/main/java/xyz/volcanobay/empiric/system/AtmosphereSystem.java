@@ -18,14 +18,17 @@ import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
+import xyz.volcanobay.empiric.core.registry.Register;
 
 public final class AtmosphereSystem {
 
+    @Register
     public static final SpatialNetworkType<VolumeNetwork> VOLUME = new SpatialNetworkType<>(Empiric.id("volume"), VolumeNetwork.class, VolumeNetwork::new);
     /**
      * The air of each dimension, which also sets the dimension's ambient temperature.
      */
     public static final DimensionDataType<LevelAtmosphere> LEVEL_ATMOSPHERE = new DimensionDataType<>(Empiric.id("level_atmosphere"), LevelAtmosphere.class, LevelAtmosphere::new);
+    @Register
     public static final SpatialNetworkType<AtmosphereNetwork> ATMOSPHERE = new SpatialNetworkType<>(Empiric.id("atmosphere"), AtmosphereNetwork.class, AtmosphereNetwork::new) {
         @Override
         public boolean allowDefaultNetwork() {
@@ -42,11 +45,13 @@ public final class AtmosphereSystem {
             return octLevel.getBlockState(new OctPos(x, y, z)).isAir();
         }
     };
-    public static final EntityModuleType<BloodstreamModule> BLOODSTREAM = EntityModuleType.builder(Empiric.id("bloodstream"), BloodstreamModule.class, BloodstreamModule::new)
+    @Register(value = "bloodstream", after = {"empiric:volume", "empiric:atmosphere"})
+    public static final EntityModuleType<BloodstreamModule> BLOODSTREAM = EntityModuleType.builder(BloodstreamModule.class, BloodstreamModule::new)
             .autoAttach(attachment -> attachment.entity() instanceof LivingEntity)
             .requires(VOLUME.moduleType(), ATMOSPHERE.moduleType())
             .build();
-    public static final ItemModuleType<ItemVolumeModule> ITEM_VOLUME = ItemModuleType.builder(Empiric.id("item_volume"), ItemVolumeModule.class, ItemVolumeModule::new).build();
+    @Register("item_volume")
+    public static final ItemModuleType<ItemVolumeModule> ITEM_VOLUME = ItemModuleType.builder(ItemVolumeModule.class, ItemVolumeModule::new).build();
 
     private AtmosphereSystem() {
     }
@@ -59,11 +64,9 @@ public final class AtmosphereSystem {
         return LEVEL_ATMOSPHERE.get(level);
     }
 
+    /** @deprecated registration is automatic, so this does nothing. */
+    @Deprecated
     public static void register(ModuleSystem modules) {
-        SpatialNetworkSystem.register(modules, VOLUME);
-        SpatialNetworkSystem.register(modules, ATMOSPHERE);
-        modules.register(BLOODSTREAM);
-        modules.register(ITEM_VOLUME);
     }
 
     public static void subscribe(String modId) {

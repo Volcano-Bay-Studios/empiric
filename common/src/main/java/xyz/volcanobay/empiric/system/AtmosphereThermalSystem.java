@@ -1,10 +1,12 @@
 package xyz.volcanobay.empiric.system;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.world.level.Level;
 import xyz.volcanobay.empiric.api.atmosphere.Volume;
 import xyz.volcanobay.empiric.api.atmosphere.module.AtmosphereNetwork;
 import xyz.volcanobay.empiric.api.atmosphere.volume.AtmosphereVolume;
 import xyz.volcanobay.empiric.api.chemistry.sim.CellHeat;
+import xyz.volcanobay.empiric.api.temperature.TemperatureSection;
 import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
 
 import java.util.HashMap;
@@ -61,6 +63,7 @@ public final class AtmosphereThermalSystem {
         Level level = network.level();
         Set<SpatialPos> members = network.members();
         double before = volume.getTemperature();
+        Views views = new Views(level);
         Map<SpatialPos, double[]> cells = new HashMap<>();
         double conductance = 0;
         for (SpatialPos member : members) {
@@ -69,7 +72,8 @@ public final class AtmosphereThermalSystem {
                 if (members.contains(pos)) {
                     continue;
                 }
-                int conductivity = TemperatureSystem.conductivity(level, pos.x(), pos.y(), pos.z());
+                TemperatureSection section = views.at(pos.x(), pos.y(), pos.z());
+                int conductivity = section != null ? section.conductivity(TemperatureSection.indexOf(pos.x(), pos.y(), pos.z())) : TemperatureSystem.conductivity(level, pos.x(), pos.y(), pos.z());
                 if (conductivity <= 0) {
                     continue;
                 }
@@ -86,10 +90,12 @@ public final class AtmosphereThermalSystem {
         double heat = 0;
         for (Map.Entry<SpatialPos, double[]> entry : cells.entrySet()) {
             SpatialPos pos = entry.getKey();
-            int cell = TemperatureSystem.get(level, pos.x(), pos.y(), pos.z());
+            TemperatureSection section = views.at(pos.x(), pos.y(), pos.z());
+            int index = TemperatureSection.indexOf(pos.x(), pos.y(), pos.z());
+            int cell = section != null ? section.temperature(index) : TemperatureSystem.get(level, pos.x(), pos.y(), pos.z());
             double flow = scale * entry.getValue()[0] * (before - (cell / 10.0 + 273.15));
             heat += flow;
-            double left = CellHeat.apply(level, pos.x(), pos.y(), pos.z(), flow, CELL_HEAT_CAPACITY, carry.getOrDefault(pos, 0.0));
+            double left = section != null ? CellHeat.apply(section, index, flow, CELL_HEAT_CAPACITY, carry.getOrDefault(pos, 0.0)) : CellHeat.apply(level, pos.x(), pos.y(), pos.z(), flow, CELL_HEAT_CAPACITY, carry.getOrDefault(pos, 0.0));
             if (left != 0) {
                 carry.put(pos, left);
             } else {
@@ -102,5 +108,34 @@ public final class AtmosphereThermalSystem {
             return true;
         }
         return false;
+    }
+
+    private static final class Views {
+
+        private final Level level;
+        private final Long2ObjectOpenHashMap<TemperatureSection> sections = new Long2ObjectOpenHashMap<>();
+
+        Views(Level level) {
+            this.level = level;
+        }
+
+        TemperatureSection at(long x, long y, long z) {
+            int blockY = (int) Math.floorDiv(y, 2L);
+            if (blockY < level.getMinBuildHeight() || blockY >= level.getMaxBuildHeight()) {
+                return null;
+            }
+            int chunkX = (int) Math.floorDiv(x, 32L);
+            int chunkZ = (int) Math.floorDiv(z, 32L);
+            int sectionIndex = level.getSectionIndex(blockY);
+            long key = ((long) chunkX & 0x3FFFFFFL) << 38 | ((long) chunkZ & 0x3FFFFFFL) << 12 | sectionIndex;
+            TemperatureSection section = sections.get(key);
+            if (section == null) {
+                section = TemperatureSystem.section(level, chunkX, sectionIndex, chunkZ, false);
+                if (section != null) {
+                    sections.put(key, section);
+                }
+            }
+            return section;
+        }
     }
 }
