@@ -5,8 +5,7 @@ import xyz.volcanobay.empiric.api.temperature.TemperatureSection;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 
 /**
- * Heat going into the temperature system's cells. Cells only hold whole tenths of a degree, so the caller keeps the
- * fraction a cell couldn't take yet and hands it back next time, instead of it being rounded away.
+ * Heat going into the temperature system's cells. Cells keep their temperature exactly, so nothing is left over to carry.
  */
 public final class CellHeat {
 
@@ -14,20 +13,16 @@ public final class CellHeat {
     }
 
     /**
-     * Adds heat to the cell at oct coordinates.
+     * Adds heat to the cell at oct coordinates. The heat is added exactly, using the cell's own heat capacity.
      *
      * @param joules   Heat in J, negative to cool it
-     * @param capacity The cell's heat capacity in J/K
-     * @param carry    Tenths of a degree left over from the last call
-     * @return Tenths of a degree left over this time, to pass in next time
+     * @param capacity Ignored, kept so existing callers still compile
+     * @param carry    Ignored, kept so existing callers still compile
+     * @return Always 0
      */
     public static double apply(Level level, long x, long y, long z, double joules, double capacity, double carry) {
-        double wanted = joules / capacity * 10 + carry;
-        int applied = (int) wanted;
-        if (applied != 0) {
-            TemperatureSystem.set(level, x, y, z, TemperatureSystem.get(level, x, y, z) + applied);
-        }
-        return wanted - applied;
+        TemperatureSystem.addHeat(level, x, y, z, joules);
+        return 0;
     }
 
     /**
@@ -36,18 +31,14 @@ public final class CellHeat {
      * @see #apply(Level, long, long, long, double, double, double)
      */
     public static double apply(TemperatureSection section, int index, double joules, double capacity, double carry) {
-        double wanted = joules / capacity * 10 + carry;
-        int applied = (int) wanted;
-        if (applied != 0) {
-            section.set(index, section.temperature(index) + applied);
-        }
-        return wanted - applied;
+        section.addHeat(index, joules);
+        return 0;
     }
 
     /**
      * @return The cell's temperature in kelvin
      */
     public static double kelvin(Level level, long x, long y, long z) {
-        return TemperatureSystem.get(level, x, y, z) / 10.0 + 273.15;
+        return TemperatureSystem.kelvin(level, x, y, z);
     }
 }

@@ -1,5 +1,8 @@
 package xyz.volcanobay.empiric.gametest;
 
+import com.google.gson.JsonElement;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestGenerator;
@@ -7,105 +10,69 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestFunction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.DimensionTransition;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
-import xyz.volcanobay.empiric.platform.ModCompat;
+import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.EmpiricApi;
-import xyz.volcanobay.empiric.api.attachment.BlockAttachment;
-import xyz.volcanobay.empiric.api.attachment.ChunkAttachment;
-import xyz.volcanobay.empiric.api.attachment.OctAttachment;
-import xyz.volcanobay.empiric.system.AtmosphereSystem;
+import xyz.volcanobay.empiric.api.atmosphere.LevelAtmosphere;
 import xyz.volcanobay.empiric.api.atmosphere.Volume;
 import xyz.volcanobay.empiric.api.atmosphere.VolumeHelper;
 import xyz.volcanobay.empiric.api.atmosphere.module.AtmosphereNetwork;
 import xyz.volcanobay.empiric.api.atmosphere.volume.AtmosphereVolume;
 import xyz.volcanobay.empiric.api.atmosphere.volume.ItemVolume;
+import xyz.volcanobay.empiric.api.attachment.*;
 import xyz.volcanobay.empiric.api.chemistry.Chemical;
 import xyz.volcanobay.empiric.api.chemistry.ChemicalRegistry;
-import xyz.volcanobay.empiric.api.oct.OctBlockComplement;
-import xyz.volcanobay.empiric.api.oct.OctBlockEntityComplement;
-import xyz.volcanobay.empiric.system.TemperatureSystem;
-import xyz.volcanobay.empiric.client.ItemModuleCache;
-import xyz.volcanobay.empiric.core.data.tree.TreeDataBuffer;
-import xyz.volcanobay.empiric.data.JsonNodes;
-import com.google.gson.JsonElement;
-import xyz.volcanobay.empiric.api.oct.OctLevel;
-import xyz.volcanobay.empiric.api.oct.OctPos;
-import xyz.volcanobay.empiric.oct.FullOctBlockEntity;
-import xyz.volcanobay.empiric.registry.EmpiricBlocks;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
-import xyz.volcanobay.empiric.api.attachment.EmpiricAttachments;
-import xyz.volcanobay.empiric.api.attachment.LevelAttachment;
-import xyz.volcanobay.empiric.core.data.DataBuffer;
-import xyz.volcanobay.empiric.api.attachment.EntityAttachment;
-import xyz.volcanobay.empiric.api.attachment.ServerAttachment;
 import xyz.volcanobay.empiric.api.module.EntityModuleType;
 import xyz.volcanobay.empiric.api.module.SelfModule;
-import net.minecraft.world.level.block.entity.ChestBlockEntity;
-import xyz.volcanobay.empiric.core.EmpiricCore;
-import xyz.volcanobay.empiric.core.data.Track;
-import xyz.volcanobay.empiric.system.TrackingSystem;
-import xyz.volcanobay.empiric.core.data.DataContext;
-import xyz.volcanobay.empiric.core.data.Encoding;
-import xyz.volcanobay.empiric.core.data.FieldDelta;
-import xyz.volcanobay.empiric.core.data.Spec;
-import xyz.volcanobay.empiric.core.module.DirtyConsumer;
-import xyz.volcanobay.empiric.core.module.ModuleSystem;
-import xyz.volcanobay.empiric.core.module.Side;
-import xyz.volcanobay.empiric.data.EmpiricBuffers;
-import xyz.volcanobay.empiric.networking.packet.ModuleSyncS2CPacket;
-import xyz.volcanobay.empiric.registry.EmpiricDataComponents;
-import xyz.volcanobay.empiric.system.BlockModuleSystem;
-import xyz.volcanobay.empiric.system.SpatialModuleStore;
-import xyz.volcanobay.empiric.system.WorldModuleSystem;
-
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.commands.CommandSourceStack;
-import xyz.volcanobay.empiric.core.data.layout.Accessors;
-import xyz.volcanobay.empiric.system.DebugSubscriptionSystem;
-
-import net.minecraft.server.level.ServerPlayer;
-import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
-import xyz.volcanobay.empiric.api.atmosphere.LevelAtmosphere;
-import xyz.volcanobay.empiric.system.AtmosphereThermalSystem;
-import xyz.volcanobay.empiric.core.data.DataException;
-import xyz.volcanobay.empiric.core.data.tree.DataNode;
-import xyz.volcanobay.empiric.Empiric;
-import xyz.volcanobay.empiric.core.module.ModuleEvent;
-import xyz.volcanobay.empiric.core.module.ModuleEvents;
-import xyz.volcanobay.empiric.core.module.SyncedFields;
+import xyz.volcanobay.empiric.api.network.NetworkAttachment;
 import xyz.volcanobay.empiric.api.network.NetworkEvents;
-import xyz.volcanobay.empiric.system.ModuleSyncSystem;
+import xyz.volcanobay.empiric.api.network.SpatialNetworkMap;
+import xyz.volcanobay.empiric.api.oct.OctBlockComplement;
+import xyz.volcanobay.empiric.api.oct.OctBlockEntityComplement;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
+import xyz.volcanobay.empiric.api.oct.OctPos;
+import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
+import xyz.volcanobay.empiric.api.temperature.ThermalEnvironment;
+import xyz.volcanobay.empiric.client.ItemModuleCache;
+import xyz.volcanobay.empiric.core.EmpiricCore;
+import xyz.volcanobay.empiric.core.data.*;
+import xyz.volcanobay.empiric.core.data.layout.Accessors;
+import xyz.volcanobay.empiric.core.data.tree.DataNode;
+import xyz.volcanobay.empiric.core.data.tree.TreeDataBuffer;
+import xyz.volcanobay.empiric.core.module.*;
+import xyz.volcanobay.empiric.data.EmpiricBuffers;
+import xyz.volcanobay.empiric.data.JsonNodes;
 import xyz.volcanobay.empiric.networking.handler.EmpiricServerPacketHandler;
 import xyz.volcanobay.empiric.networking.packet.ModuleSyncC2SPacket;
-import xyz.volcanobay.empiric.system.DataSyncSystem;
-
-import net.minecraft.world.level.ChunkPos;
-import xyz.volcanobay.empiric.api.network.NetworkAttachment;
-import xyz.volcanobay.empiric.system.SpatialNetworkSystem;
+import xyz.volcanobay.empiric.networking.packet.ModuleSyncS2CPacket;
+import xyz.volcanobay.empiric.oct.FullOctBlockEntity;
+import xyz.volcanobay.empiric.platform.ModCompat;
+import xyz.volcanobay.empiric.registry.EmpiricBlocks;
+import xyz.volcanobay.empiric.registry.EmpiricDataComponents;
+import xyz.volcanobay.empiric.system.*;
 
 import java.lang.invoke.MethodHandles;
-import java.util.BitSet;
-import xyz.volcanobay.empiric.api.network.SpatialNetworkMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -448,6 +415,34 @@ public class EmpiricGameTests {
         helper.succeed();
     }
 
+    private static void insulate(ServerLevel level) {
+        double ambient = TemperatureSystem.ambientKelvin(level);
+        TemperatureSystem.setEnvironment(dimension -> new ThermalEnvironment(ambient, 0, ambient));
+        TemperatureSystem.setEmissivityScale(0);
+    }
+
+    private static void uninsulate() {
+        TemperatureSystem.setEnvironment(null);
+        TemperatureSystem.setEmissivityScale(1);
+        TemperatureSystem.setTimeScale(null);
+    }
+
+    private static void conduct(ServerLevel level, BlockPos near, int iterations, Runnable before) {
+        for (int i = 0; i < iterations; i++) {
+            before.run();
+            java.util.List<TemperatureModule> modules = new java.util.ArrayList<>();
+            for (int x = -1; x <= 1; x++) {
+                for (int z = -1; z <= 1; z++) {
+                    TemperatureModule module = TemperatureSystem.module(level, (near.getX() >> 4) + x, (near.getZ() >> 4) + z, false);
+                    if (module != null) {
+                        modules.add(module);
+                    }
+                }
+            }
+            TemperatureSystem.step(level, modules);
+        }
+    }
+
     private static void temperatureConduction(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         BlockPos hot = helper.absolutePos(new BlockPos(1, 1, 2));
@@ -459,13 +454,24 @@ public class EmpiricGameTests {
         int ambient = TemperatureSystem.ambient(level);
         TemperatureSystem.set(level, hot, ambient + 250);
         helper.assertTrue(TemperatureSystem.get(level, hot) == ambient + 250, "setting a block's temperature didn't stick");
-        helper.succeedWhen(() -> {
-            TemperatureSystem.set(level, hot, ambient + 250);
+        try {
+            insulate(level);
+            TemperatureSystem.setTimeScale(dimension -> 20000);
+            conduct(level, hot, 300, () -> TemperatureSystem.set(level, hot, ambient + 250));
             helper.assertTrue(TemperatureSystem.get(level, next) > ambient, "heat didn't conduct into the next stone block");
             helper.assertTrue(TemperatureSystem.get(level, new OctPos(oct, 0)) > ambient, "heat didn't reach the filled octant");
             helper.assertTrue(TemperatureSystem.get(level, new OctPos(oct, 7)) == ambient, "heat entered an empty octant");
             helper.assertTrue(TemperatureSystem.get(level, hot.above()) == ambient, "heat entered the air");
-        });
+            helper.succeed();
+        } finally {
+            uninsulate();
+            for (BlockPos pos : new BlockPos[]{hot, next}) {
+                TemperatureSystem.set(level, pos, ambient);
+            }
+            for (int octant = 0; octant < 8; octant++) {
+                TemperatureSystem.set(level, new OctPos(oct, octant), ambient);
+            }
+        }
     }
 
     private static void chemistryVolume(GameTestHelper helper) {
@@ -671,9 +677,14 @@ public class EmpiricGameTests {
         BlockPos wall = helper.absolutePos(new BlockPos(2, 2, 1));
         int ambient = TemperatureSystem.ambient(level);
         double start = room.getVolume().getTemperature();
-        for (int i = 0; i < 300; i++) {
-            TemperatureSystem.set(level, wall, ambient + 500);
-            AtmosphereThermalSystem.exchange(room);
+        TemperatureSystem.setTimeScale(dimension -> 1000);
+        try {
+            for (int i = 0; i < 300; i++) {
+                TemperatureSystem.set(level, wall, ambient + 500);
+                AtmosphereThermalSystem.exchange(room);
+            }
+        } finally {
+            TemperatureSystem.setTimeScale(null);
         }
         helper.assertTrue(room.getVolume().getTemperature() > start + 1, "a heated wall didn't warm the room, " + start + " K to " + room.getVolume().getTemperature() + " K");
         BlockPos opposite = helper.absolutePos(new BlockPos(2, 2, 3));
@@ -708,9 +719,9 @@ public class EmpiricGameTests {
     private static void blockData(GameTestHelper helper) {
         var data = TemperatureSystem.BLOCK_DATA;
         helper.assertTrue(!data.entries().entries().isEmpty(), "no temperature block data was loaded");
-        helper.assertTrue(data.get(Blocks.IRON_BLOCK).conductivity == 1.0, "iron should conduct fully");
-        helper.assertTrue(data.get(Blocks.STONE).conductivity == 0.5, "stone should come from the base stone tag");
-        helper.assertTrue(data.get(Blocks.WHITE_WOOL).conductivity == 0.02, "wool should insulate, got " + data.get(Blocks.WHITE_WOOL).conductivity);
+        helper.assertTrue(data.get(Blocks.IRON_BLOCK).conductivity == 80, "iron should conduct at 80 W/mK");
+        helper.assertTrue(data.get(Blocks.STONE).conductivity == 2.5, "stone should come from the base stone tag");
+        helper.assertTrue(data.get(Blocks.WHITE_WOOL).conductivity == 0.04, "wool should insulate, got " + data.get(Blocks.WHITE_WOOL).conductivity);
         helper.assertTrue(data.get(Blocks.SPONGE) == data.defaultValue(), "an unlisted block should use the default");
         helper.succeed();
     }
@@ -737,13 +748,28 @@ public class EmpiricGameTests {
         helper.setBlock(new BlockPos(2, 1, 2), Blocks.IRON_BLOCK);
         helper.setBlock(new BlockPos(3, 1, 2), Blocks.STONE);
         helper.setBlock(new BlockPos(1, 1, 2), Blocks.WHITE_WOOL);
-        helper.onEachTick(() -> TemperatureSystem.set(level, hot, TemperatureSystem.ambient(level) + 250));
-        helper.runAfterDelay(40, () -> {
-            int stone = TemperatureSystem.get(level, hot.east());
-            int wool = TemperatureSystem.get(level, hot.west());
-            helper.assertTrue(stone > wool, "stone (" + stone + ") should have taken more heat than wool (" + wool + ")");
+        int ambient = TemperatureSystem.ambient(level);
+        try {
+            insulate(level);
+            TemperatureSystem.setTimeScale(dimension -> 20000);
+            conduct(level, hot, 40, () -> TemperatureSystem.set(level, hot, ambient + 250));
+            double ambientKelvin = TemperatureSystem.ambientKelvin(level);
+            double stone = 0;
+            double wool = 0;
+            for (int octant = 0; octant < 8; octant++) {
+                OctPos east = new OctPos(hot.east(), octant);
+                OctPos west = new OctPos(hot.west(), octant);
+                stone += TemperatureSystem.heatCapacity(level, east.getLongX(), east.getLongY(), east.getLongZ()) * (TemperatureSystem.kelvin(level, east) - ambientKelvin);
+                wool += TemperatureSystem.heatCapacity(level, west.getLongX(), west.getLongY(), west.getLongZ()) * (TemperatureSystem.kelvin(level, west) - ambientKelvin);
+            }
+            helper.assertTrue(stone > wool && wool > 0, "stone (" + stone + " J) should have taken more heat than wool (" + wool + " J)");
             helper.succeed();
-        });
+        } finally {
+            uninsulate();
+            for (BlockPos pos : new BlockPos[]{hot, hot.east(), hot.west()}) {
+                TemperatureSystem.set(level, pos, ambient);
+            }
+        }
     }
 
     private static void generatedAccessors(GameTestHelper helper) {
@@ -785,11 +811,21 @@ public class EmpiricGameTests {
         }
         helper.assertTrue(TemperatureSystem.get(level, block) == ambient + 25, "the block average should be an eighth of one oct, got " + TemperatureSystem.get(level, block));
         OctLevel.get(level).setOctState(block.east(), 0, EmpiricTestBlocks.PLAIN_OCT.get().defaultBlockState());
-        helper.assertTrue(TemperatureSystem.conductivity(level, new OctPos(block.east(), 0).getLongX(), new OctPos(block.east(), 0).getLongY(), new OctPos(block.east(), 0).getLongZ()) > 0, "a filled oct should conduct");
-        helper.assertTrue(TemperatureSystem.conductivity(level, new OctPos(block.east(), 1).getLongX(), new OctPos(block.east(), 1).getLongY(), new OctPos(block.east(), 1).getLongZ()) < 0, "an empty oct in an oct block should count as air");
-        helper.succeedWhen(() -> {
+        helper.assertTrue(TemperatureSystem.material(level, new OctPos(block.east(), 0)) != null, "a filled oct should hold heat");
+        helper.assertTrue(TemperatureSystem.material(level, new OctPos(block.east(), 1)) == null, "an empty oct in an oct block should count as air");
+        try {
+            insulate(level);
+            TemperatureSystem.setTimeScale(dimension -> 20000);
+            conduct(level, block, 5, () -> {
+            });
             helper.assertTrue(TemperatureSystem.get(level, new OctPos(block, 1)) > ambient, "heat didn't spread to the neighbouring oct inside the block");
-        });
+            helper.succeed();
+        } finally {
+            uninsulate();
+            for (int octant = 0; octant < 8; octant++) {
+                TemperatureSystem.set(level, new OctPos(block, octant), ambient);
+            }
+        }
     }
 
     private static int command(GameTestHelper helper, String command) {
@@ -888,21 +924,23 @@ public class EmpiricGameTests {
     }
 
     private static void temperatureSectionSync(GameTestHelper helper) {
-        short[] values = new short[TemperatureModule.CELLS];
+        int[] values = new int[TemperatureModule.CELLS];
         java.util.Random random = new java.util.Random(7);
         for (int i = 0; i < values.length; i++) {
-            values[i] = (short) (TemperatureModule.MIN + random.nextInt(TemperatureModule.MAX - TemperatureModule.MIN + 1));
+            values[i] = TemperatureModule.MIN + random.nextInt(TemperatureModule.MAX - TemperatureModule.MIN + 1);
         }
         byte[] encoded = TemperatureModule.encode(values);
         helper.assertTrue(encoded.length < ModuleSyncS2CPacket.LIMIT, "a noisy section encoded to " + encoded.length + " bytes");
         helper.assertTrue(java.util.Arrays.equals(TemperatureModule.decode(encoded), values), "noisy section didn't round trip");
-        short[] sparse = new short[TemperatureModule.CELLS];
+        int[] sparse = new int[TemperatureModule.CELLS];
         sparse[100] = 42;
         sparse[101] = -42;
         sparse[102] = TemperatureModule.MAX;
         sparse[103] = TemperatureModule.MIN;
+        sparse[104] = 1_000_000;
+        sparse[105] = -1_000_000;
         byte[] small = TemperatureModule.encode(sparse);
-        helper.assertTrue(small.length < 32, "a sparse section should be tiny, got " + small.length + " bytes");
+        helper.assertTrue(small.length < 40, "a sparse section should be tiny, got " + small.length + " bytes");
         helper.assertTrue(java.util.Arrays.equals(TemperatureModule.decode(small), sparse), "sparse section didn't round trip");
         helper.succeed();
     }
@@ -1231,8 +1269,8 @@ public class EmpiricGameTests {
         for (var packet : packets) {
             DataSyncSystem.apply(packet);
         }
-        helper.assertTrue(TemperatureSystem.BLOCK_DATA.get(Blocks.IRON_BLOCK).conductivity == 1.0, "synced block data lost iron's conductivity");
-        helper.assertTrue(TemperatureSystem.BLOCK_DATA.get(Blocks.WHITE_WOOL).conductivity == 0.02, "synced block data lost the wool tag rule");
+        helper.assertTrue(TemperatureSystem.BLOCK_DATA.get(Blocks.IRON_BLOCK).conductivity == 80, "synced block data lost iron's conductivity");
+        helper.assertTrue(TemperatureSystem.BLOCK_DATA.get(Blocks.WHITE_WOOL).conductivity == 0.04, "synced block data lost the wool tag rule");
         helper.assertTrue(ChemicalRegistry.getAllChemicals().size() == chemicals && ChemicalRegistry.getChemical("empiric:oxygen") != null, "synced chemicals didn't match");
         helper.succeed();
     }
@@ -1328,7 +1366,7 @@ public class EmpiricGameTests {
         int index = TemperatureModule.index((int) Math.floorMod(oct.getLongX(), 32L), (int) Math.floorMod(oct.getLongY(), 32L), (int) Math.floorMod(oct.getLongZ(), 32L));
         helper.assertTrue((module.active(section)[index >> 6] & (1L << index)) != 0, "a heated oct wasn't marked active");
         TemperatureSystem.set(level, oct, ambient);
-        TemperatureSystem.propagate(module);
+        TemperatureSystem.step(level, java.util.List.of(module));
         helper.assertTrue(module.sections.get(section) == null || (module.active(section)[index >> 6] & (1L << index)) == 0, "a cold oct stayed active");
         helper.succeed();
     }

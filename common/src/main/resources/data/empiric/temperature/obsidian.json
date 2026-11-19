@@ -1,0 +1,10 @@
+{
+  "blocks": [
+    "minecraft:obsidian",
+    "minecraft:crying_obsidian"
+  ],
+  "conductivity": 1.4,
+  "density": 2400,
+  "specificHeat": 1000,
+  "emissivity": 0.9
+}

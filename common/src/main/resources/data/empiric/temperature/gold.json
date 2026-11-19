@@ -1,0 +1,9 @@
+{
+  "blocks": [
+    "minecraft:gold_block"
+  ],
+  "conductivity": 318,
+  "density": 19300,
+  "specificHeat": 129,
+  "emissivity": 0.03
+}

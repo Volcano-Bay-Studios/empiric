@@ -1,6 +1,5 @@
 package xyz.volcanobay.empiric.api.temperature;
 
-import net.minecraft.util.Mth;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 
 /**
@@ -9,25 +8,20 @@ import xyz.volcanobay.empiric.system.TemperatureSystem;
  * Reads and writes behave like the matching {@link TemperatureSystem} calls, without the lookups for each cell.
  * <p>
  * A section view is valid for the current tick only. Don't keep it, because the section can be removed or its chunk can
- * unload afterwards. Values are absolute temperatures in tenths of a degree Celsius unless a method says delta.
+ * unload afterwards. Values are absolute temperatures in tenths of a degree Celsius unless a method says delta or kelvin.
  */
 public final class TemperatureSection {
 
     private final TemperatureModule module;
     private final int sectionIndex;
-    private final int ambient;
-    private final int low;
-    private final int high;
-    private short[] values;
-    private byte[] conductivity;
-    private long[] active;
+    private final double restingKelvin;
+    private double[] values;
+    private byte[] materials;
 
     public TemperatureSection(TemperatureModule module, int sectionIndex) {
         this.module = module;
         this.sectionIndex = sectionIndex;
-        this.ambient = module.ambient();
-        this.low = Math.max(TemperatureModule.MIN - ambient, Short.MIN_VALUE);
-        this.high = Math.min(TemperatureModule.MAX - ambient, Short.MAX_VALUE);
+        this.restingKelvin = module.restingKelvin();
         this.values = module.values(sectionIndex, false);
     }
 
@@ -52,61 +46,79 @@ public final class TemperatureSection {
     }
 
     /**
-     * The cell's difference from the dimension's ambient temperature, 0 if the section holds no heat yet.
+     * The cell's temperature in K, which is the level's resting temperature if the section holds no heat yet.
      */
-    public short get(int index) {
+    public double kelvin(int index) {
         if (values == null) {
             values = module.values(sectionIndex, false);
             if (values == null) {
-                return 0;
+                return restingKelvin;
             }
         }
         return values[index];
     }
 
+    /**
+     * The cell's difference from the level's resting temperature in tenths of a degree, 0 if the section holds no heat yet.
+     */
+    public short get(int index) {
+        return TemperatureModule.delta(kelvin(index), restingKelvin);
+    }
+
     public short temperature(int index) {
-        return (short) (ambient + get(index));
+        return (short) TemperatureModule.tenths(kelvin(index));
     }
 
     public void set(int index, int temperature) {
-        setDelta(index, temperature - ambient);
+        setKelvin(index, temperature / 10.0 + TemperatureModule.ZERO_CELSIUS);
     }
 
     /**
-     * Sets the difference from ambient, clamped so the temperature stays between absolute zero and {@link TemperatureModule#MAX}.
-     * The section is marked changed and the cell active, as in {@link TemperatureModule#set}.
+     * Sets the difference from the resting temperature in tenths of a degree.
      */
     public void setDelta(int index, int delta) {
-        short clamped = (short) Mth.clamp(delta, low, high);
-        if (values == null) {
-            if (clamped == 0) {
-                return;
-            }
-            values = module.values(sectionIndex, true);
-        }
-        if (values[index] != clamped) {
-            values[index] = clamped;
-            module.touch(sectionIndex);
-            if (clamped != 0) {
-                if (active == null) {
-                    active = module.active(sectionIndex);
-                }
-                active[index >> 6] |= 1L << index;
-            }
-        }
+        setKelvin(index, restingKelvin + delta / 10.0);
     }
 
     public void add(int index, int delta) {
-        setDelta(index, get(index) + delta);
+        setKelvin(index, kelvin(index) + delta / 10.0);
     }
 
     /**
-     * The cell's conductivity from 0 to 100, or -1 for a cell that doesn't conduct and holds no heat.
+     * Sets the temperature of a cell in K, clamped between absolute zero and {@link TemperatureModule#MAX_KELVIN}.
+     * The section is marked changed and the cell and its neighbours are woken, as in {@link TemperatureModule#setKelvin}.
      */
-    public byte conductivity(int index) {
-        if (conductivity == null) {
-            conductivity = module.conductivity(sectionIndex);
+    public void setKelvin(int index, double kelvin) {
+        module.setKelvin(sectionIndex, index, kelvin);
+        values = module.values(sectionIndex, false);
+    }
+
+    /**
+     * Adds heat to a cell in J. A cell that holds no heat, like air, ignores it.
+     */
+    public void addHeat(int index, double joules) {
+        module.addHeat(sectionIndex, index, joules);
+        values = module.values(sectionIndex, false);
+    }
+
+    /**
+     * The cell's material, or null if it holds no heat.
+     */
+    public ThermalMaterial material(int index) {
+        return ThermalMaterials.table().materials[materialIndex(index)];
+    }
+
+    /**
+     * The cell's heat capacity in J/K, 0 for a cell that holds no heat.
+     */
+    public double heatCapacity(int index) {
+        return ThermalMaterials.table().capacity[materialIndex(index)];
+    }
+
+    private int materialIndex(int index) {
+        if (materials == null) {
+            materials = module.materials(sectionIndex);
         }
-        return conductivity[index];
+        return materials[index] & 0xFF;
     }
 }

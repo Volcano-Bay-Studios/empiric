@@ -1,33 +1,35 @@
 package xyz.volcanobay.empiric.system;
 
 import com.google.common.annotations.VisibleForTesting;
-import xyz.volcanobay.empiric.api.module.ChunkModuleType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.EmpiricApi;
-import xyz.volcanobay.empiric.api.data.BlockDataType;
-import xyz.volcanobay.empiric.api.temperature.TemperatureBlockData;
-import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.api.attachment.ChunkAttachment;
+import xyz.volcanobay.empiric.api.data.BlockDataType;
+import xyz.volcanobay.empiric.api.module.ChunkModuleType;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctPos;
-import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
-import xyz.volcanobay.empiric.api.temperature.TemperatureSection;
+import xyz.volcanobay.empiric.api.temperature.*;
+import xyz.volcanobay.empiric.core.entry.DataEntrySystem;
 import xyz.volcanobay.empiric.core.module.ModuleEvent;
 import xyz.volcanobay.empiric.core.module.ModuleSystem;
 import xyz.volcanobay.empiric.core.registry.Register;
-import xyz.volcanobay.empiric.api.oct.OctLevel;
-import org.joml.Vector3i;
-import org.joml.Vector3ic;
 
+import java.util.*;
+import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 
+/**
+ * Heat in the blocks of a level, kept per oct in kelvin and moved by a conduction, convection and radiation solver in SI units.
+ * Every oct is a cube of 0.5 m. Heat flows between touching octs that hold heat, and out of the faces that touch air or the edge of the world.
+ * Each server tick moves the heat by {@code 0.05 s * timeScale} of physical time, in as many smaller steps as the solver needs to stay stable.
+ */
 public final class TemperatureSystem {
 
     @Register("temperature")
@@ -40,12 +42,27 @@ public final class TemperatureSystem {
 
     public static final BlockDataType<TemperatureBlockData> BLOCK_DATA = new BlockDataType<>(Empiric.id("temperature"), TemperatureBlockData.class, TemperatureBlockData::new);
 
-    private static final Vector3ic[] FACES = {new Vector3i(0, 1, 0), new Vector3i(0, -1, 0), new Vector3i(0, 0, 1), new Vector3i(0, 0, -1), new Vector3i(1, 0, 0), new Vector3i(-1, 0, 0)};
-    private static final RandomSource RANDOM = RandomSource.create();
+    /**
+     * Cells whose neighbours are within this many kelvin of them, and that have nothing else to do, stop being looked at until something changes.
+     */
+    public static final double SETTLE = 0.01;
+    /**
+     * The emissivity that {@link #restingKelvin(Level)} is worked out for. Sections that hold no heat, new sections and the synced and saved deltas
+     * all use that one level value, which keeps lookups cheap. Cells of materials with another emissivity settle to their own resting temperature
+     * ({@link #resting(Level)}) once the solver looks at them, which only differs from the level value when the sink and ambient temperatures differ and there is convection.
+     */
+    public static final double REST_EMISSIVITY = 0.9;
+    private static final double DEFAULT_CONVECTION = 10;
+
+    private static final Map<Level, Set<TemperatureModule>> MODULES = new WeakHashMap<>();
     private static boolean counting;
     private static long crossExchanges;
     private static ToIntFunction<Level> ambient = level -> AtmosphereSystem.levelAtmosphere(level).ambient();
-    private static ToDoubleFunction<Level> dimensionCooling = level -> level.dimension() == Level.END ? 0.002 : 0.05;
+    private static Function<Level, ThermalEnvironment> environment;
+    private static ToDoubleFunction<Level> timeScale;
+    private static double settle = SETTLE;
+    private static double emissivityScale = 1;
+    private static volatile Resting restingCache;
 
     private TemperatureSystem() {
     }
@@ -62,16 +79,15 @@ public final class TemperatureSystem {
         return crossExchanges;
     }
 
-    public static ToDoubleFunction<Level> getCooling() {
-        return dimensionCooling;
+    static void countCrossExchange() {
+        if (counting) {
+            crossExchanges++;
+        }
     }
 
-    @VisibleForTesting
-    public static void reseed(long seed) {
-        RANDOM.setSeed(seed);
-    }
-
-    /** @deprecated registration is automatic, so this does nothing. */
+    /**
+     * @deprecated registration is automatic, so this does nothing.
+     */
     @Deprecated
     public static void register(ModuleSystem modules) {
     }
@@ -85,34 +101,219 @@ public final class TemperatureSystem {
     }
 
     /**
-     * Overrides the resting temperature of a dimension in tenths of a degree Celsius (240 is 24 C), which otherwise comes from its level atmosphere entry. Cells drift back to it and everything else is stored relative to it.
-     * Must give the same answer on the server and the client.
+     * Overrides the resting temperature of a dimension in tenths of a degree Celsius (240 is 24 C), which otherwise comes from its level atmosphere entry. Cells that touch air drift back to it.
+     * Must give the same answer on the server and the client. It has no effect on a level that has its own {@link #setEnvironment environment}.
      */
     public static void setAmbient(ToIntFunction<Level> temperature) {
         ambient = temperature;
     }
 
+    /**
+     * The ambient temperature of the level in tenths of a degree Celsius.
+     */
     public static int ambient(Level level) {
+        if (environment != null) {
+            return Mth.clamp((int) Math.round((environment.apply(level).ambientKelvin() - TemperatureModule.ZERO_CELSIUS) * 10), TemperatureModule.MIN, TemperatureModule.MAX);
+        }
         return Mth.clamp(ambient.applyAsInt(level), TemperatureModule.MIN, TemperatureModule.MAX);
     }
 
-    public static void setCooling(ToDoubleFunction<Level> chance) {
-        dimensionCooling = chance;
+    /**
+     * The ambient temperature of the level in K, the temperature of its air.
+     */
+    public static double ambientKelvin(Level level) {
+        if (environment != null) {
+            return environment.apply(level).ambientKelvin();
+        }
+        return Mth.clamp(ambient.applyAsInt(level), TemperatureModule.MIN, TemperatureModule.MAX) / 10.0 + TemperatureModule.ZERO_CELSIUS;
+    }
+
+    /**
+     * What the outside of the level does to block surfaces. Unless it is replaced with {@link #setEnvironment}, this is the ambient temperature
+     * with still air (10 W/(m2 K)) and a radiation sink at ambient.
+     */
+    public static ThermalEnvironment environment(Level level) {
+        if (environment != null) {
+            return environment.apply(level);
+        }
+        double kelvin = ambientKelvin(level);
+        return new ThermalEnvironment(kelvin, DEFAULT_CONVECTION, kelvin);
+    }
+
+    /**
+     * Replaces how a level's surroundings behave, for example a vacuum with {@code new ThermalEnvironment(ambient, 0, 3)}.
+     * Must give the same answer on the server and the client. Pass null to go back to the default.
+     */
+    public static void setEnvironment(Function<Level, ThermalEnvironment> function) {
+        environment = function;
+    }
+
+    /**
+     * How many seconds of physical time pass each second of real time in the level. By default it comes from the config file, {@link TemperatureConfig},
+     * as the level's dimension value or else the default value. Code can replace it with {@link #setTimeScale}, which wins over the config.
+     */
+    public static double timeScale(Level level) {
+        double scale = timeScale != null ? timeScale.applyAsDouble(level) : TemperatureConfig.timeScale(level.dimension().location());
+        return scale > 0 ? scale : 0;
+    }
+
+    /**
+     * Replaces the time scale of every level with the function's value. Pass null to go back to the config file.
+     */
+    public static void setTimeScale(ToDoubleFunction<Level> scale) {
+        timeScale = scale;
+    }
+
+    public static boolean isTimeScaleOverridden() {
+        return timeScale != null;
+    }
+
+    /**
+     * The temperature that cells without heat sit at, where a surface of emissivity {@link #REST_EMISSIVITY} balances convection and radiation in the level's
+     * {@link #environment}. It is the ambient temperature when the sink equals ambient, and the sink temperature in a vacuum.
+     */
+    public static double restingKelvin(Level level) {
+        return resting(level)[0];
+    }
+
+    /**
+     * The resting temperature of every material of the {@link ThermalMaterials} table, in K, at the material's index. Index 0, for air, is {@link #restingKelvin}.
+     * The array is shared and must not be changed.
+     */
+    public static double[] resting(Level level) {
+        ThermalEnvironment current = environment(level);
+        Resting cached = restingCache;
+        int generation = ThermalMaterials.generation();
+        if (cached != null && cached.generation == generation && cached.scale == emissivityScale && cached.environment.equals(current)) {
+            return cached.values;
+        }
+        ThermalMaterials.Table table = ThermalMaterials.table();
+        double[] values = new double[table.count];
+        values[0] = current.restingKelvin(REST_EMISSIVITY * emissivityScale);
+        for (int material = 1; material < table.count; material++) {
+            values[material] = current.restingKelvin(table.emissivity[material] * emissivityScale);
+        }
+        restingCache = new Resting(current, emissivityScale, table.generation, values);
+        return values;
+    }
+
+    private record Resting(ThermalEnvironment environment, double scale, int generation, double[] values) {
+    }
+
+    public static double settleThreshold() {
+        return settle;
+    }
+
+    @VisibleForTesting
+    public static void setSettleThreshold(double kelvin) {
+        settle = kelvin;
+    }
+
+    /**
+     * Whether faces that touch the air of a sealed room are left out of the open air surface loss, true by default. Off only for tests that compare the two.
+     */
+    @VisibleForTesting
+    public static void setRoomAirExclusion(boolean enabled) {
+        RoomAir.setEnabled(enabled);
+    }
+
+    public static double emissivityScale() {
+        return emissivityScale;
+    }
+
+    /**
+     * Multiplies the emissivity of every material, so 0 turns radiation off. Meant for tests that check conduction or convection on their own.
+     */
+    @VisibleForTesting
+    public static void setEmissivityScale(double scale) {
+        emissivityScale = scale;
     }
 
     public static void registerData(DataEntrySystem data) {
         BLOCK_DATA.register(data);
+        BLOCK_DATA.entries().onReload(ThermalMaterials::rebuild);
     }
 
-    public static byte conductivityOf(BlockState state) {
-        if (state.isAir()) {
-            return -1;
+    public static void register(TemperatureModule module) {
+        if (module.level() instanceof ServerLevel level) {
+            MODULES.computeIfAbsent(level, key -> new LinkedHashSet<>()).add(module);
         }
-        double conductivity = BLOCK_DATA.get(state).conductivity;
-        return (byte) Math.round(Math.max(0, Math.min(1, conductivity)) * 100);
+    }
+
+    public static void unregister(TemperatureModule module) {
+        Set<TemperatureModule> modules = MODULES.get(module.level());
+        if (modules != null) {
+            modules.remove(module);
+        }
+    }
+
+    /**
+     * Moves the heat of every loaded temperature module of the level by one server tick.
+     */
+    public static void tick(ServerLevel level) {
+        Set<TemperatureModule> modules = MODULES.get(level);
+        if (modules == null || modules.isEmpty()) {
+            return;
+        }
+        ThermalSolver.step(level, new ArrayList<>(modules));
+    }
+
+    /**
+     * Moves the heat of the given modules by one server tick, in as many substeps as it takes to stay stable.
+     */
+    @VisibleForTesting
+    public static void step(ServerLevel level, Collection<TemperatureModule> modules) {
+        ThermalSolver.step(level, modules);
+    }
+
+    /**
+     * How many substeps the last {@link #step} used.
+     */
+    @VisibleForTesting
+    public static int lastSubsteps() {
+        return ThermalSolver.lastSubsteps();
+    }
+
+    /**
+     * Sets how many threads the solver's compute phase uses, 1 for none. The default comes from the {@code empiric.temperature.threads} system property.
+     */
+    @VisibleForTesting
+    public static void setThreads(int threads) {
+        ThermalSolver.threads(threads);
+    }
+
+    @VisibleForTesting
+    public static int threads() {
+        return ThermalSolver.threads();
+    }
+
+    /**
+     * The time the solver has spent in each phase since the server started, in nanoseconds.
+     */
+    @VisibleForTesting
+    public static long prepareNanos() {
+        return ThermalSolver.prepareNanos();
+    }
+
+    @VisibleForTesting
+    public static long computeNanos() {
+        return ThermalSolver.computeNanos();
+    }
+
+    @VisibleForTesting
+    public static long commitNanos() {
+        return ThermalSolver.commitNanos();
+    }
+
+    /**
+     * Throws in development when called from the solver's compute phase, which must not touch modules, levels or user code.
+     */
+    public static void guardCompute(String what) {
+        ThermalSolver.guard(what);
     }
 
     public static TemperatureModule module(Level level, int chunkX, int chunkZ, boolean create) {
+        guardCompute("TemperatureSystem.module");
         LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
         if (chunk == null) {
             return null;
@@ -152,45 +353,107 @@ public final class TemperatureSystem {
         return TemperatureModule.index((int) Math.floorMod(x, 32L), (int) Math.floorMod(y, 32L), (int) Math.floorMod(z, 32L));
     }
 
-    public static short get(Level level, long x, long y, long z) {
-        return (short) (ambient(level) + delta(level, x, y, z));
+    /**
+     * The temperature of an oct in K, exactly. Octs without heat are at the {@link #restingKelvin resting temperature}.
+     */
+    public static double kelvin(Level level, long x, long y, long z) {
+        if (!inBuildHeight(level, y)) {
+            return restingKelvin(level);
+        }
+        TemperatureModule module = module(level, (int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L), false);
+        return module == null ? restingKelvin(level) : module.kelvin(section(level, y), index(x, y, z));
     }
 
-    public static void set(Level level, long x, long y, long z, int value) {
-        setDelta(level, x, y, z, value - ambient(level));
+    public static double kelvin(Level level, OctPos pos) {
+        return kelvin(level, pos.getLongX(), pos.getLongY(), pos.getLongZ());
     }
 
-    private static short delta(Level level, long x, long y, long z) {
+    /**
+     * Sets the temperature of an oct in K, between absolute zero and 100000 K. The cell and its neighbours are woken so the heat starts moving.
+     */
+    public static void setKelvin(Level level, long x, long y, long z, double kelvin) {
+        if (!inBuildHeight(level, y)) {
+            return;
+        }
+        TemperatureModule module = module(level, (int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L), kelvin != restingKelvin(level));
+        if (module != null) {
+            module.setKelvin(section(level, y), index(x, y, z), kelvin);
+        }
+    }
+
+    public static void setKelvin(Level level, OctPos pos, double kelvin) {
+        setKelvin(level, pos.getLongX(), pos.getLongY(), pos.getLongZ(), kelvin);
+    }
+
+    public static void setKelvin(Level level, BlockPos pos, double kelvin) {
+        for (int octant = 0; octant < 8; octant++) {
+            setKelvin(level, new OctPos(pos, octant), kelvin);
+        }
+    }
+
+    /**
+     * Adds heat to an oct in J, negative to remove it. The temperature changes by the heat over the oct's capacity, with no rounding.
+     * Octs that hold no heat, like air, ignore it.
+     */
+    public static void addHeat(Level level, long x, long y, long z, double joules) {
+        if (joules == 0 || !inBuildHeight(level, y)) {
+            return;
+        }
+        TemperatureModule module = module(level, (int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L), true);
+        if (module != null) {
+            module.addHeat(section(level, y), index(x, y, z), joules);
+        }
+    }
+
+    public static void addHeat(Level level, OctPos pos, double joules) {
+        addHeat(level, pos.getLongX(), pos.getLongY(), pos.getLongZ(), joules);
+    }
+
+    private static int materialIndex(Level level, long x, long y, long z) {
         if (!inBuildHeight(level, y)) {
             return 0;
         }
         TemperatureModule module = module(level, (int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L), false);
-        return module == null ? 0 : module.get(section(level, y), index(x, y, z));
-    }
-
-    private static void setDelta(Level level, long x, long y, long z, int value) {
-        if (!inBuildHeight(level, y)) {
-            return;
-        }
-        TemperatureModule module = module(level, (int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L), value != 0);
         if (module != null) {
-            module.set(section(level, y), index(x, y, z), value);
-        }
-    }
-
-    public static byte conductivity(Level level, long x, long y, long z) {
-        if (!inBuildHeight(level, y)) {
-            return -1;
-        }
-        TemperatureModule module = module(level, (int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L), false);
-        if (module != null) {
-            return module.conductivity(section(level, y))[index(x, y, z)];
+            return module.materials(section(level, y))[index(x, y, z)] & 0xFF;
         }
         LevelChunk chunk = level.getChunkSource().getChunkNow((int) Math.floorDiv(x, 32L), (int) Math.floorDiv(z, 32L));
         if (chunk == null) {
-            return -1;
+            return 0;
         }
-        return conductivityOf(OctLevel.get(level).getBlockState(new OctPos(x, y, z)));
+        return ThermalMaterials.indexOf(OctLevel.get(level).getBlockState(new OctPos(x, y, z)));
+    }
+
+    /**
+     * The heat capacity of an oct in J/K, 0 for air and anything else that holds no heat.
+     */
+    public static double heatCapacity(Level level, long x, long y, long z) {
+        return ThermalMaterials.table().capacity[materialIndex(level, x, y, z)];
+    }
+
+    /**
+     * What an oct is made of, or null if it holds no heat or its chunk isn't loaded.
+     */
+    public static ThermalMaterial material(Level level, long x, long y, long z) {
+        return ThermalMaterials.table().materials[materialIndex(level, x, y, z)];
+    }
+
+    public static ThermalMaterial material(Level level, OctPos pos) {
+        return material(level, pos.getLongX(), pos.getLongY(), pos.getLongZ());
+    }
+
+    /**
+     * The temperature of an oct in tenths of a degree Celsius, rounded from kelvin.
+     */
+    public static short get(Level level, long x, long y, long z) {
+        return (short) TemperatureModule.tenths(kelvin(level, x, y, z));
+    }
+
+    /**
+     * Sets the temperature of an oct in tenths of a degree Celsius.
+     */
+    public static void set(Level level, long x, long y, long z, int value) {
+        setKelvin(level, x, y, z, value / 10.0 + TemperatureModule.ZERO_CELSIUS);
     }
 
     public static short get(Level level, OctPos pos) {
@@ -202,15 +465,18 @@ public final class TemperatureSystem {
     }
 
     public static void add(Level level, OctPos pos, int value) {
-        set(level, pos, get(level, pos) + value);
+        setKelvin(level, pos, kelvin(level, pos) + value / 10.0);
     }
 
+    /**
+     * The average temperature of the block's eight octs in tenths of a degree Celsius.
+     */
     public static short get(Level level, BlockPos pos) {
-        int total = 0;
+        double total = 0;
         for (int octant = 0; octant < 8; octant++) {
-            total += get(level, new OctPos(pos, octant));
+            total += kelvin(level, new OctPos(pos, octant));
         }
-        return (short) (total / 8);
+        return (short) TemperatureModule.tenths(total / 8);
     }
 
     public static void set(Level level, BlockPos pos, int value) {
@@ -250,215 +516,7 @@ public final class TemperatureSystem {
         TemperatureModule module = module(level, chunkX, chunkZ, false);
         if (module != null) {
             module.invalidateBorder(level.getSectionIndex(pos.getY()), face);
+            module.wakeBorder(pos, face);
         }
-    }
-
-    public static void propagate(TemperatureModule module) {
-        Level level = module.level();
-        double chance = dimensionCooling.applyAsDouble(level);
-        int chunkX = module.chunk().getPos().x;
-        int chunkZ = module.chunk().getPos().z;
-        long baseX = chunkX * 32L;
-        long baseZ = chunkZ * 32L;
-        int ambient = ambient(level);
-        int low = Math.max(TemperatureModule.MIN - ambient, Short.MIN_VALUE);
-        int high = Math.min(TemperatureModule.MAX - ambient, Short.MAX_VALUE);
-        int sectionCount = level.getSectionsCount();
-        Neighbour[] slots = new Neighbour[6];
-        for (int f = 0; f < 6; f++) {
-            slots[f] = new Neighbour();
-        }
-        for (int section : module.sections.keySet().toIntArray()) {
-            short[] values = module.sections.get(section);
-            if (values == null) {
-                continue;
-            }
-            byte[] conductivity = module.conductivity(section);
-            long[] active = module.active(section);
-            long baseY = (long) (level.getMinSection() + section) * 32L;
-            for (Neighbour slot : slots) {
-                slot.reset();
-            }
-            boolean any = false;
-            boolean changed = false;
-            for (int word = 0; word < active.length; word++) {
-                long bits = active[word];
-                while (bits != 0) {
-                    int bit = Long.numberOfTrailingZeros(bits);
-                    bits &= bits - 1;
-                    int i = (word << 6) | bit;
-                    if (values[i] == 0) {
-                        active[word] &= ~(1L << bit);
-                        continue;
-                    }
-                    any = true;
-                    if (RANDOM.nextDouble() < chance) {
-                        values[i] += values[i] > 0 ? -1 : 1;
-                        changed = true;
-                    }
-                    if (values[i] == 0) {
-                        active[word] &= ~(1L << bit);
-                        continue;
-                    }
-                    int own = conductivity[i];
-                    if (own <= 0) {
-                        continue;
-                    }
-                    int lx = (i >> 10) & 31;
-                    int ly = (i >> 5) & 31;
-                    int lz = i & 31;
-                    int face = RANDOM.nextInt(6);
-                    for (int f = face; f < 6; f++) {
-                        int nx = lx + FACES[f].x();
-                        int ny = ly + FACES[f].y();
-                        int nz = lz + FACES[f].z();
-                        if (nx >= 0 && nx < 32 && ny >= 0 && ny < 32 && nz >= 0 && nz < 32) {
-                            int neighbour = TemperatureModule.index(nx, ny, nz);
-                            int other = conductivity[neighbour];
-                            if (other > 0) {
-                                int kept = share(values[i], values[neighbour], Math.min(own, other) / 100f);
-                                values[neighbour] = (short) (values[i] + values[neighbour] - kept);
-                                values[i] = (short) kept;
-                                if (values[neighbour] != 0) {
-                                    active[neighbour >> 6] |= 1L << neighbour;
-                                }
-                                changed = true;
-                            }
-                            continue;
-                        }
-                        Neighbour slot = slots[f];
-                        if (!slot.resolved) {
-                            slot.resolve(level, module, f, section, sectionCount, chunkX, chunkZ);
-                        }
-                        if (slot.blocked) {
-                            continue;
-                        }
-                        if (slot.module == null) {
-                            int plane = f >= 4 ? ny * 32 + nz : nx * 32 + ny;
-                            int other = slot.border[plane];
-                            if (other > 0) {
-                                long x = baseX + nx;
-                                long y = baseY + ny;
-                                long z = baseZ + nz;
-                                int second = delta(level, x, y, z);
-                                int kept = share(values[i], second, Math.min(own, other) / 100f);
-                                setDelta(level, x, y, z, values[i] + second - kept);
-                                values[i] = (short) kept;
-                                changed = true;
-                                if (TEMPERATURE.get(ChunkAttachment.of(slot.chunk)) != null) {
-                                    slot.resolved = false;
-                                }
-                                if (counting) {
-                                    crossExchanges++;
-                                }
-                            }
-                            continue;
-                        }
-                        int neighbour = TemperatureModule.index(nx & 31, ny & 31, nz & 31);
-                        int other = slot.conductivity[neighbour];
-                        if (other > 0) {
-                            int second = slot.values == null ? 0 : slot.values[neighbour];
-                            int kept = share(values[i], second, Math.min(own, other) / 100f);
-                            slot.write(neighbour, values[i] + second - kept, low, high);
-                            values[i] = (short) kept;
-                            changed = true;
-                            if (counting) {
-                                crossExchanges++;
-                            }
-                        }
-                    }
-                }
-            }
-            if (!any) {
-                module.removeSection(section);
-            } else if (changed) {
-                module.touch(section);
-            }
-        }
-        if (module.isEmpty()) {
-            TEMPERATURE.detach(module.attachment());
-        }
-    }
-
-    private static final class Neighbour {
-
-        boolean resolved;
-        boolean blocked;
-        TemperatureModule module;
-        int section;
-        short[] values;
-        byte[] conductivity;
-        long[] active;
-        LevelChunk chunk;
-        byte[] border;
-
-        void reset() {
-            resolved = false;
-            blocked = false;
-            module = null;
-            values = null;
-            conductivity = null;
-            active = null;
-            chunk = null;
-            border = null;
-        }
-
-        void resolve(Level level, TemperatureModule own, int face, int ownSection, int sectionCount, int chunkX, int chunkZ) {
-            reset();
-            resolved = true;
-            section = ownSection;
-            if (face < 2) {
-                section += face == 0 ? 1 : -1;
-                if (section < 0 || section >= sectionCount) {
-                    blocked = true;
-                    return;
-                }
-                module = own;
-            } else {
-                int dx = face == 4 ? 1 : face == 5 ? -1 : 0;
-                int dz = face == 2 ? 1 : face == 3 ? -1 : 0;
-                LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX + dx, chunkZ + dz);
-                if (chunk == null) {
-                    blocked = true;
-                    return;
-                }
-                module = TEMPERATURE.get(ChunkAttachment.of(chunk));
-                if (module == null) {
-                    this.chunk = chunk;
-                    border = own.border(ownSection, face, chunk);
-                    return;
-                }
-            }
-            values = module.sections.get(section);
-            conductivity = module.conductivity(section);
-        }
-
-        void write(int index, int value, int low, int high) {
-            short clamped = (short) Mth.clamp(value, low, high);
-            short[] cells = values;
-            if (cells == null) {
-                if (clamped == 0) {
-                    return;
-                }
-                cells = module.values(section, true);
-                values = cells;
-            }
-            if (cells[index] != clamped) {
-                cells[index] = clamped;
-                module.touch(section);
-                if (clamped != 0) {
-                    if (active == null) {
-                        active = module.active(section);
-                    }
-                    active[index >> 6] |= 1L << index;
-                }
-            }
-        }
-    }
-
-    private static int share(int first, int second, float conductivity) {
-        float target = first - (first - second) * conductivity / 2f;
-        int floor = (int) Math.floor(target);
-        return RANDOM.nextFloat() < target - floor ? floor + 1 : floor;
     }
 }

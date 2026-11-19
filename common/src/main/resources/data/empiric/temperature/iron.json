@@ -1,0 +1,11 @@
+{
+  "blocks": [
+    "minecraft:iron_block",
+    "minecraft:iron_bars",
+    "minecraft:anvil"
+  ],
+  "conductivity": 80,
+  "density": 7870,
+  "specificHeat": 450,
+  "emissivity": 0.3
+}

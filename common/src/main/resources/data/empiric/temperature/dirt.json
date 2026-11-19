@@ -1,0 +1,11 @@
+{
+  "blocks": [
+    "#minecraft:dirt",
+    "#minecraft:sand",
+    "minecraft:gravel"
+  ],
+  "conductivity": 1.0,
+  "density": 1600,
+  "specificHeat": 800,
+  "emissivity": 0.9
+}

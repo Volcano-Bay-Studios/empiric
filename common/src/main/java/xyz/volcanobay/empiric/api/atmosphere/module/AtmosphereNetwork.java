@@ -6,9 +6,9 @@ import xyz.volcanobay.empiric.api.behavior.NetworkBehavior;
 import xyz.volcanobay.empiric.api.behavior.ServerTickBehavior;
 import xyz.volcanobay.empiric.api.network.NetworkModule;
 import xyz.volcanobay.empiric.core.data.Data;
+import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
 import xyz.volcanobay.empiric.system.AtmosphereSystem;
 import xyz.volcanobay.empiric.system.AtmosphereThermalSystem;
-import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +32,7 @@ public class AtmosphereNetwork extends NetworkModule implements NetworkBehavior,
 
     @Override
     public void update() {
+        AtmosphereThermalSystem.roomsChanged();
         this.volume.updateVolume(isWorldAtmosphere() ? PLANET_VOLUME : members().size() / 8f);
         if (!level().isClientSide() && (isWorldAtmosphere() || volume.getTemperature() <= 0)) {
             volume.fill(AtmosphereSystem.levelAtmosphere(level()));

@@ -13,13 +13,7 @@ import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
 import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public final class TemperatureOverlay implements OverlayLayer {
 
@@ -157,22 +151,23 @@ public final class TemperatureOverlay implements OverlayLayer {
     }
 
     private static OverlayMesh build(Level level, TemperatureModule module, int chunkX, int chunkZ, int section) {
-        short[] values = module.sections.get(section);
+        double[] values = module.sections.get(section);
         if (values == null) {
             return null;
         }
+        double resting = module.restingKelvin();
         long baseX = chunkX * (long) TemperatureModule.SIZE;
         long baseY = (long) (level.getMinSection() + section) * TemperatureModule.SIZE;
         long baseZ = chunkZ * (long) TemperatureModule.SIZE;
         List<SpatialPos> cells = new ArrayList<>();
         for (int i = 0; i < TemperatureModule.CELLS; i++) {
-            if (values[i] != 0) {
+            if (TemperatureModule.delta(values[i], resting) != 0) {
                 cells.add(new SpatialPos(baseX + ((i >> 10) & 31), baseY + ((i >> 5) & 31), baseZ + (i & 31)));
             }
         }
-        int ambient = TemperatureSystem.ambient(level);
-        Lookup lookup = new Lookup(level);
-        return OverlayMesh.build(CELL_SIZE, cells, (x, y, z) -> lookup.get(x, y, z) != 0, (x, y, z) -> color(ambient, lookup.get(x, y, z)));
+        int restingTenths = TemperatureModule.tenths(resting);
+        Lookup lookup = new Lookup(level, resting);
+        return OverlayMesh.build(CELL_SIZE, cells, (x, y, z) -> lookup.get(x, y, z) != 0, (x, y, z) -> color(restingTenths, lookup.get(x, y, z)));
     }
 
     @Override
@@ -205,10 +200,12 @@ public final class TemperatureOverlay implements OverlayLayer {
 
         private final Level level;
         private long cachedChunk = Long.MIN_VALUE;
+        private final double resting;
         private TemperatureModule cached;
 
-        Lookup(Level level) {
+        Lookup(Level level, double resting) {
             this.level = level;
+            this.resting = resting;
         }
 
         short get(long x, long y, long z) {
@@ -226,8 +223,9 @@ public final class TemperatureOverlay implements OverlayLayer {
             if (section < 0 || section >= level.getSectionsCount()) {
                 return 0;
             }
-            int index = TemperatureModule.index((int) Math.floorMod(x, TemperatureModule.SIZE), (int) Math.floorMod(y, TemperatureModule.SIZE), (int) Math.floorMod(z, TemperatureModule.SIZE));
-            return cached.get(section, index);
+            int index = TemperatureModule.index(Math.floorMod(x, TemperatureModule.SIZE), Math.floorMod(y, TemperatureModule.SIZE), Math.floorMod(z, TemperatureModule.SIZE));
+            double[] values = cached.sections.get(section);
+            return values == null ? 0 : TemperatureModule.delta(values[index], resting);
         }
     }
 }

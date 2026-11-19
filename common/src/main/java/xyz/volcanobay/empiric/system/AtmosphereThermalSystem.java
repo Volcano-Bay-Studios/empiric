@@ -7,11 +7,10 @@ import xyz.volcanobay.empiric.api.atmosphere.module.AtmosphereNetwork;
 import xyz.volcanobay.empiric.api.atmosphere.volume.AtmosphereVolume;
 import xyz.volcanobay.empiric.api.chemistry.sim.CellHeat;
 import xyz.volcanobay.empiric.api.temperature.TemperatureSection;
+import xyz.volcanobay.empiric.api.temperature.ThermalMaterials;
 import xyz.volcanobay.empiric.core.spatial.ManagedSpatialNetwork.SpatialPos;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Heat moving between the air of a sealed room and the blocks around it. Only runs while both the temperature and atmosphere systems are subscribed.
@@ -24,21 +23,24 @@ public final class AtmosphereThermalSystem {
      */
     public static final double GAS_HEAT_CAPACITY = 29;
     /**
-     * Heat capacity of an oct of solid in J/K, about an eighth of a cubic metre of stone.
-     */
-    public static final double CELL_HEAT_CAPACITY = 260_000;
-    /**
-     * Heat in J/K that a fully conductive face moves between a volume and a block per exchange, much faster than reality so it shows up in play.
-     */
-    public static final double CONDUCTANCE = 5000;
-    /**
      * The most of a volume's temperature gap a single face may close, so the air can't overshoot the blocks.
      */
     private static final double MAX_FRACTION = 0.5;
+    /**
+     * The convection coefficient between a room's air and the walls in W/(m2 K), the same in every level. Open air faces use the level's environment instead.
+     */
+    public static final double INDOOR_CONVECTION = 5;
 
     private static final int[][] FACES = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 
     private AtmosphereThermalSystem() {
+    }
+
+    /**
+     * Tells the temperature solver that the members of an atmosphere network changed, so it looks up which faces touch room air again.
+     */
+    public static void roomsChanged() {
+        RoomAir.changed();
     }
 
     public static boolean isActive() {
@@ -46,8 +48,10 @@ public final class AtmosphereThermalSystem {
     }
 
     /**
-     * Moves heat between a sealed volume and every conductive block touching it. Every face is worked out against the air's temperature at the start, so the result doesn't depend on the order of the faces.
-     * The air takes the exact heat, while cells only take whole tenths of a degree, so each cell keeps the fraction it couldn't take yet and gets it on a later call instead of being rounded randomly.
+     * Moves heat between a sealed volume and every block touching it that holds heat, as convection through each touching face using {@link #INDOOR_CONVECTION}.
+     * One call covers a second of real time (20 ticks) times the level's time scale. Every face is worked out against the air's temperature at the start, so the result doesn't depend on the order of the faces.
+     * A cell takes at most half of its own gap per call however many faces touch the room, so light materials can't overshoot at high time scales.
+     * Cells take the exact heat, with no rounding. The temperature solver leaves these faces out of its open air surface loss, so they aren't counted twice.
      *
      * @return whether the volume's temperature changed
      */
@@ -61,45 +65,50 @@ public final class AtmosphereThermalSystem {
             return false;
         }
         Level level = network.level();
-        Set<SpatialPos> members = network.members();
+        List<SpatialPos> members = new ArrayList<>(network.members());
+        members.sort(Comparator.comparingLong(SpatialPos::x).thenComparingLong(SpatialPos::y).thenComparingLong(SpatialPos::z));
+        Set<SpatialPos> room = new HashSet<>(members);
         double before = volume.getTemperature();
         Views views = new Views(level);
-        Map<SpatialPos, double[]> cells = new HashMap<>();
-        double conductance = 0;
+        Map<SpatialPos, double[]> cells = new LinkedHashMap<>();
+        double face = INDOOR_CONVECTION * ThermalMaterials.CELL_AREA;
+        double seconds = 20 * 0.05 * TemperatureSystem.timeScale(level);
         for (SpatialPos member : members) {
-            for (int[] face : FACES) {
-                SpatialPos pos = new SpatialPos(member.x() + face[0], member.y() + face[1], member.z() + face[2]);
-                if (members.contains(pos)) {
+            for (int[] offset : FACES) {
+                SpatialPos pos = new SpatialPos(member.x() + offset[0], member.y() + offset[1], member.z() + offset[2]);
+                if (room.contains(pos)) {
                     continue;
                 }
                 TemperatureSection section = views.at(pos.x(), pos.y(), pos.z());
-                int conductivity = section != null ? section.conductivity(TemperatureSection.indexOf(pos.x(), pos.y(), pos.z())) : TemperatureSystem.conductivity(level, pos.x(), pos.y(), pos.z());
-                if (conductivity <= 0) {
+                int index = TemperatureSection.indexOf(pos.x(), pos.y(), pos.z());
+                double cell = section != null ? section.heatCapacity(index) : TemperatureSystem.heatCapacity(level, pos.x(), pos.y(), pos.z());
+                if (cell <= 0) {
                     continue;
                 }
-                double share = conductivity / 100.0 * CONDUCTANCE;
-                cells.computeIfAbsent(pos, key -> new double[1])[0] += share;
-                conductance += share;
+                cells.computeIfAbsent(pos, key -> new double[]{0, cell})[0] += face;
             }
         }
-        if (conductance <= 0) {
+        if (cells.isEmpty() || seconds <= 0) {
             return false;
         }
-        double scale = Math.min(1, capacity * MAX_FRACTION / conductance);
-        Map<SpatialPos, Double> carry = network.getThermalCarry();
+        double conductance = 0;
+        for (double[] entry : cells.values()) {
+            entry[0] = Math.min(entry[0], MAX_FRACTION * entry[1] / seconds);
+            conductance += entry[0];
+        }
+        double scale = Math.min(1, capacity * MAX_FRACTION / (conductance * seconds));
         double heat = 0;
         for (Map.Entry<SpatialPos, double[]> entry : cells.entrySet()) {
             SpatialPos pos = entry.getKey();
             TemperatureSection section = views.at(pos.x(), pos.y(), pos.z());
             int index = TemperatureSection.indexOf(pos.x(), pos.y(), pos.z());
-            int cell = section != null ? section.temperature(index) : TemperatureSystem.get(level, pos.x(), pos.y(), pos.z());
-            double flow = scale * entry.getValue()[0] * (before - (cell / 10.0 + 273.15));
+            double cell = section != null ? section.kelvin(index) : TemperatureSystem.kelvin(level, pos.x(), pos.y(), pos.z());
+            double flow = scale * entry.getValue()[0] * seconds * (before - cell);
             heat += flow;
-            double left = section != null ? CellHeat.apply(section, index, flow, CELL_HEAT_CAPACITY, carry.getOrDefault(pos, 0.0)) : CellHeat.apply(level, pos.x(), pos.y(), pos.z(), flow, CELL_HEAT_CAPACITY, carry.getOrDefault(pos, 0.0));
-            if (left != 0) {
-                carry.put(pos, left);
+            if (section != null) {
+                CellHeat.apply(section, index, flow, 0, 0);
             } else {
-                carry.remove(pos);
+                CellHeat.apply(level, pos.x(), pos.y(), pos.z(), flow, 0, 0);
             }
         }
         double temperature = Math.max(0.01, before - heat / capacity);

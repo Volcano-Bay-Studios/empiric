@@ -1,0 +1,9 @@
+{
+  "blocks": [
+    "minecraft:copper_block"
+  ],
+  "conductivity": 400,
+  "density": 8960,
+  "specificHeat": 385,
+  "emissivity": 0.05
+}

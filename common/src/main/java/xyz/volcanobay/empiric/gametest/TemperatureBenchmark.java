@@ -11,6 +11,7 @@ import xyz.volcanobay.empiric.Empiric;
 import xyz.volcanobay.empiric.api.atmosphere.module.AtmosphereNetwork;
 import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
+import xyz.volcanobay.empiric.api.temperature.ThermalMaterials;
 import xyz.volcanobay.empiric.system.AtmosphereSystem;
 import xyz.volcanobay.empiric.system.AtmosphereThermalSystem;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
@@ -51,10 +52,16 @@ final class TemperatureBenchmark {
         final int chunkX;
         final int chunkZ;
         final int baseY;
+        final int size;
         final List<Box> stone = new ArrayList<>();
         final List<Box> hot = new ArrayList<>();
 
         Grid(GameTestHelper helper) {
+            this(helper, GRID);
+        }
+
+        Grid(GameTestHelper helper, int size) {
+            this.size = size;
             this.level = helper.getLevel();
             BlockPos origin = helper.absolutePos(BlockPos.ZERO);
             this.chunkX = (origin.getX() >> 4) + 2;
@@ -71,15 +78,33 @@ final class TemperatureBenchmark {
         }
 
         int maxX() {
-            return (chunkX + GRID) * 16;
+            return (chunkX + size) * 16;
         }
 
         int maxZ() {
-            return (chunkZ + GRID) * 16;
+            return (chunkZ + size) * 16;
         }
     }
 
     static List<TestFunction> tests(BiFunction<String, Consumer<GameTestHelper>, TestFunction> test) {
+        // Every time scale at the default thread count only
+        if ("flood-default".equals(System.getenv("EMPIRIC_BENCH"))) {
+            List<TestFunction> tests = new ArrayList<>();
+            for (double scale : new double[]{1, 100, 1000}) {
+                String variant = "x" + (int) scale;
+                tests.add(test.apply("temp_bench_flood_" + variant + "_default", helper -> flood(helper, variant, scale, TemperatureSystem.threads())));
+            }
+            return tests;
+        }
+        if ("flood".equals(System.getenv("EMPIRIC_BENCH"))) {
+            List<TestFunction> tests = new ArrayList<>();
+            for (int threads : new int[]{1, 2, 4, 8}) {
+                tests.add(test.apply("temp_bench_flood_x1_t" + threads, helper -> flood(helper, "x1", 1.0, threads)));
+                tests.add(test.apply("temp_bench_flood_x100_t" + threads, helper -> flood(helper, "x100", 100.0, threads)));
+            }
+            tests.add(test.apply("temp_bench_flood_x1000_default", helper -> flood(helper, "x1000", 1000.0, TemperatureSystem.threads())));
+            return tests;
+        }
         return List.of(test.apply("temp_bench_interior", TemperatureBenchmark::interior),
                 test.apply("temp_bench_boundary", TemperatureBenchmark::boundary),
                 test.apply("temp_bench_spread", TemperatureBenchmark::spread),
@@ -126,12 +151,11 @@ final class TemperatureBenchmark {
             for (Box box : grid.stone) {
                 fill(level, box, Blocks.STONE.defaultBlockState(), 2);
             }
-            TemperatureSystem.reseed(SEED);
             int ambient = TemperatureSystem.ambient(level);
             for (Box box : grid.hot) {
                 heat(level, box, ambient + HEAT);
             }
-            long initial = total(grid);
+            double initial = total(grid);
             long[] nanos = new long[TICKS];
             long active = 0;
             long cross = 0;
@@ -142,9 +166,7 @@ final class TemperatureBenchmark {
                 }
                 List<TemperatureModule> modules = modules(grid);
                 long start = System.nanoTime();
-                for (TemperatureModule module : modules) {
-                    TemperatureSystem.propagate(module);
-                }
+                TemperatureSystem.step(level, modules);
                 long elapsed = System.nanoTime() - start;
                 if (measured) {
                     cross += TemperatureSystem.stopCountingCrossExchanges();
@@ -153,9 +175,9 @@ final class TemperatureBenchmark {
                 }
             }
             long checksum = checksum(grid);
-            long finalTotal = total(grid);
+            double finalTotal = total(grid);
             report(name, nanos, active, cross, checksum);
-            helper.assertTrue(finalTotal >= 0 && finalTotal <= initial, "total heat left its bounds, " + initial + " became " + finalTotal);
+            helper.assertTrue(finalTotal >= 0 && finalTotal <= initial * (1 + 1.0E-9), "total energy left its bounds, " + initial + " J became " + finalTotal + " J");
             if (lookups) {
                 lookups(grid);
             }
@@ -166,7 +188,6 @@ final class TemperatureBenchmark {
             for (Box box : grid.stone) {
                 fill(level, box, Blocks.AIR.defaultBlockState(), 2);
             }
-            unload(grid);
         }
     }
 
@@ -219,23 +240,14 @@ final class TemperatureBenchmark {
             for (BlockPos wall : walls) {
                 level.setBlock(wall, Blocks.AIR.defaultBlockState(), 3);
             }
-            unload(grid);
         }
     }
 
     private static void load(Grid grid) {
-        for (int x = 0; x < GRID; x++) {
-            for (int z = 0; z < GRID; z++) {
+        for (int x = 0; x < grid.size; x++) {
+            for (int z = 0; z < grid.size; z++) {
                 grid.level.setChunkForced(grid.chunkX + x, grid.chunkZ + z, true);
                 grid.level.getChunk(grid.chunkX + x, grid.chunkZ + z);
-            }
-        }
-    }
-
-    private static void unload(Grid grid) {
-        for (int x = 0; x < GRID; x++) {
-            for (int z = 0; z < GRID; z++) {
-                grid.level.setChunkForced(grid.chunkX + x, grid.chunkZ + z, false);
             }
         }
     }
@@ -264,8 +276,8 @@ final class TemperatureBenchmark {
 
     private static List<TemperatureModule> modules(Grid grid) {
         List<TemperatureModule> modules = new ArrayList<>();
-        for (int x = 0; x < GRID; x++) {
-            for (int z = 0; z < GRID; z++) {
+        for (int x = 0; x < grid.size; x++) {
+            for (int z = 0; z < grid.size; z++) {
                 TemperatureModule module = TemperatureSystem.module(grid.level, grid.chunkX + x, grid.chunkZ + z, false);
                 if (module != null) {
                     modules.add(module);
@@ -287,12 +299,16 @@ final class TemperatureBenchmark {
         return cells;
     }
 
-    private static long total(Grid grid) {
-        long total = 0;
+    private static double total(Grid grid) {
+        double ambient = TemperatureSystem.ambientKelvin(grid.level);
+        double[] capacity = ThermalMaterials.table().capacity;
+        double total = 0;
         for (TemperatureModule module : modules(grid)) {
-            for (short[] values : module.sections.values()) {
-                for (short value : values) {
-                    total += value;
+            for (int section : module.sections.keySet().toIntArray()) {
+                double[] values = module.sections.get(section);
+                byte[] materials = module.materials(section);
+                for (int i = 0; i < values.length; i++) {
+                    total += capacity[materials[i] & 0xFF] * (values[i] - ambient);
                 }
             }
         }
@@ -306,8 +322,8 @@ final class TemperatureBenchmark {
             Arrays.sort(sections);
             for (int section : sections) {
                 hash = hash * 31 + section;
-                for (short value : module.sections.get(section)) {
-                    hash = hash * 1000003L + value;
+                for (double value : module.sections.get(section)) {
+                    hash = hash * 1000003L + Double.doubleToLongBits(value);
                 }
             }
         }
@@ -371,5 +387,98 @@ final class TemperatureBenchmark {
         }
         long raw = System.nanoTime() - start;
         Empiric.LOGGER.info("TEMP_BENCH lookup get_ns={} raw_ns={} sink={}", round(get / (double) LOOKUPS), round(raw / (double) LOOKUPS), sink);
+    }
+
+    private static void flood(GameTestHelper helper, String name, double timeScale, int threads) {
+        int size = 12;
+        int original = TemperatureSystem.threads();
+        Grid grid = new Grid(helper, size);
+        ServerLevel level = grid.level;
+        load(grid);
+        Box slab = new Box(grid.minX(), grid.baseY, grid.minZ(), grid.maxX(), grid.baseY + 48, grid.maxZ());
+        long budget = 300_000_000_000L;
+        try {
+            TemperatureSystem.setThreads(threads);
+            TemperatureSystem.setTimeScale(dimension -> timeScale);
+            fill(level, slab, Blocks.STONE.defaultBlockState(), 2 | 16);
+            int middleX = grid.minX() + size * 8;
+            int middleZ = grid.minZ() + size * 8;
+            BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+            for (int x = middleX - 16; x < middleX + 16; x++) {
+                for (int y = grid.baseY + 8; y < grid.baseY + 40; y++) {
+                    for (int z = middleZ - 16; z < middleZ + 16; z++) {
+                        pos.set(x, y, z);
+                        TemperatureSystem.set(level, pos, 10000);
+                    }
+                }
+            }
+            long windowPropagate = 0;
+            long preparedBefore = TemperatureSystem.prepareNanos();
+            long computedBefore = TemperatureSystem.computeNanos();
+            long committedBefore = TemperatureSystem.commitNanos();
+            long runStart = System.nanoTime();
+            int window = 0;
+            for (int tick = 1; tick <= 400; tick++) {
+                List<TemperatureModule> modules = modules(grid);
+                long start = System.nanoTime();
+                TemperatureSystem.step(level, modules);
+                long end = System.nanoTime();
+                windowPropagate += end - start;
+                window++;
+                boolean over = end - runStart > budget;
+                if (tick % 50 == 0 || over || tick == 1) {
+                    long prepared = TemperatureSystem.prepareNanos();
+                    long computed = TemperatureSystem.computeNanos();
+                    long committed = TemperatureSystem.commitNanos();
+                    reportFlood(name, threads, tick, grid, windowPropagate / 1_000_000.0 / window, (prepared - preparedBefore) / 1_000_000.0 / window, (computed - computedBefore) / 1_000_000.0 / window, (committed - committedBefore) / 1_000_000.0 / window);
+                    preparedBefore = prepared;
+                    computedBefore = computed;
+                    committedBefore = committed;
+                    windowPropagate = 0;
+                    window = 0;
+                }
+                if (over) {
+                    Empiric.LOGGER.info("TEMP_BENCH flood stopped variant={} threads={} tick={} reason=time budget", name, threads, tick);
+                    break;
+                }
+            }
+            helper.succeed();
+        } finally {
+            TemperatureSystem.setThreads(original);
+            TemperatureSystem.setTimeScale(null);
+            clear(grid);
+            fill(level, slab, Blocks.AIR.defaultBlockState(), 2 | 16);
+        }
+    }
+
+    private static void reportFlood(String name, int threads, int tick, Grid grid, double propagateMs, double prepareMs, double computeMs, double commitMs) {
+        List<TemperatureModule> modules = modules(grid);
+        double ambient = TemperatureSystem.ambientKelvin(grid.level);
+        double[] capacity = ThermalMaterials.table().capacity;
+        long sections = 0;
+        long active = 0;
+        double total = 0;
+        int max = 0;
+        long[] bands = new long[4];
+        for (TemperatureModule module : modules) {
+            sections += module.sections.size();
+            for (int section : module.sections.keySet().toIntArray()) {
+                double[] values = module.sections.get(section);
+                byte[] materials = module.materials(section);
+                long[] mask = module.active(section);
+                for (int i = 0; i < values.length; i++) {
+                    total += capacity[materials[i] & 0xFF] * (values[i] - ambient);
+                    int delta = TemperatureModule.delta(values[i], ambient);
+                    max = Math.max(max, delta);
+                    if ((mask[i >> 6] & (1L << i)) != 0) {
+                        active++;
+                        int magnitude = Math.abs(delta);
+                        bands[magnitude <= 2 ? 0 : magnitude <= 5 ? 1 : magnitude <= 20 ? 2 : 3]++;
+                    }
+                }
+            }
+        }
+        Empiric.LOGGER.info("TEMP_BENCH flood variant={} threads={} tick={} propagate_ms={} prepare_ms={} compute_ms={} commit_ms={} substeps={} active_cells={} sections={} checksum={} modules={} total_energy_j={} max_value={} le2={} le5={} le20={} gt20={}",
+                name, threads, tick, round(propagateMs), round(prepareMs), round(computeMs), round(commitMs), TemperatureSystem.lastSubsteps(), active, sections, checksum(grid), modules.size(), Math.round(total), max, bands[0], bands[1], bands[2], bands[3]);
     }
 }

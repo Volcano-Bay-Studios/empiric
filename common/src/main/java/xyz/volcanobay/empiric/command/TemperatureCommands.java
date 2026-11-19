@@ -6,7 +6,6 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import xyz.volcanobay.empiric.api.network.PacketTarget;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -14,14 +13,19 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import xyz.volcanobay.empiric.api.network.PacketTarget;
+import xyz.volcanobay.empiric.api.oct.OctLevel;
 import xyz.volcanobay.empiric.api.oct.OctPos;
 import xyz.volcanobay.empiric.api.temperature.TemperatureModule;
-import xyz.volcanobay.empiric.api.oct.OctLevel;
+import xyz.volcanobay.empiric.api.temperature.TemperatureSection;
+import xyz.volcanobay.empiric.api.temperature.ThermalMaterial;
 import xyz.volcanobay.empiric.networking.packet.TemperatureOverlayS2CPacket;
+import xyz.volcanobay.empiric.system.TemperatureConfig;
 import xyz.volcanobay.empiric.system.TemperatureSystem;
 
 import java.util.Arrays;
@@ -64,39 +68,95 @@ public final class TemperatureCommands {
                         .executes(context -> show(context, 32))
                         .then(Commands.argument("radius", IntegerArgumentType.integer(1, 128))
                                 .executes(context -> show(context, IntegerArgumentType.getInteger(context, "radius")))))
-                .then(Commands.literal("hide").executes(TemperatureCommands::hide));
+                .then(Commands.literal("hide").executes(TemperatureCommands::hide))
+                .then(Commands.literal("timescale")
+                        .executes(TemperatureCommands::timeScale)
+                        .then(Commands.literal("clear").executes(TemperatureCommands::clearTimeScale))
+                        .then(Commands.literal("default")
+                                .then(Commands.argument("value", DoubleArgumentType.doubleArg(0, 1_000_000))
+                                        .executes(TemperatureCommands::setDefaultTimeScale)))
+                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0, 1_000_000))
+                                .executes(TemperatureCommands::setTimeScale)));
     }
 
     private static void enable(CommandContext<CommandSourceStack> context) {
         EmpiricCommands.ensureEnabled(context.getSource(), TemperatureSystem.TEMPERATURE);
     }
 
-    /** Commands take degrees Celsius with one decimal, the system works in tenths. */
+    /**
+     * Commands take degrees Celsius with one decimal, the system works in tenths.
+     */
     private static int tenths(CommandContext<CommandSourceStack> context) {
         return (int) Math.round(DoubleArgumentType.getDouble(context, "value") * 10);
     }
 
-    private static String conductivity(byte value) {
-        return value < 0 ? "air" : String.format("%.2f", value / 100f);
+    private static String material(ThermalMaterial material) {
+        if (material == null) {
+            return "air";
+        }
+        return String.format("k %.3g W/mK, rho %.0f kg/m3, c %.0f J/kgK, eps %.2f", material.conductivity(), material.density(), material.specificHeat(), material.emissivity());
+    }
+
+    private static boolean isActive(ServerLevel level, OctPos oct) {
+        TemperatureModule module = TemperatureSystem.module(level, (int) Math.floorDiv(oct.getLongX(), 32L), (int) Math.floorDiv(oct.getLongZ(), 32L), false);
+        if (module == null) {
+            return false;
+        }
+        int section = level.getSectionIndex((int) Math.floorDiv(oct.getLongY(), 2L));
+        long[] mask = module.activeMask(section);
+        int index = TemperatureSection.indexOf(oct.getLongX(), oct.getLongY(), oct.getLongZ());
+        return mask != null && (mask[index >> 6] & (1L << index)) != 0;
+    }
+
+    private static int timeScale(CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        ResourceLocation dimension = level.dimension().location();
+        String source = TemperatureSystem.isTimeScaleOverridden() ? "code override" : TemperatureConfig.hasDimension(dimension) ? "dimension override" : "default";
+        double scale = TemperatureSystem.timeScale(level);
+        EmpiricCommands.send(context, EmpiricCommands.label("Time scale in " + dimension + ": " + scale + " (" + source + ")"));
+        return (int) scale;
+    }
+
+    private static int setTimeScale(CommandContext<CommandSourceStack> context) {
+        ResourceLocation dimension = context.getSource().getLevel().dimension().location();
+        double value = DoubleArgumentType.getDouble(context, "value");
+        TemperatureConfig.setDimension(dimension, value);
+        context.getSource().sendSuccess(() -> Component.literal("Set the time scale in " + dimension + " to " + value), true);
+        return 1;
+    }
+
+    private static int setDefaultTimeScale(CommandContext<CommandSourceStack> context) {
+        double value = DoubleArgumentType.getDouble(context, "value");
+        TemperatureConfig.setDefault(value);
+        context.getSource().sendSuccess(() -> Component.literal("Set the default time scale to " + value), true);
+        return 1;
+    }
+
+    private static int clearTimeScale(CommandContext<CommandSourceStack> context) {
+        ResourceLocation dimension = context.getSource().getLevel().dimension().location();
+        TemperatureConfig.setDimension(dimension, null);
+        context.getSource().sendSuccess(() -> Component.literal("Removed the time scale override in " + dimension), true);
+        return 1;
     }
 
     private static int get(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         enable(context);
         ServerLevel level = context.getSource().getLevel();
         BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
-        StringBuilder octs = new StringBuilder("octant  heat  conductivity  state");
+        StringBuilder octs = new StringBuilder("octant  heat  kelvin  active  material  state");
         for (int octant = 0; octant < 8; octant++) {
             OctPos oct = new OctPos(pos, octant);
             BlockState state = OctLevel.get(level).getBlockState(oct);
             octs.append('\n').append(octant).append(" (").append(octant & 1).append(' ').append((octant >> 1) & 1).append(' ').append((octant >> 2) & 1).append(")  ")
                     .append(TemperatureModule.format(TemperatureSystem.get(level, oct))).append("  ")
-                    .append(conductivity(TemperatureSystem.conductivity(level, oct.getLongX(), oct.getLongY(), oct.getLongZ()))).append("  ")
+                    .append(String.format("%.3f K", TemperatureSystem.kelvin(level, oct))).append("  ")
+                    .append(isActive(level, oct) ? "active" : "asleep").append("  ")
+                    .append(material(TemperatureSystem.material(level, oct))).append("  ")
                     .append(state.getBlock().getName().getString());
         }
-        double data = TemperatureSystem.BLOCK_DATA.get(level.getBlockState(pos)).conductivity;
         MutableComponent line = EmpiricCommands.label("Temperature at " + EmpiricCommands.describe(pos) + ": ")
                 .append(EmpiricCommands.hover(TemperatureModule.format(TemperatureSystem.get(level, pos)) + " average", octs.toString(), ChatFormatting.GOLD))
-                .append(EmpiricCommands.label(", block conductivity " + String.format("%.2f", data)));
+                .append(EmpiricCommands.label(", " + material(TemperatureSystem.material(level, new OctPos(pos, 0)))));
         EmpiricCommands.send(context, line);
         return TemperatureSystem.get(level, pos);
     }
@@ -156,20 +216,20 @@ public final class TemperatureCommands {
             return 0;
         }
         ServerLevel level = context.getSource().getLevel();
-        long total = 0;
         int cells = 0;
         int max = 0;
         StringBuilder sections = new StringBuilder("section  cells  largest offset");
         int[] keys = module.sections.keySet().toIntArray();
         Arrays.sort(keys);
+        double resting = module.restingKelvin();
         for (int section : keys) {
-            short[] values = module.sections.get(section);
             int sectionCells = 0;
             int sectionMax = 0;
-            for (short value : values) {
+            double[] values = module.sections.get(section);
+            for (int i = 0; i < TemperatureModule.CELLS; i++) {
+                int value = TemperatureModule.deltaTenths(values[i], resting);
                 if (value != 0) {
                     sectionCells++;
-                    total += value;
                     sectionMax = Math.max(sectionMax, Math.abs(value));
                 }
             }
@@ -180,7 +240,7 @@ public final class TemperatureCommands {
         ChunkPos chunk = module.chunk().getPos();
         MutableComponent line = EmpiricCommands.label("Chunk " + chunk.x + " " + chunk.z + ": ")
                 .append(EmpiricCommands.hover(module.sections.size() + " sections", sections.toString(), ChatFormatting.AQUA))
-                .append(EmpiricCommands.label(", " + cells + " octs off ambient (" + TemperatureModule.format(TemperatureSystem.ambient(level)) + "), largest offset " + TemperatureModule.format(max)));
+                .append(EmpiricCommands.label(", " + cells + " octs off the resting temperature (" + TemperatureModule.format(TemperatureModule.tenths(resting)) + "), largest offset " + TemperatureModule.format(max)));
         EmpiricCommands.send(context, line);
         return cells;
     }

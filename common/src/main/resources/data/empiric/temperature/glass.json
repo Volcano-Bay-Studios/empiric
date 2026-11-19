@@ -4,5 +4,8 @@
     "minecraft:glass_pane",
     "minecraft:tinted_glass"
   ],
-  "conductivity": 0.3
+  "conductivity": 1.0,
+  "density": 2500,
+  "specificHeat": 840,
+  "emissivity": 0.92
 }

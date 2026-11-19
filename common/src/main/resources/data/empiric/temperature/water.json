@@ -1,0 +1,9 @@
+{
+  "blocks": [
+    "minecraft:water"
+  ],
+  "conductivity": 0.6,
+  "density": 1000,
+  "specificHeat": 4186,
+  "emissivity": 0.96
+}

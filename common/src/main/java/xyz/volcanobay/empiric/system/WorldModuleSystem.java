@@ -14,15 +14,10 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.ProtoChunk;
-import xyz.volcanobay.empiric.api.attachment.BlockEntityAttachment;
-import xyz.volcanobay.empiric.api.attachment.ChunkAttachment;
-import xyz.volcanobay.empiric.api.attachment.EntityAttachment;
-import xyz.volcanobay.empiric.api.attachment.LevelAttachment;
-import xyz.volcanobay.empiric.api.attachment.PersistentAttachment;
-import xyz.volcanobay.empiric.api.attachment.ServerAttachment;
-import xyz.volcanobay.empiric.api.attachment.WorldAttachment;
+import xyz.volcanobay.empiric.api.attachment.*;
 import xyz.volcanobay.empiric.api.behavior.BlockChangeBehavior;
 import xyz.volcanobay.empiric.api.behavior.EmpiricBehaviors;
+import xyz.volcanobay.empiric.api.module.SaveHook;
 import xyz.volcanobay.empiric.client.ClientLookup;
 import xyz.volcanobay.empiric.core.EmpiricCore;
 import xyz.volcanobay.empiric.core.attachment.Attachment;
@@ -36,10 +31,7 @@ import xyz.volcanobay.empiric.data.EmpiricBuffers;
 import xyz.volcanobay.empiric.ext.ChunkExtension;
 import xyz.volcanobay.empiric.persistent.ModuleSavedData;
 
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -67,6 +59,7 @@ public final class WorldModuleSystem {
     public static void serverStarting(MinecraftServer server) {
         WorldModuleSystem.server = server;
         EmpiricBuffers.registries(server.registryAccess());
+        TemperatureConfig.load(server);
     }
 
     public static Level keyLevel(Side side) {
@@ -87,6 +80,7 @@ public final class WorldModuleSystem {
     }
 
     public static void serverStopped() {
+        ThermalSolver.shutdown();
         EmpiricCore.modules().unloadSide(Side.SERVER);
         ServerAttachment.reset(Side.SERVER);
         DebugSubscriptionSystem.clear();
@@ -144,7 +138,20 @@ public final class WorldModuleSystem {
     public static byte[] encodeAll(Attachment attachment, Predicate<ModuleType<?, ?>> filter) {
         ModuleSystem modules = EmpiricCore.modules();
         RegistryFriendlyByteBuf buffer = EmpiricBuffers.create();
-        modules.save(attachment, EmpiricBuffers.of(buffer), modules.specs().context(Encoding.KEYED), filter);
+        List<SaveHook> hooks = new ArrayList<>();
+        attachment.modules().forEach(module -> {
+            if (module instanceof SaveHook hook && filter.test(module.type())) {
+                hooks.add(hook);
+                hook.beforeSave();
+            }
+        });
+        try {
+            modules.save(attachment, EmpiricBuffers.of(buffer), modules.specs().context(Encoding.KEYED), filter);
+        } finally {
+            for (SaveHook hook : hooks) {
+                hook.afterSave();
+            }
+        }
         return EmpiricBuffers.bytes(buffer);
     }
 

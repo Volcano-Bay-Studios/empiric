@@ -3,5 +3,8 @@
     "#minecraft:wool",
     "#minecraft:wool_carpets"
   ],
-  "conductivity": 0.02
+  "conductivity": 0.04,
+  "density": 100,
+  "specificHeat": 1300,
+  "emissivity": 0.9
 }

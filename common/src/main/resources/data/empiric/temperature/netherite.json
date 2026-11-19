@@ -1,0 +1,9 @@
+{
+  "blocks": [
+    "minecraft:netherite_block"
+  ],
+  "conductivity": 170,
+  "density": 19000,
+  "specificHeat": 135,
+  "emissivity": 0.3
+}

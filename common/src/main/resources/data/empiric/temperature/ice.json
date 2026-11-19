@@ -1,0 +1,11 @@
+{
+  "blocks": [
+    "minecraft:ice",
+    "minecraft:packed_ice",
+    "minecraft:blue_ice"
+  ],
+  "conductivity": 2.2,
+  "density": 917,
+  "specificHeat": 2100,
+  "emissivity": 0.97
+}
